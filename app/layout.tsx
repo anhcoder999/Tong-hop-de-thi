@@ -5,6 +5,7 @@ import { IconSeal } from "@/components/Icons";
 import Guard from "@/components/Guard";
 import Navbar from "@/components/Navbar";
 import PageTransition from "@/components/PageTransition";
+import { AuthProvider } from "@/lib/auth";
 import "./globals.css";
 const lora = Lora({
   subsets: ["latin", "vietnamese"],
@@ -46,30 +47,32 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="vi" className={`${lora.variable} ${be.variable}`}>
       <body className="flex min-h-screen flex-col font-sans text-ink antialiased">
-        <Guard />
-        <Navbar />
-        <PageTransition>{children}</PageTransition>
-        <footer className="border-t-2 border-ink bg-paper-light/70">
-          <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 sm:flex-row">
-            <div className="flex items-center gap-2">
-              <span className="grid h-8 w-8 place-items-center border border-ink/40 text-ink">
-                <IconSeal className="h-4 w-4" />
-              </span>
-              <span className="font-display text-base font-bold">
-                Đề<span className="text-accent">.</span>Thi
-              </span>
+        <AuthProvider>
+          <Guard />
+          <Navbar />
+          <PageTransition>{children}</PageTransition>
+          <footer className="border-t-2 border-ink bg-paper-light/70">
+            <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 sm:flex-row">
+              <div className="flex items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center border border-ink/40 text-ink">
+                  <IconSeal className="h-4 w-4" />
+                </span>
+                <span className="font-display text-base font-bold">
+                  Đề<span className="text-accent">.</span>Thi
+                </span>
+              </div>
+              <nav className="flex items-center gap-5 text-sm text-ink-soft">
+                <Link href="/" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">
+                  Trang chủ
+                </Link>
+                <Link href="/login" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">
+                  Tài khoản
+                </Link>
+              </nav>
+              <p className="text-xs uppercase tracking-[0.16em] text-ink-faint">© 2026 Đề.Thi</p>
             </div>
-            <nav className="flex items-center gap-5 text-sm text-ink-soft">
-              <Link href="/" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">
-                Trang chủ
-              </Link>
-              <Link href="/admin" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">
-                Quản trị
-              </Link>
-            </nav>
-            <p className="text-xs uppercase tracking-[0.16em] text-ink-faint">© 2026 Đề.Thi</p>
-          </div>
-        </footer>
+          </footer>
+        </AuthProvider>
       </body>
     </html>
   );
