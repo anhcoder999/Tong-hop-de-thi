@@ -8,7 +8,7 @@ import { buttonTap, EASE } from "@/lib/animations";
 export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
   const router = useRouter();
   const [daTai, setDaTai] = useState(false);
-  const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+  const viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(url)}`;
   return (
     <div className="mt-6">
       <div className="flex flex-wrap items-center gap-2.5">
@@ -16,7 +16,7 @@ export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
           whileTap={buttonTap}
           type="button"
           onClick={() => router.push("/")}
-          className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-paper"
+          className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper"
         >
           <IconArrowLeft className="h-4 w-4" />
           Quay lại
@@ -27,17 +27,17 @@ export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
           download
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent"
+          className="flex items-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent"
         >
           <IconDownload className="h-4 w-4" />
           Tải PDF
         </motion.a>
         <motion.a
           whileTap={buttonTap}
-          href={url}
+          href={viewerUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-paper"
+          className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper"
         >
           <IconExternal className="h-4 w-4" />
           Mở tab mới
@@ -52,7 +52,7 @@ export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
             <Skeleton className="h-[55%] w-full" />
             <div className="flex items-center justify-center gap-2 pt-2 text-sm text-ink-faint">
               <IconLoader className="h-4 w-4 animate-spin text-accent" />
-              Đang tải đề...
+              Đang dựng trang đề...
             </div>
           </div>
         )}
@@ -60,6 +60,7 @@ export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
           key={viewerUrl}
           src={viewerUrl}
           title={ten}
+          allow="fullscreen"
           onLoad={() => setDaTai(true)}
           initial={{ opacity: 0 }}
           animate={{ opacity: daTai ? 1 : 0 }}
@@ -67,7 +68,7 @@ export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
           className="h-[80vh] w-full border-0 bg-paper-light"
         />
       </div>
-      <p className="mt-3 text-xs text-ink-faint">Mẹo: nếu khung trống, bấm Mở tab mới để xem trực tiếp.</p>
+      <p className="mt-3 text-xs text-ink-faint">Chụm hai ngón hoặc dùng nút cộng trừ trong khung để phóng to tài liệu. Chỉ nút Tải PDF mới lưu file về máy.</p>
     </div>
   );
 }
