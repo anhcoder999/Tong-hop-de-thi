@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { IconArrowLeft, IconDownload, IconExternal, IconLoader } from "@/components/Icons";
 import Skeleton from "@/components/Skeleton";
 import { buttonTap, EASE } from "@/lib/animations";
-import { resolveUrl } from "@/lib/sampleDocx";
 import type { Loai } from "@/lib/data";
 const WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 function PdfEngine({ src, zoom, onReady, onError }: { src: string; zoom: number; onReady: () => void; onError: () => void }) {
@@ -14,12 +13,13 @@ function PdfEngine({ src, zoom, onReady, onError }: { src: string; zoom: number;
   useEffect(() => {
     let alive = true;
     const tasks: { cancel?: () => void }[] = [];
-    let doc: { destroy?: () => void; numPages: number; getPage: (n: number) => Promise<unknown> } | null = null;
+    let doc: { destroy?: () => void } | null = null;
     (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
         pdfjs.GlobalWorkerOptions.workerSrc = WORKER;
         const res = await fetch(src);
+        if (!res.ok) throw new Error("fetch");
         const data = await res.arrayBuffer();
         const loaded = await pdfjs.getDocument({ data }).promise;
         doc = loaded as unknown as typeof doc;
@@ -77,6 +77,7 @@ function DocxEngine({ src, zoom, onReady, onError }: { src: string; zoom: number
       try {
         const { renderAsync } = await import("docx-preview");
         const res = await fetch(src);
+        if (!res.ok) throw new Error("fetch");
         const data = await res.arrayBuffer();
         if (!alive || !hostRef.current) return;
         hostRef.current.innerHTML = "";
@@ -107,24 +108,15 @@ function DocxEngine({ src, zoom, onReady, onError }: { src: string; zoom: number
     </div>
   );
 }
-export default function DocumentViewer({ url, ten, loai }: { url: string; ten: string; loai?: Loai }) {
+export default function DocumentViewer({ url, ten, loai }: { url: string; ten: string; loai: Loai }) {
   const router = useRouter();
-  const [src, setSrc] = useState("");
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const kind: Loai = loai ?? (url.toLowerCase().endsWith(".docx") ? "docx" : "pdf");
   useEffect(() => {
-    let alive = true;
     setReady(false);
     setError(false);
     setZoom(1);
-    resolveUrl(url).then((u) => {
-      if (alive) setSrc(u);
-    });
-    return () => {
-      alive = false;
-    };
   }, [url]);
   const onReady = useCallback(() => setReady(true), []);
   const onError = useCallback(() => setError(true), []);
@@ -135,20 +127,20 @@ export default function DocumentViewer({ url, ten, loai }: { url: string; ten: s
           <IconArrowLeft className="h-4 w-4" />
           Quay lại
         </motion.button>
-        <motion.a whileTap={buttonTap} href={src || url} download target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent">
+        <motion.a whileTap={buttonTap} href={url} download={`${ten}.${loai}`} className="flex items-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent">
           <IconDownload className="h-4 w-4" />
           Tải file
         </motion.a>
-        <motion.a whileTap={buttonTap} href={src || url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
+        <motion.a whileTap={buttonTap} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
           <IconExternal className="h-4 w-4" />
           Mở tab mới
         </motion.a>
         <div className="ml-auto flex items-center gap-1 border border-ink/30 bg-paper-light">
-          <motion.button whileTap={buttonTap} type="button" aria-label="Thu nhỏ" onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))} className="px-3 py-2 text-sm font-bold text-ink transition-colors active:bg-accent-wash hover:bg-paper">
+          <motion.button whileTap={buttonTap} type="button" aria-label="Thu nhỏ" onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.25).toFixed(2))))} className="px-3 py-2 text-sm font-bold text-ink transition-colors active:bg-accent-wash hover:bg-paper">
             −
           </motion.button>
           <span className="min-w-[3.5rem] text-center text-xs font-semibold text-ink-soft">{Math.round(zoom * 100)}%</span>
-          <motion.button whileTap={buttonTap} type="button" aria-label="Phóng to" onClick={() => setZoom((z) => Math.min(3, z + 0.25))} className="px-3 py-2 text-sm font-bold text-ink transition-colors active:bg-accent-wash hover:bg-paper">
+          <motion.button whileTap={buttonTap} type="button" aria-label="Phóng to" onClick={() => setZoom((z) => Math.min(3, Number((z + 0.25).toFixed(2))))} className="px-3 py-2 text-sm font-bold text-ink transition-colors active:bg-accent-wash hover:bg-paper">
             +
           </motion.button>
           <motion.button whileTap={buttonTap} type="button" onClick={() => setZoom(1)} className="border-l border-ink/30 px-3 py-2 text-xs font-semibold text-ink-soft transition-colors active:bg-accent-wash hover:bg-paper">
@@ -169,16 +161,19 @@ export default function DocumentViewer({ url, ten, loai }: { url: string; ten: s
             </div>
           </div>
         )}
-        {error && (
+        {error ? (
           <div className="flex h-[80vh] flex-col items-center justify-center gap-3 p-6 text-center">
             <p className="font-display text-xl font-bold text-accent">Không dựng được tài liệu</p>
-            <p className="max-w-sm text-sm text-ink-soft">File có thể chặn truy cập hoặc hỏng. Bấm Tải file hoặc Mở tab mới để xem trực tiếp.</p>
+            <p className="max-w-sm text-sm text-ink-soft">File có thể chưa tải xong hoặc bị chặn truy cập. Bấm Tải file hoặc Mở tab mới để xem trực tiếp.</p>
           </div>
+        ) : loai === "pdf" ? (
+          <PdfEngine src={url} zoom={zoom} onReady={onReady} onError={onError} />
+        ) : (
+          <DocxEngine src={url} zoom={zoom} onReady={onReady} onError={onError} />
         )}
-        {src && !error && (kind === "pdf" ? <PdfEngine src={src} zoom={zoom} onReady={onReady} onError={onError} /> : <DocxEngine src={src} zoom={zoom} onReady={onReady} onError={onError} />)}
       </div>
       <p className="mt-3 text-xs text-ink-faint">
-        {kind === "pdf" ? "PDF giữ nguyên font nhúng. Dùng nút cộng trừ để phóng to." : "DOCX giữ layout và font gần như Word. Dùng nút cộng trừ để phóng to."} Chỉ nút Tải file mới lưu về máy.
+        {loai === "pdf" ? "PDF giữ nguyên font nhúng. Dùng nút cộng trừ để phóng to." : "DOCX giữ layout và font gần như Word. Dùng nút cộng trừ để phóng to."} Chỉ nút Tải file mới lưu về máy.
       </p>
     </div>
   );
