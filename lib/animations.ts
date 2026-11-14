@@ -17,4 +17,9 @@ export const cardHover: Variants = {
     transition: { duration: 0.25, ease: EASE },
   },
 };
+export const stampIn: Variants = {
+  hidden: { opacity: 0, scale: 1.3, rotate: -10 },
+  visible: { opacity: 1, scale: 1, rotate: -2, transition: { type: "spring", stiffness: 300, damping: 25 } },
+};
 export const buttonTap = { scale: 0.97 };
+export const tapCard = { scale: 0.99 };
