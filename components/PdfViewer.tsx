@@ -1,24 +1,17 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Download, ExternalLink, FileWarning, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, ExternalLink, Loader2 } from "lucide-react";
 import Skeleton from "@/components/Skeleton";
 import { buttonTap, EASE } from "@/lib/animations";
+
 export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
   const router = useRouter();
   const [daTai, setDaTai] = useState(false);
-  const [quaCham, setQuaCham] = useState(false);
-  // Đổi PDF thì reset trạng thái; quá 8 giây chưa load xong thì hiện lối thoát
-  useEffect(() => {
-    setDaTai(false);
-    setQuaCham(false);
-    const t = setTimeout(() => {
-      setDaTai(true);
-      setQuaCham(true);
-    }, 8000);
-    return () => clearTimeout(t);
-  }, [url]);
+  // Google Docs Viewer render PDF qua server Google, hoạt động trên mọi trình duyệt
+  const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+
   return (
     <div className="mt-6">
       <div className="flex flex-wrap items-center gap-2.5">
@@ -54,7 +47,6 @@ export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
         </motion.a>
       </div>
       <div className="glass relative mt-4 overflow-hidden rounded-xl shadow-soft">
-        {/* Skeleton shimmer phủ lên trong lúc chờ iframe tải PDF */}
         {!daTai && (
           <div className="absolute inset-0 z-10 space-y-3 bg-white p-5">
             <Skeleton className="h-7 w-2/3" />
@@ -67,10 +59,9 @@ export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
             </div>
           </div>
         )}
-        {/* PDF fade-in khi load xong, cao 80vh full chiều ngang */}
         <motion.iframe
-          key={url}
-          src={url}
+          key={viewerUrl}
+          src={viewerUrl}
           title={ten}
           onLoad={() => setDaTai(true)}
           initial={{ opacity: 0 }}
@@ -78,17 +69,8 @@ export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
           transition={{ duration: 0.5, ease: EASE }}
           className="h-[80vh] w-full border-0 bg-white"
         />
-        {/* Nhiều trình duyệt Android không nhúng được PDF, đưa lối thoát rõ ràng */}
-        {quaCham && (
-          <div className="absolute inset-x-4 bottom-4 z-20 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/95 p-3.5 text-sm text-amber-800 shadow-soft backdrop-blur">
-            <FileWarning size={17} className="mt-0.5 shrink-0" />
-            <p>
-              Khung trắng trơn? Trình duyệt của bạn không nhúng được PDF - bấm <b>Tải PDF</b> hoặc <b>Mở tab mới</b> ở trên là xem ngon lành.
-            </p>
-          </div>
-        )}
       </div>
-      <p className="mt-3 text-xs text-slate-400">Mẹo: trên điện thoại nên bấm Mở tab mới để xem PDF mượt nhất.</p>
+      <p className="mt-3 text-xs text-slate-400">Mẹo: nếu PDF vẫn không hiển thị, bấm "Mở tab mới" để xem trực tiếp.</p>
     </div>
   );
 }
