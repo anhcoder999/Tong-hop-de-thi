@@ -24,9 +24,15 @@ export default function Navbar() {
         cuon ? "border-ink/20 bg-paper/90 shadow-paper backdrop-blur-md" : "border-ink/10 bg-paper/60 backdrop-blur-sm"
       }`}
     >
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4">
+      <div className={`mx-auto flex w-full max-w-6xl items-center justify-between px-4 transition-all duration-300 ${cuon ? "h-14" : "h-16"}`}>
         <Link href="/" className="flex items-center gap-2.5">
-          <motion.span whileTap={buttonTap} className="grid h-9 w-9 place-items-center border border-ink/40 bg-paper-light text-ink">
+          <motion.span
+            initial={{ scale: 1.35, rotate: -14, opacity: 0 }}
+            animate={{ scale: 1, rotate: 0, opacity: 1 }}
+            transition={spring}
+            whileTap={buttonTap}
+            className="grid h-9 w-9 place-items-center border border-ink/40 bg-paper-light text-ink"
+          >
             <IconSeal className="h-5 w-5" />
           </motion.span>
           <span className="font-display text-lg font-bold tracking-tight text-ink">
@@ -37,7 +43,7 @@ export default function Navbar() {
           {LINKS.map(({ href, label }) => {
             const active = href === "/" ? duongDan === "/" || duongDan.startsWith("/de") : duongDan.startsWith(href);
             return (
-              <motion.div key={href} whileTap={buttonTap}>
+              <motion.div key={href} whileTap={buttonTap} whileHover={{ y: -1 }} transition={spring}>
                 <Link
                   href={href}
                   className={`relative pb-1 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${
