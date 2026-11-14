@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { IconCalendar, IconChevron } from "@/components/Icons";
 import DocumentViewer from "@/components/DocumentViewer";
-import { formatDungLuong, formatNgay, type DeThi, type Loai, type Mon } from "@/lib/data";
+import { chuanMon, formatDungLuong, formatNgay, MON_DAY_DU, tenNhom, type DeThi, type Loai } from "@/lib/data";
 import { SUPABASE_KEY, SUPABASE_URL } from "@/lib/supabase";
 export const dynamic = "force-dynamic";
 interface Props {
@@ -22,7 +22,7 @@ async function layDe(id: string): Promise<DeThi | null> {
     if (!r) return null;
     return {
       id: String(r.id),
-      mon: r.mon as Mon,
+      mon: chuanMon(String(r.mon ?? "")),
       ten: String(r.ten),
       ngay: String(r.ngay),
       urlPdf: String(r.url_file),
@@ -38,7 +38,7 @@ async function layDe(id: string): Promise<DeThi | null> {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const de = await layDe(params.id);
   if (!de) return { title: "Không tìm thấy đề" };
-  const moTa = `Xem và tải miễn phí ${de.ten} - môn ${de.mon}, cập nhật ngày ${formatNgay(de.ngay)}.`;
+  const moTa = `Xem và tải miễn phí ${de.ten} - môn ${MON_DAY_DU[de.mon]}, cập nhật ngày ${formatNgay(de.ngay)}.`;
   return { title: de.ten, description: moTa, openGraph: { title: de.ten, description: moTa, type: "article" } };
 }
 export default async function TrangXemDe({ params }: Props) {
@@ -51,18 +51,23 @@ export default async function TrangXemDe({ params }: Props) {
           Trang chủ
         </Link>
         <IconChevron className="h-3 w-3 text-ink-faint" />
-        <span>{de.mon}</span>
+        <span>{tenNhom(de.mon)}</span>
         <IconChevron className="h-3 w-3 text-ink-faint" />
-        <span className="max-w-[16rem] truncate text-ink">{de.ten}</span>
+        <span title={MON_DAY_DU[de.mon]}>{de.mon}</span>
+        <IconChevron className="h-3 w-3 text-ink-faint" />
+        <span className="max-w-[14rem] truncate text-ink">{de.ten}</span>
       </nav>
       <header className="mt-4 border-b-2 border-ink pb-5">
         <h1 className="font-display text-3xl font-bold leading-tight tracking-tight text-ink sm:text-4xl">{de.ten}</h1>
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <span className="-rotate-2 border border-accent/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">Môn {de.mon}</span>
+          <span title={MON_DAY_DU[de.mon]} className="-rotate-2 border border-accent/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">
+            {de.mon}
+          </span>
+          <span className="text-[11px] uppercase tracking-[0.14em] text-ink-soft">{MON_DAY_DU[de.mon]}</span>
           <span className="border border-ink/40 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-soft">{de.loai === "docx" ? "DOCX" : "PDF"}</span>
           <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-faint">
             <IconCalendar className="h-3.5 w-3.5" />
-            Đăng ngày {formatNgay(de.ngay)}
+            {formatNgay(de.ngay)}
           </span>
           <span className="text-xs uppercase tracking-[0.12em] text-ink-faint">{formatDungLuong(de.kichThuoc)}</span>
         </div>
