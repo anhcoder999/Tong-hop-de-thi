@@ -5,12 +5,14 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { IconSeal, InkLine } from "@/components/Icons";
 import { buttonTap, spring } from "@/lib/animations";
+import { useHoverCapable } from "@/lib/useHover";
 const LINKS = [
   { href: "/", label: "Trang chủ" },
   { href: "/admin", label: "Quản trị" },
 ];
 export default function Navbar() {
   const duongDan = usePathname();
+  const hover = useHoverCapable();
   const [cuon, setCuon] = useState(false);
   useEffect(() => {
     const f = () => setCuon(window.scrollY > 8);
@@ -43,7 +45,7 @@ export default function Navbar() {
           {LINKS.map(({ href, label }) => {
             const active = href === "/" ? duongDan === "/" || duongDan.startsWith("/de") : duongDan.startsWith(href);
             return (
-              <motion.div key={href} whileTap={buttonTap} whileHover={{ y: -1 }} transition={spring}>
+              <motion.div key={href} whileTap={buttonTap} whileHover={hover ? { y: -1 } : undefined} transition={spring}>
                 <Link
                   href={href}
                   className={`relative pb-1 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${
