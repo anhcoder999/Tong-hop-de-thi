@@ -160,14 +160,14 @@ const IconToan = ({ className }: P) => (
     <path d="M14.5 8.5h5M17 6v5" />
   </S>
 );
-const IconVatLi = ({ className }: P) => (
+const IconLi = ({ className }: P) => (
   <S c={className}>
     <circle cx="12" cy="12" r="2.1" />
     <ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(30 12 12)" />
     <ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(-30 12 12)" />
   </S>
 );
-const IconHoaHoc = ({ className }: P) => (
+const IconHoa = ({ className }: P) => (
   <S c={className}>
     <path d="M9 3h6" />
     <path d="M10 3v6l-4.6 9.2A1.6 1.6 0 0 0 6.8 21h10.4a1.6 1.6 0 0 0 1.4-2.8L14 9V3" />
@@ -175,7 +175,7 @@ const IconHoaHoc = ({ className }: P) => (
     <path d="M11 18h.5M13.5 17h.5" />
   </S>
 );
-const IconSinhHoc = ({ className }: P) => (
+const IconSinh = ({ className }: P) => (
   <S c={className}>
     <path d="M8 3c4 3 4 6 0 9s-4 6 0 9" />
     <path d="M16 3c-4 3-4 6 0 9s4 6 0 9" />
@@ -222,18 +222,18 @@ const IconKtpl = ({ className }: P) => (
     <path d="M16.5 13a2.5 2.5 0 0 0 5 0" />
   </S>
 );
-const IconCongNghe = ({ className }: P) => (
-  <S c={className}>
-    <circle cx="12" cy="12" r="7.4" />
-    <circle cx="12" cy="12" r="3" />
-    <path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M19.1 4.9l-1.9 1.9M6.8 17.2l-1.9 1.9" />
-  </S>
-);
-const IconTinHoc = ({ className }: P) => (
+const IconTin = ({ className }: P) => (
   <S c={className}>
     <rect x="3" y="4" width="18" height="13" />
     <path d="M9 21h6M12 17v4" />
     <path d="M9.6 8.6 7.6 10.6l2 2M14.4 8.6l2 2-2 2" />
+  </S>
+);
+const IconCn = ({ className }: P) => (
+  <S c={className}>
+    <circle cx="12" cy="12" r="7.4" />
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M19.1 4.9l-1.9 1.9M6.8 17.2l-1.9 1.9" />
   </S>
 );
 const IconKhac = ({ className }: P) => (
@@ -248,15 +248,15 @@ const IconKhac = ({ className }: P) => (
 );
 export function MonIcon({ mon, className }: { mon: Mon; className?: string }) {
   if (mon === "Toán") return <IconToan className={className} />;
-  if (mon === "Vật lí") return <IconVatLi className={className} />;
-  if (mon === "Hoá học") return <IconHoaHoc className={className} />;
-  if (mon === "Sinh học") return <IconSinhHoc className={className} />;
   if (mon === "Văn") return <IconVan className={className} />;
+  if (mon === "Anh") return <IconAnh className={className} />;
+  if (mon === "Lí") return <IconLi className={className} />;
+  if (mon === "Hóa") return <IconHoa className={className} />;
+  if (mon === "Sinh") return <IconSinh className={className} />;
   if (mon === "Sử") return <IconSu className={className} />;
   if (mon === "Địa") return <IconDia className={className} />;
-  if (mon === "Anh") return <IconAnh className={className} />;
   if (mon === "KTPL") return <IconKtpl className={className} />;
-  if (mon === "Công nghệ") return <IconCongNghe className={className} />;
-  if (mon === "Tin học") return <IconTinHoc className={className} />;
+  if (mon === "Tin") return <IconTin className={className} />;
+  if (mon === "CN") return <IconCn className={className} />;
   return <IconKhac className={className} />;
 }
