@@ -7,10 +7,15 @@ import { IconSeal, InkLine } from "@/components/Icons";
 import { buttonTap, spring } from "@/lib/animations";
 import { useHoverCapable } from "@/lib/useHover";
 import { useAuth } from "@/lib/auth";
+const chuDau = (s: string) => {
+  const w = s.trim().split(/\s+/).filter(Boolean);
+  if (w.length === 0) return "DT";
+  return w.slice(-2).map((x) => x[0]?.toUpperCase() ?? "").join("") || "DT";
+};
 export default function Navbar() {
   const duongDan = usePathname();
   const hover = useHoverCapable();
-  const { user, isAdmin, loading, signOut } = useAuth();
+  const { user, hoSo, isAdmin, loading, signOut } = useAuth();
   const [cuon, setCuon] = useState(false);
   useEffect(() => {
     const f = () => setCuon(window.scrollY > 8);
@@ -18,12 +23,14 @@ export default function Navbar() {
     window.addEventListener("scroll", f, { passive: true });
     return () => window.removeEventListener("scroll", f);
   }, []);
-  const links = isAdmin
-    ? [
-        { href: "/", label: "Trang chủ" },
-        { href: "/admin", label: "Quản trị" },
-      ]
-    : [{ href: "/", label: "Trang chủ" }];
+  const dangChon = (href: string) =>
+    href === "/" ? duongDan === "/" || duongDan.startsWith("/de") : duongDan.startsWith(href);
+  const links = [
+    { href: "/", label: "Trang chủ", hien: true },
+    { href: "/admin", label: "Quản trị", hien: isAdmin },
+    { href: "/tai-khoan", label: "Tài khoản", hien: !!user },
+  ].filter((l) => l.hien);
+  const tenChip = hoSo?.ho_ten?.trim() || user?.email?.split("@")[0] || "DT";
   return (
     <header
       className={`sticky top-0 z-50 border-b transition-all duration-300 ${
@@ -45,27 +52,24 @@ export default function Navbar() {
             Đề<span className="text-accent">.</span>Thi
           </span>
         </Link>
-        <nav className="flex min-w-0 items-center gap-4 sm:gap-5">
-          {links.map(({ href, label }) => {
-            const active = href === "/" ? duongDan === "/" || duongDan.startsWith("/de") : duongDan.startsWith(href);
-            return (
-              <motion.div key={href} whileTap={buttonTap} whileHover={hover ? { y: -1 } : undefined} transition={spring}>
-                <Link
-                  href={href}
-                  className={`relative whitespace-nowrap pb-1 text-xs font-semibold uppercase tracking-[0.12em] transition-colors sm:text-sm ${
-                    active ? "text-accent" : "text-ink-soft hover:text-ink"
-                  }`}
-                >
-                  {label}
-                  {active && (
-                    <motion.span layoutId="nav-ink" transition={spring} className="absolute inset-x-0 -bottom-0.5 text-accent">
-                      <InkLine className="h-1.5 w-full" />
-                    </motion.span>
-                  )}
-                </Link>
-              </motion.div>
-            );
-          })}
+        <nav className="hidden min-w-0 items-center gap-5 sm:flex">
+          {links.map(({ href, label }) => (
+            <motion.div key={href} whileTap={buttonTap} whileHover={hover ? { y: -1 } : undefined} transition={spring}>
+              <Link
+                href={href}
+                className={`relative whitespace-nowrap pb-1 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${
+                  dangChon(href) ? "text-accent" : "text-ink-soft hover:text-ink"
+                }`}
+              >
+                {label}
+                {dangChon(href) && (
+                  <motion.span layoutId="nav-ink-d" transition={spring} className="absolute inset-x-0 -bottom-0.5 text-accent">
+                    <InkLine className="h-1.5 w-full" />
+                  </motion.span>
+                )}
+              </Link>
+            </motion.div>
+          ))}
           {!loading && (
             <motion.div whileTap={buttonTap} whileHover={hover ? { y: -1 } : undefined} transition={spring}>
               {user ? (
@@ -79,13 +83,13 @@ export default function Navbar() {
               ) : (
                 <Link
                   href="/login"
-                  className={`relative whitespace-nowrap pb-1 text-xs font-semibold uppercase tracking-[0.12em] transition-colors sm:text-sm ${
-                    duongDan.startsWith("/login") ? "text-accent" : "text-ink-soft hover:text-ink"
+                  className={`relative whitespace-nowrap pb-1 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${
+                    dangChon("/login") ? "text-accent" : "text-ink-soft hover:text-ink"
                   }`}
                 >
                   Đăng nhập
-                  {duongDan.startsWith("/login") && (
-                    <motion.span layoutId="nav-ink" transition={spring} className="absolute inset-x-0 -bottom-0.5 text-accent">
+                  {dangChon("/login") && (
+                    <motion.span layoutId="nav-ink-d" transition={spring} className="absolute inset-x-0 -bottom-0.5 text-accent">
                       <InkLine className="h-1.5 w-full" />
                     </motion.span>
                   )}
@@ -93,6 +97,55 @@ export default function Navbar() {
               )}
             </motion.div>
           )}
+        </nav>
+        <nav className="flex min-w-0 items-center gap-3 sm:hidden">
+          {isAdmin && (
+            <motion.div whileTap={buttonTap}>
+              <Link
+                href="/admin"
+                className={`relative whitespace-nowrap pb-1 text-xs font-semibold uppercase tracking-[0.1em] transition-colors ${
+                  dangChon("/admin") ? "text-accent" : "text-ink-soft"
+                }`}
+              >
+                Quản trị
+                {dangChon("/admin") && (
+                  <motion.span layoutId="nav-ink-m" transition={spring} className="absolute inset-x-0 -bottom-0.5 text-accent">
+                    <InkLine className="h-1.5 w-full" />
+                  </motion.span>
+                )}
+              </Link>
+            </motion.div>
+          )}
+          {!loading &&
+            (user ? (
+              <motion.div whileTap={buttonTap}>
+                <Link
+                  href="/tai-khoan"
+                  aria-label="Trang cá nhân"
+                  className={`grid h-9 w-9 place-items-center border font-display text-xs font-bold transition-colors ${
+                    dangChon("/tai-khoan") ? "border-accent bg-accent-wash text-accent" : "border-ink/40 bg-paper-light text-ink"
+                  }`}
+                >
+                  {chuDau(tenChip)}
+                </Link>
+              </motion.div>
+            ) : (
+              <motion.div whileTap={buttonTap}>
+                <Link
+                  href="/login"
+                  className={`relative whitespace-nowrap pb-1 text-xs font-semibold uppercase tracking-[0.1em] transition-colors ${
+                    dangChon("/login") ? "text-accent" : "text-ink-soft"
+                  }`}
+                >
+                  Đăng nhập
+                  {dangChon("/login") && (
+                    <motion.span layoutId="nav-ink-m" transition={spring} className="absolute inset-x-0 -bottom-0.5 text-accent">
+                      <InkLine className="h-1.5 w-full" />
+                    </motion.span>
+                  )}
+                </Link>
+              </motion.div>
+            ))}
         </nav>
       </div>
     </header>
