@@ -4,11 +4,13 @@ import { motion } from "framer-motion";
 import { IconArrowRight, IconCalendar, MonIcon } from "@/components/Icons";
 import { formatNgay, type DeThi } from "@/lib/data";
 import { buttonTap, cardHover, fadeInUp, stampIn, tapCard } from "@/lib/animations";
+import { useHoverCapable } from "@/lib/useHover";
 export default function DeCard({ de }: { de: DeThi }) {
+  const hover = useHoverCapable();
   return (
     <motion.article
       variants={{ ...fadeInUp, ...cardHover }}
-      whileHover="hover"
+      whileHover={hover ? "hover" : undefined}
       whileTap={tapCard}
       className="sheet group relative flex flex-col p-5 pl-8 shadow-paper transition-colors duration-300 hover:border-accent/60"
     >
@@ -31,7 +33,7 @@ export default function DeCard({ de }: { de: DeThi }) {
       <Link href={`/de/${de.id}`} className="mt-4 block">
         <motion.span
           whileTap={buttonTap}
-          className="flex items-center justify-between gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors duration-300 group-hover:border-accent group-hover:bg-accent"
+          className="flex items-center justify-between gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors duration-300 active:border-accent active:bg-accent group-hover:border-accent group-hover:bg-accent"
         >
           Xem đề
           <IconArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
