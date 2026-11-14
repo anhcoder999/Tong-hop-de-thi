@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -9,16 +9,34 @@ import { buttonTap, EASE, fadeInUp, spring, staggerContainer } from "@/lib/anima
 import { useHoverCapable } from "@/lib/useHover";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+const MAX_TEN = 60;
 const ngayVN = (iso?: string | null) => {
   if (!iso) return "Chưa rõ";
   const p = iso.slice(0, 10).split("-");
   return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : "Chưa rõ";
+};
+const ngayGioVN = (iso?: string | null) => {
+  if (!iso) return "Chưa có";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "Chưa có";
+  const h = (n: number) => String(n).padStart(2, "0");
+  return `${h(d.getDate())}/${h(d.getMonth() + 1)}/${d.getFullYear()} · ${h(d.getHours())}:${h(d.getMinutes())}`;
 };
 const chuDau = (s: string) => {
   const w = s.trim().split(/\s+/).filter(Boolean);
   if (w.length === 0) return "DT";
   return w.slice(-2).map((x) => x[0]?.toUpperCase() ?? "").join("") || "DT";
 };
+const diemManh = (s: string) => {
+  if (!s) return 0;
+  let d = 0;
+  if (s.length >= 6) d += 1;
+  if (s.length >= 10) d += 1;
+  if (/[a-z]/.test(s) && /[A-Z]/.test(s)) d += 1;
+  if (/\d/.test(s) && /[^\w\s]/.test(s)) d += 1;
+  return Math.min(d, 4);
+};
+const NHAN_MANH = ["Chưa nhập", "Yếu", "Trung bình", "Khá", "Mạnh"];
 const QUYEN = [
   { ten: "Xem và đọc đề trực tuyến", admin: true, user: true },
   { ten: "Tải đề về máy", admin: true, user: true },
@@ -28,9 +46,10 @@ const QUYEN = [
   { ten: "Xóa đề khỏi kho", admin: true, user: false },
 ];
 export default function TrangCaNhan() {
-  const { user, hoSo, isAdmin, loading, signOut, taiLaiHoSo } = useAuth();
+  const { user, hoSo, isAdmin, loading, signOut, capNhatHoTen } = useAuth();
   const router = useRouter();
   const hover = useHoverCapable();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [dangSua, setDangSua] = useState(false);
   const [hoTen, setHoTen] = useState("");
   const [dangLuu, setDangLuu] = useState(false);
@@ -38,6 +57,7 @@ export default function TrangCaNhan() {
   const [tinTen, setTinTen] = useState("");
   const [mk1, setMk1] = useState("");
   const [mk2, setMk2] = useState("");
+  const [hienMk, setHienMk] = useState(false);
   const [dangDoi, setDangDoi] = useState(false);
   const [loiMk, setLoiMk] = useState("");
   const [tinMk, setTinMk] = useState("");
@@ -46,36 +66,61 @@ export default function TrangCaNhan() {
     if (!loading && !user) router.replace("/login");
   }, [loading, user, router]);
   useEffect(() => {
-    if (!dangSua) setHoTen(hoSo?.ho_ten ?? "");
-  }, [hoSo?.ho_ten, dangSua]);
+    if (dangSua) inputRef.current?.focus();
+  }, [dangSua]);
+  useEffect(() => {
+    if (!tinTen) return;
+    const t = setTimeout(() => setTinTen(""), 2600);
+    return () => clearTimeout(t);
+  }, [tinTen]);
+  useEffect(() => {
+    if (!tinMk) return;
+    const t = setTimeout(() => setTinMk(""), 3200);
+    return () => clearTimeout(t);
+  }, [tinMk]);
   useEffect(() => {
     if (!daChep) return;
     const t = setTimeout(() => setDaChep(false), 2000);
     return () => clearTimeout(t);
   }, [daChep]);
+  const manh = useMemo(() => diemManh(mk1), [mk1]);
+  const tenGoc = hoSo?.ho_ten?.trim() || user?.email?.split("@")[0] || "Người dùng";
+  const tenXem = dangSua ? hoTen.trim() || tenGoc : tenGoc;
+  const khopMk = mk2.length > 0 && mk1 === mk2;
+  const tenKhongDoi = hoTen.trim() === (hoSo?.ho_ten?.trim() ?? "");
+  const batDauSua = () => {
+    setHoTen(hoSo?.ho_ten ?? "");
+    setLoiTen("");
+    setTinTen("");
+    setDangSua(true);
+  };
+  const huySua = () => {
+    setDangSua(false);
+    setLoiTen("");
+  };
   const luuTen = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user) return;
+    if (dangLuu || tenKhongDoi) return;
     const giaTri = hoTen.trim();
-    if (giaTri.length > 60) {
-      setLoiTen("Họ tên tối đa 60 ký tự.");
+    if (giaTri.length > MAX_TEN) {
+      setLoiTen(`Họ tên tối đa ${MAX_TEN} ký tự.`);
       return;
     }
     setDangLuu(true);
     setLoiTen("");
     setTinTen("");
-    const { error } = await supabase.from("profiles").update({ ho_ten: giaTri || null }).eq("id", user.id);
+    const kq = await capNhatHoTen(giaTri);
     setDangLuu(false);
-    if (error) {
-      setLoiTen(error.message);
+    if (kq.loi) {
+      setLoiTen(kq.loi);
       return;
     }
-    await taiLaiHoSo();
-    setTinTen("Đã lưu họ tên ✓");
+    setTinTen(giaTri ? "Đã lưu họ tên ✓" : "Đã xóa họ tên ✓");
     setDangSua(false);
   };
   const doiMatKhau = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (dangDoi) return;
     setLoiMk("");
     setTinMk("");
     if (mk1.length < 6) {
@@ -118,17 +163,16 @@ export default function TrangCaNhan() {
             <Skeleton className="h-16 w-16" />
             <Skeleton className="h-7 w-48" />
             <Skeleton className="h-4 w-56" />
-            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-28 w-full" />
           </div>
           <div className="space-y-6 lg:col-span-2">
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-52 w-full" />
+            <Skeleton className="h-44 w-full" />
+            <Skeleton className="h-56 w-full" />
           </div>
         </div>
       </div>
     );
   }
-  const tenHienThi = hoSo?.ho_ten?.trim() || user.email?.split("@")[0] || "Người dùng";
   const email = hoSo?.email ?? user.email ?? "";
   return (
     <div className="mx-auto w-full min-w-0 max-w-4xl overflow-x-clip px-4 pb-16 pt-8 sm:pt-10">
@@ -155,19 +199,27 @@ export default function TrangCaNhan() {
             </motion.span>
             <div className="flex items-center gap-4">
               <motion.span
-                initial={{ scale: 1.25, rotate: -10, opacity: 0 }}
+                key={chuDau(tenXem)}
+                initial={{ scale: 1.18, rotate: -8, opacity: 0.4 }}
                 animate={{ scale: 1, rotate: -2, opacity: 1 }}
                 transition={spring}
                 className="grid h-16 w-16 shrink-0 place-items-center border-2 border-ink bg-paper font-display text-xl font-bold text-accent shadow-stamp"
               >
-                {chuDau(tenHienThi)}
+                {chuDau(tenXem)}
               </motion.span>
               <div className="min-w-0 pt-4">
-                <p className="truncate font-display text-xl font-bold leading-tight text-ink">{tenHienThi}</p>
+                <p className="truncate font-display text-xl font-bold leading-tight text-ink">{tenXem}</p>
                 <p className="mt-1 truncate text-sm text-ink-soft">{email}</p>
               </div>
             </div>
-            <dl className="mt-5 space-y-0 border-t border-dashed border-ink/25">
+            <AnimatePresence>
+              {dangSua && hoTen.trim() && hoTen.trim() !== (hoSo?.ho_ten?.trim() ?? "") && (
+                <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden text-[11px] uppercase tracking-[0.14em] text-accent">
+                  Đang xem trước tên mới
+                </motion.p>
+              )}
+            </AnimatePresence>
+            <dl className="mt-5 border-t border-dashed border-ink/25">
               <div className="flex items-center justify-between gap-3 border-b border-dashed border-ink/20 py-2.5">
                 <dt className="text-xs uppercase tracking-[0.12em] text-ink-faint">Vai trò</dt>
                 <dd className={`flex items-center gap-1.5 text-sm font-semibold ${isAdmin ? "text-accent" : "text-ink"}`}>
@@ -185,6 +237,10 @@ export default function TrangCaNhan() {
               <div className="flex items-center justify-between gap-3 border-b border-dashed border-ink/20 py-2.5">
                 <dt className="text-xs uppercase tracking-[0.12em] text-ink-faint">Đăng nhập gần nhất</dt>
                 <dd className="text-sm font-semibold text-ink">{ngayVN(user.last_sign_in_at)}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-b border-dashed border-ink/20 py-2.5">
+                <dt className="text-xs uppercase tracking-[0.12em] text-ink-faint">Hồ sơ cập nhật</dt>
+                <dd className="text-sm font-semibold text-ink">{ngayGioVN(hoSo?.updated_at)}</dd>
               </div>
               <div className="flex items-center justify-between gap-3 py-2.5">
                 <dt className="shrink-0 text-xs uppercase tracking-[0.12em] text-ink-faint">Mã tài khoản</dt>
@@ -208,53 +264,118 @@ export default function TrangCaNhan() {
           </motion.section>
           <motion.div variants={fadeInUp} className="min-w-0 space-y-6 lg:col-span-2">
             <form onSubmit={luuTen} className="min-w-0 border border-ink/25 bg-paper-light p-5 shadow-paper">
-              <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
-                <IconEdit className="h-4 w-4 text-accent" />
-                Họ tên hiển thị
-              </h2>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
+                  <IconEdit className="h-4 w-4 text-accent" />
+                  Họ tên hiển thị
+                </h2>
+                {dangSua && (
+                  <span className={`shrink-0 font-mono text-[11px] ${hoTen.length > MAX_TEN - 10 ? "text-accent" : "text-ink-faint"}`}>
+                    {hoTen.length}/{MAX_TEN}
+                  </span>
+                )}
+              </div>
               <AnimatePresence mode="wait" initial={false}>
                 {dangSua ? (
                   <motion.div key="sua" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2, ease: EASE }} className="mt-3 space-y-3">
-                    <input type="text" value={hoTen} onChange={(e) => setHoTen(e.target.value)} placeholder="Nguyễn Văn A" aria-label="Họ tên hiển thị" className="w-full min-w-0 border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent" />
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={hoTen}
+                      maxLength={MAX_TEN}
+                      onChange={(e) => setHoTen(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") huySua();
+                      }}
+                      placeholder="Nguyễn Văn A"
+                      aria-label="Họ tên hiển thị"
+                      className="w-full min-w-0 border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+                    />
                     <div className="flex gap-2">
-                      <motion.button whileTap={buttonTap} type="submit" disabled={dangLuu} className="flex flex-1 items-center justify-center gap-1.5 border border-ink bg-ink px-3 py-2 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent disabled:opacity-60">
-                        <IconCheck className="h-4 w-4" />
+                      <motion.button whileTap={buttonTap} type="submit" disabled={dangLuu || tenKhongDoi} className="flex flex-1 items-center justify-center gap-1.5 border border-ink bg-ink px-3 py-2 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent disabled:cursor-not-allowed disabled:opacity-45">
+                        {dangLuu ? <IconLoader className="h-4 w-4 animate-spin" /> : <IconCheck className="h-4 w-4" />}
                         {dangLuu ? "Đang lưu" : "Lưu"}
                       </motion.button>
-                      <motion.button whileTap={buttonTap} type="button" onClick={() => { setDangSua(false); setLoiTen(""); }} className="flex items-center gap-1.5 border border-ink/40 bg-paper px-3 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-paper-deep">
+                      <motion.button whileTap={buttonTap} type="button" onClick={huySua} className="flex items-center gap-1.5 border border-ink/40 bg-paper px-3 py-2 text-sm font-semibold text-ink-soft transition-colors active:bg-paper-deep hover:bg-paper-deep">
                         <IconClose className="h-4 w-4" />
                         Hủy
                       </motion.button>
                     </div>
+                    <p className="text-[11px] text-ink-faint">Enter để lưu · Esc để hủy · bỏ trống để xóa tên</p>
                   </motion.div>
                 ) : (
                   <motion.div key="xem" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2, ease: EASE }} className="mt-3">
-                    <p className="truncate border-b border-dashed border-ink/25 pb-2 text-sm text-ink">{hoSo?.ho_ten?.trim() || "Chưa đặt họ tên"}</p>
-                    <motion.button whileTap={buttonTap} whileHover={hover ? { x: 3 } : undefined} type="button" onClick={() => { setDangSua(true); setTinTen(""); }} className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-accent">
+                    <p className={`truncate border-b border-dashed border-ink/25 pb-2 text-sm ${hoSo?.ho_ten?.trim() ? "font-semibold text-ink" : "text-ink-faint"}`}>
+                      {hoSo?.ho_ten?.trim() || "Chưa đặt họ tên"}
+                    </p>
+                    <motion.button whileTap={buttonTap} whileHover={hover ? { x: 3 } : undefined} type="button" onClick={batDauSua} className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-accent">
                       <IconEdit className="h-4 w-4" />
-                      {hoSo?.ho_ten ? "Đổi họ tên" : "Đặt họ tên"}
+                      {hoSo?.ho_ten?.trim() ? "Đổi họ tên" : "Đặt họ tên"}
                     </motion.button>
                   </motion.div>
                 )}
               </AnimatePresence>
-              {loiTen && <p className="mt-3 border border-accent/50 bg-accent-wash p-2.5 text-xs text-accent-deep">{loiTen}</p>}
-              {tinTen && <p className="mt-3 text-xs font-semibold text-accent">{tinTen}</p>}
+              <AnimatePresence>
+                {loiTen && (
+                  <motion.p initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3 flex items-start gap-2 border border-accent/50 bg-accent-wash p-2.5 text-xs text-accent-deep">
+                    <IconAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    {loiTen}
+                  </motion.p>
+                )}
+                {tinTen && (
+                  <motion.p initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-accent">
+                    <IconCheck className="h-3.5 w-3.5" />
+                    {tinTen}
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </form>
             <form onSubmit={doiMatKhau} className="min-w-0 border border-ink/25 bg-paper-light p-5 shadow-paper">
-              <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
-                <IconSeal className="h-4 w-4 text-accent" />
-                Đổi mật khẩu
-              </h2>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
+                  <IconSeal className="h-4 w-4 text-accent" />
+                  Đổi mật khẩu
+                </h2>
+                <button type="button" onClick={() => setHienMk((v) => !v)} className="shrink-0 border border-ink/30 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-soft transition-colors active:bg-accent-wash hover:border-accent hover:text-accent">
+                  {hienMk ? "Ẩn" : "Hiện"}
+                </button>
+              </div>
               <div className="mt-3 space-y-3">
-                <input type="password" value={mk1} onChange={(e) => setMk1(e.target.value)} autoComplete="new-password" placeholder="Mật khẩu mới" aria-label="Mật khẩu mới" className="w-full min-w-0 border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent" />
-                <input type="password" value={mk2} onChange={(e) => setMk2(e.target.value)} autoComplete="new-password" placeholder="Nhập lại mật khẩu" aria-label="Nhập lại mật khẩu" className="w-full min-w-0 border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent" />
-                <motion.button whileTap={buttonTap} type="submit" disabled={dangDoi} className="flex w-full items-center justify-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent disabled:opacity-60">
+                <input type={hienMk ? "text" : "password"} value={mk1} onChange={(e) => setMk1(e.target.value)} autoComplete="new-password" placeholder="Mật khẩu mới" aria-label="Mật khẩu mới" className="w-full min-w-0 border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent" />
+                <div>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4].map((b) => (
+                      <motion.span key={b} animate={{ opacity: manh >= b ? 1 : 0.18 }} transition={{ duration: 0.25, ease: EASE }} className={`h-1 flex-1 ${manh >= 4 ? "bg-ink" : manh >= 3 ? "bg-ink-soft" : "bg-accent"}`} />
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[11px] uppercase tracking-[0.12em] text-ink-faint">Độ mạnh: {NHAN_MANH[manh]}</p>
+                </div>
+                <input type={hienMk ? "text" : "password"} value={mk2} onChange={(e) => setMk2(e.target.value)} autoComplete="new-password" placeholder="Nhập lại mật khẩu" aria-label="Nhập lại mật khẩu" className={`w-full min-w-0 border bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent ${mk2 && !khopMk ? "border-accent/60" : "border-ink/30"}`} />
+                {mk2.length > 0 && (
+                  <p className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${khopMk ? "text-ink" : "text-accent"}`}>
+                    {khopMk ? <IconCheck className="h-3 w-3" /> : <IconClose className="h-3 w-3" />}
+                    {khopMk ? "Mật khẩu khớp" : "Chưa khớp"}
+                  </p>
+                )}
+                <motion.button whileTap={buttonTap} type="submit" disabled={dangDoi || !mk1 || !khopMk} className="flex w-full items-center justify-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent disabled:cursor-not-allowed disabled:opacity-45">
                   {dangDoi ? <IconLoader className="h-4 w-4 animate-spin" /> : <IconCheck className="h-4 w-4" />}
                   {dangDoi ? "Đang đổi" : "Cập nhật mật khẩu"}
                 </motion.button>
               </div>
-              {loiMk && <p className="mt-3 border border-accent/50 bg-accent-wash p-2.5 text-xs text-accent-deep">{loiMk}</p>}
-              {tinMk && <p className="mt-3 text-xs font-semibold text-accent">{tinMk}</p>}
+              <AnimatePresence>
+                {loiMk && (
+                  <motion.p initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3 flex items-start gap-2 border border-accent/50 bg-accent-wash p-2.5 text-xs text-accent-deep">
+                    <IconAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    {loiMk}
+                  </motion.p>
+                )}
+                {tinMk && (
+                  <motion.p initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-accent">
+                    <IconCheck className="h-3.5 w-3.5" />
+                    {tinMk}
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </form>
           </motion.div>
         </div>
