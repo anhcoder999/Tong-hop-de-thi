@@ -3,21 +3,25 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { IconArrowRight, IconCalendar, MonIcon } from "@/components/Icons";
 import { formatNgay, type DeThi } from "@/lib/data";
-import { buttonTap, cardHover, fadeInUp } from "@/lib/animations";
+import { buttonTap, cardHover, fadeInUp, stampIn, tapCard } from "@/lib/animations";
 export default function DeCard({ de }: { de: DeThi }) {
   return (
     <motion.article
       variants={{ ...fadeInUp, ...cardHover }}
       whileHover="hover"
+      whileTap={tapCard}
       className="sheet group relative flex flex-col p-5 pl-8 shadow-paper transition-colors duration-300 hover:border-accent/60"
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="grid h-11 w-11 place-items-center border border-ink/30 bg-paper text-ink transition-colors duration-300 group-hover:border-accent group-hover:text-accent">
+        <span className="grid h-11 w-11 place-items-center border border-ink/30 bg-paper text-ink transition-all duration-300 group-hover:-rotate-3 group-hover:border-accent group-hover:text-accent">
           <MonIcon mon={de.mon} className="h-6 w-6" />
         </span>
-        <span className="-rotate-2 border border-accent/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">
+        <motion.span
+          variants={stampIn}
+          className="border border-accent/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent"
+        >
           {de.mon}
-        </span>
+        </motion.span>
       </div>
       <h3 className="mt-4 line-clamp-2 min-h-[3.2rem] font-display text-lg font-bold leading-snug text-ink">{de.ten}</h3>
       <p className="mt-2 flex items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-faint">
