@@ -3,7 +3,7 @@
 @tailwind utilities;
 html {
   scroll-behavior: smooth;
-  touch-action: pan-x pan-y;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 body {
@@ -39,10 +39,6 @@ svg {
 .guarded [contenteditable="true"] {
   -webkit-user-select: text;
   user-select: text;
-}
-.peek main {
-  filter: blur(14px);
-  pointer-events: none;
 }
 @layer components {
   .sheet {
