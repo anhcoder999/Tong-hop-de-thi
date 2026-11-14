@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { IconCalendar, IconChevron } from "@/components/Icons";
-import PdfViewer from "@/components/PdfViewer";
+import DocumentViewer from "@/components/DocumentViewer";
 import { DS_DE, formatNgay, timDeTheoId } from "@/lib/data";
 interface Props {
   params: { id: string };
@@ -40,13 +40,16 @@ export default function TrangXemDe({ params }: Props) {
           <span className="-rotate-2 border border-accent/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">
             Môn {de.mon}
           </span>
+          <span className="border border-ink/40 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-soft">
+            {de.loai === "docx" ? "DOCX" : "PDF"}
+          </span>
           <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-faint">
             <IconCalendar className="h-3.5 w-3.5" />
             Đăng ngày {formatNgay(de.ngay)}
           </span>
         </div>
       </header>
-      <PdfViewer url={de.urlPdf} ten={de.ten} />
+      <DocumentViewer url={de.urlPdf} ten={de.ten} loai={de.loai} />
     </div>
   );
 }
