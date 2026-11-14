@@ -1,5 +1,6 @@
-export type Mon = "Toán" | "Văn" | "Anh" | "Sử" | "Địa" | "KTPL";
-export type Tab = "Tất cả" | Mon;
+export type Mon = "Toán" | "Văn" | "Anh" | "Lí" | "Hóa" | "Sinh" | "Sử" | "Địa" | "KTPL" | "Tin" | "CN" | "Khác";
+export type NhomMon = "bat-buoc" | "tu-nhien" | "xa-hoi" | "ung-dung" | "khac";
+export type Loc = "Tất cả" | NhomMon | Mon;
 export type Loai = "pdf" | "docx";
 export interface DeThi {
   id: string;
@@ -7,31 +8,94 @@ export interface DeThi {
   ten: string;
   ngay: string;
   urlPdf: string;
-  loai?: Loai;
+  loai: Loai;
+  duongDan: string | null;
+  kichThuoc: number | null;
+  tenGoc: string | null;
 }
-export const DS_MON: Mon[] = ["Toán", "Văn", "Anh", "Sử", "Địa", "KTPL"];
-export const DS_TAB: Tab[] = ["Tất cả", ...DS_MON];
-const PDF_1 = "https://raw.githubusercontent.com/mozilla/pdf.js/master/web/compressed.tracemonkey-pldi-09.pdf";
-const PDF_2 = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
-const PDF_3 = "https://raw.githubusercontent.com/mozilla/pdf.js/master/web/compressed.tracemonkey-pldi-09.pdf";
-export const DS_DE: DeThi[] = [
-  { id: "toan-thpt-2026-lan-1", mon: "Toán", ten: "Đề thi thử tốt nghiệp THPT 2026 môn Toán - Lần 1", ngay: "2026-11-10", urlPdf: PDF_2, loai: "pdf" },
-  { id: "toan-giua-ki-1-2026", mon: "Toán", ten: "Đề kiểm tra giữa kì 1 Toán 12 - Có đáp án chi tiết", ngay: "2026-10-28", urlPdf: PDF_1, loai: "pdf" },
-  { id: "toan-docx-minh-hoa", mon: "Toán", ten: "Đề minh họa Toán - định dạng DOCX (bảng + font tiếng Việt)", ngay: "2026-11-13", urlPdf: "demo-docx:toan", loai: "docx" },
-  { id: "van-thpt-2026-lan-1", mon: "Văn", ten: "Đề thi thử tốt nghiệp THPT 2026 môn Ngữ Văn - Lần 1", ngay: "2026-11-08", urlPdf: PDF_3, loai: "pdf" },
-  { id: "van-nghi-luan-2026", mon: "Văn", ten: "Bộ đề luyện viết nghị luận xã hội - Tuyển chọn 2026", ngay: "2026-10-20", urlPdf: PDF_1, loai: "pdf" },
-  { id: "van-docx-minh-hoa", mon: "Văn", ten: "Đề minh họa Ngữ Văn - định dạng DOCX (giữ layout Word)", ngay: "2026-11-13", urlPdf: "demo-docx:van", loai: "docx" },
-  { id: "anh-thpt-2026-lan-1", mon: "Anh", ten: "Đề thi thử tốt nghiệp THPT 2026 môn Tiếng Anh - Lần 1", ngay: "2026-11-12", urlPdf: PDF_2, loai: "pdf" },
-  { id: "anh-giua-ki-1-2026", mon: "Anh", ten: "Đề kiểm tra giữa kì 1 Tiếng Anh 12 - Kèm file nghe", ngay: "2026-10-25", urlPdf: PDF_1, loai: "pdf" },
-  { id: "su-giua-ki-1-2026", mon: "Sử", ten: "Đề kiểm tra giữa kì 1 Lịch sử 12 - Bám sát chương trình mới", ngay: "2026-10-18", urlPdf: PDF_3, loai: "pdf" },
-  { id: "dia-thpt-2026-lan-1", mon: "Địa", ten: "Đề thi thử tốt nghiệp THPT 2026 môn Địa lí - Lần 1", ngay: "2026-11-02", urlPdf: PDF_1, loai: "pdf" },
-  { id: "ktpl-giua-ki-1-2026", mon: "KTPL", ten: "Đề kiểm tra giữa kì 1 Giáo dục Kinh tế và Pháp luật 12", ngay: "2026-10-30", urlPdf: PDF_2, loai: "pdf" },
-  { id: "ktpl-thpt-2026-lan-1", mon: "KTPL", ten: "Đề thi thử tốt nghiệp THPT 2026 môn KTPL - Lần 1", ngay: "2026-11-05", urlPdf: PDF_1, loai: "pdf" },
+export const NHOM_MON: { id: NhomMon; ten: string; mon: Mon[] }[] = [
+  { id: "bat-buoc", ten: "Bắt buộc", mon: ["Toán", "Văn", "Anh"] },
+  { id: "tu-nhien", ten: "Tự nhiên", mon: ["Lí", "Hóa", "Sinh"] },
+  { id: "xa-hoi", ten: "Xã hội", mon: ["Sử", "Địa", "KTPL"] },
+  { id: "ung-dung", ten: "Ứng dụng", mon: ["Tin", "CN"] },
+  { id: "khac", ten: "Mở rộng", mon: ["Khác"] },
 ];
-export function timDeTheoId(id: string): DeThi | undefined {
-  return DS_DE.find((d) => d.id === id);
+export const DS_MON: Mon[] = NHOM_MON.flatMap((n) => n.mon);
+export const MON_DAY_DU: Record<Mon, string> = {
+  "Toán": "Toán học",
+  "Văn": "Ngữ văn",
+  "Anh": "Tiếng Anh",
+  "Lí": "Vật lí",
+  "Hóa": "Hóa học",
+  "Sinh": "Sinh học",
+  "Sử": "Lịch sử",
+  "Địa": "Địa lí",
+  "KTPL": "Giáo dục Kinh tế và Pháp luật",
+  "Tin": "Tin học",
+  "CN": "Công nghệ",
+  "Khác": "Môn khác",
+};
+export const MON_SLUG: Record<Mon, string> = {
+  "Toán": "toan",
+  "Văn": "van",
+  "Anh": "anh",
+  "Lí": "vat-li",
+  "Hóa": "hoa-hoc",
+  "Sinh": "sinh-hoc",
+  "Sử": "su",
+  "Địa": "dia",
+  "KTPL": "ktpl",
+  "Tin": "tin-hoc",
+  "CN": "cong-nghe",
+  "Khác": "khac",
+};
+export const khongDau = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase().trim();
+const BI_DANH: Record<string, Mon> = {
+  "toan hoc": "Toán",
+  "ngu van": "Văn",
+  "tieng anh": "Anh",
+  "ngoai ngu": "Anh",
+  "vat li": "Lí",
+  "vat ly": "Lí",
+  "ly": "Lí",
+  "hoa hoc": "Hóa",
+  "sinh hoc": "Sinh",
+  "lich su": "Sử",
+  "dia li": "Địa",
+  "dia ly": "Địa",
+  "giao duc kinh te va phap luat": "KTPL",
+  "gdcd": "KTPL",
+  "tin hoc": "Tin",
+  "cong nghe": "CN",
+  "mon khac": "Khác",
+};
+export function chuanMon(raw: string): Mon {
+  const k = khongDau(raw);
+  const hit = DS_MON.find((m) => khongDau(m) === k);
+  return hit ?? BI_DANH[k] ?? "Khác";
+}
+export const laNhom = (v: Loc): v is NhomMon => NHOM_MON.some((n) => n.id === v);
+export function monTrongLoc(loc: Loc): Mon[] {
+  if (loc === "Tất cả") return DS_MON;
+  if (laNhom(loc)) return NHOM_MON.find((n) => n.id === loc)?.mon ?? DS_MON;
+  return [loc];
+}
+export function tenNhom(mon: Mon): string {
+  return NHOM_MON.find((n) => n.mon.includes(mon))?.ten ?? "Mở rộng";
 }
 export function formatNgay(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
+  const p = iso.slice(0, 10).split("-");
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
+}
+export function formatDungLuong(bytes: number | null): string {
+  if (!bytes || bytes <= 0) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+export function homNay(): string {
+  const d = new Date();
+  const h = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${h(d.getMonth() + 1)}-${h(d.getDate())}`;
 }
