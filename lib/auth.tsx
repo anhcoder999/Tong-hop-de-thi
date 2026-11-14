@@ -3,7 +3,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 export type VaiTro = "user" | "admin";
-export type HoSo = { id: string; email: string | null; role: VaiTro; ho_ten: string | null; created_at: string | null };
+export type HoSo = {
+  id: string;
+  email: string | null;
+  role: VaiTro;
+  ho_ten: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
 export type KetQua = { loi: string | null; canXacNhan?: boolean };
 type AuthState = {
   user: User | null;
@@ -14,8 +21,20 @@ type AuthState = {
   signUp: (email: string, password: string) => Promise<KetQua>;
   signOut: () => Promise<void>;
   taiLaiHoSo: () => Promise<void>;
+  capNhatHoTen: (ten: string) => Promise<KetQua>;
 };
 const Ctx = createContext<AuthState | null>(null);
+const docHoSo = (data: Record<string, unknown> | null): HoSo | null => {
+  if (!data) return null;
+  return {
+    id: String(data.id),
+    email: (data.email as string | null) ?? null,
+    role: data.role === "admin" ? "admin" : "user",
+    ho_ten: (data.ho_ten as string | null) ?? null,
+    created_at: (data.created_at as string | null) ?? null,
+    updated_at: (data.updated_at as string | null) ?? null,
+  };
+};
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [hoSo, setHoSo] = useState<HoSo | null>(null);
@@ -40,14 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const uid = session?.user?.id;
   const napHoSo = useCallback(async (id: string) => {
     const { data } = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
-    if (!data) return null;
-    return {
-      id: String(data.id),
-      email: (data.email as string | null) ?? null,
-      role: data.role === "admin" ? "admin" : "user",
-      ho_ten: (data.ho_ten as string | null) ?? null,
-      created_at: (data.created_at as string | null) ?? null,
-    } as HoSo;
+    return docHoSo(data as Record<string, unknown> | null);
   }, []);
   useEffect(() => {
     let alive = true;
@@ -71,6 +83,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const h = await napHoSo(uid);
     setHoSo(h);
   }, [uid, napHoSo]);
+  const capNhatHoTen = useCallback(
+    async (ten: string): Promise<KetQua> => {
+      if (!uid) return { loi: "Phiên đăng nhập đã hết. Hãy đăng nhập lại." };
+      const giaTri = ten.trim() ? ten.trim() : null;
+      const cu = hoSo;
+      setHoSo((h) => (h ? { ...h, ho_ten: giaTri } : h));
+      const { data, error } = await supabase.from("profiles").update({ ho_ten: giaTri }).eq("id", uid).select("*").maybeSingle();
+      if (error) {
+        setHoSo(cu);
+        return { loi: error.message };
+      }
+      const moi = docHoSo(data as Record<string, unknown> | null);
+      if (!moi) {
+        setHoSo(cu);
+        return { loi: "Chưa ghi được vào hồ sơ. Hãy chạy lại supabase/profile.sql trong SQL Editor để mở policy UPDATE." };
+      }
+      setHoSo(moi);
+      return { loi: null };
+    },
+    [uid, hoSo],
+  );
   const signIn = useCallback(async (email: string, password: string): Promise<KetQua> => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { loi: error ? error.message : null };
@@ -94,8 +127,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signOut,
       taiLaiHoSo,
+      capNhatHoTen,
     }),
-    [session, hoSo, phienXong, hoSoXong, signIn, signUp, signOut, taiLaiHoSo],
+    [session, hoSo, phienXong, hoSoXong, signIn, signUp, signOut, taiLaiHoSo, capNhatHoTen],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
