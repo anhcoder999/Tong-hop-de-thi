@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { IconArrowRight, IconCalendar, MonIcon } from "@/components/Icons";
-import { formatDungLuong, formatNgay, MON_DAY_DU, tenNhom, type DeThi } from "@/lib/data";
+import { formatDungLuong, formatNgay, type DeThi } from "@/lib/data";
 import { buttonTap, cardHover, fadeInUp, stampIn, tapCard } from "@/lib/animations";
 import { useHoverCapable } from "@/lib/useHover";
 export default function DeCard({ de }: { de: DeThi }) {
@@ -15,15 +15,12 @@ export default function DeCard({ de }: { de: DeThi }) {
       className="sheet group relative flex flex-col p-5 pl-8 shadow-paper transition-colors duration-300 hover:border-accent/60"
     >
       <div className="flex items-start justify-between gap-3">
-        <span title={MON_DAY_DU[de.mon]} className="grid h-11 w-11 place-items-center border border-ink/30 bg-paper text-ink transition-all duration-300 group-hover:-rotate-3 group-hover:border-accent group-hover:text-accent">
+        <span className="grid h-11 w-11 place-items-center border border-ink/30 bg-paper text-ink transition-all duration-300 group-hover:-rotate-3 group-hover:border-accent group-hover:text-accent">
           <MonIcon mon={de.mon} className="h-6 w-6" />
         </span>
-        <div className="flex flex-col items-end gap-1">
-          <motion.span variants={stampIn} title={MON_DAY_DU[de.mon]} className="border border-accent/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">
-            {de.mon}
-          </motion.span>
-          <span className="text-[9px] uppercase tracking-[0.16em] text-ink-faint">{tenNhom(de.mon)}</span>
-        </div>
+        <motion.span variants={stampIn} className="border border-accent/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">
+          {de.mon}
+        </motion.span>
       </div>
       <h3 className="mt-4 line-clamp-2 min-h-[3.2rem] font-display text-lg font-bold leading-snug text-ink">{de.ten}</h3>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs uppercase tracking-[0.12em] text-ink-faint">
