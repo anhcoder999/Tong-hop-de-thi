@@ -2,30 +2,35 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+export type VaiTro = "user" | "admin";
+export type HoSo = { id: string; email: string | null; role: VaiTro; ho_ten: string | null; created_at: string | null };
 export type KetQua = { loi: string | null; canXacNhan?: boolean };
 type AuthState = {
   user: User | null;
+  hoSo: HoSo | null;
   isAdmin: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<KetQua>;
   signUp: (email: string, password: string) => Promise<KetQua>;
   signOut: () => Promise<void>;
+  taiLaiHoSo: () => Promise<void>;
 };
 const Ctx = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [hoSo, setHoSo] = useState<HoSo | null>(null);
+  const [phienXong, setPhienXong] = useState(false);
+  const [hoSoXong, setHoSoXong] = useState(false);
   useEffect(() => {
     let alive = true;
     supabase.auth.getSession().then(({ data }) => {
       if (!alive) return;
       setSession(data.session);
-      setLoading(false);
+      setPhienXong(true);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
-      setLoading(false);
+      setPhienXong(true);
     });
     return () => {
       alive = false;
@@ -33,24 +38,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
   const uid = session?.user?.id;
+  const napHoSo = useCallback(async (id: string) => {
+    const { data } = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
+    if (!data) return null;
+    return {
+      id: String(data.id),
+      email: (data.email as string | null) ?? null,
+      role: data.role === "admin" ? "admin" : "user",
+      ho_ten: (data.ho_ten as string | null) ?? null,
+      created_at: (data.created_at as string | null) ?? null,
+    } as HoSo;
+  }, []);
   useEffect(() => {
     let alive = true;
     if (!uid) {
-      setIsAdmin(false);
+      setHoSo(null);
+      setHoSoXong(true);
       return;
     }
-    supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", uid)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (alive) setIsAdmin(data?.role === "admin");
-      });
+    setHoSoXong(false);
+    napHoSo(uid).then((h) => {
+      if (!alive) return;
+      setHoSo(h);
+      setHoSoXong(true);
+    });
     return () => {
       alive = false;
     };
-  }, [uid]);
+  }, [uid, napHoSo]);
+  const taiLaiHoSo = useCallback(async () => {
+    if (!uid) return;
+    const h = await napHoSo(uid);
+    setHoSo(h);
+  }, [uid, napHoSo]);
   const signIn = useCallback(async (email: string, password: string): Promise<KetQua> => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { loi: error ? error.message : null };
@@ -62,11 +82,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-    setIsAdmin(false);
+    setHoSo(null);
   }, []);
   const value = useMemo<AuthState>(
-    () => ({ user: session?.user ?? null, isAdmin, loading, signIn, signUp, signOut }),
-    [session, isAdmin, loading, signIn, signUp, signOut],
+    () => ({
+      user: session?.user ?? null,
+      hoSo,
+      isAdmin: hoSo?.role === "admin",
+      loading: !phienXong || !hoSoXong,
+      signIn,
+      signUp,
+      signOut,
+      taiLaiHoSo,
+    }),
+    [session, hoSo, phienXong, hoSoXong, signIn, signUp, signOut, taiLaiHoSo],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
