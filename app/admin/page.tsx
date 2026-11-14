@@ -5,6 +5,7 @@ import { IconAlert, IconCheck, IconClose, IconEdit, IconExternal, IconFile, Icon
 import EmptyState from "@/components/EmptyState";
 import { DS_DE, DS_MON, formatNgay, type DeThi, type Mon } from "@/lib/data";
 import { buttonTap, EASE, fadeInUp, spring, staggerContainer } from "@/lib/animations";
+import { useHoverCapable } from "@/lib/useHover";
 export default function TrangAdmin() {
   const [danhSach, setDanhSach] = useState<DeThi[]>([...DS_DE]);
   const [mon, setMon] = useState<Mon>("Toán");
@@ -14,6 +15,7 @@ export default function TrangAdmin() {
   const [dangKeo, setDangKeo] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [thongBao, setThongBao] = useState("");
+  const hover = useHoverCapable();
   const formRef = useRef<HTMLFormElement>(null);
   const blobUrls = useRef<string[]>([]);
   useEffect(() => {
@@ -104,12 +106,12 @@ export default function TrangAdmin() {
         </motion.header>
         <motion.div
           variants={fadeInUp}
-          className="mt-4 flex w-full items-start gap-2.5 border border-accent/50 bg-accent-wash p-3.5 text-sm text-accent-deep"
+          className="mt-4 flex w-full min-w-0 items-start gap-2.5 border border-accent/50 bg-accent-wash p-3.5 text-sm text-accent-deep"
         >
           <IconAlert className="mt-0.5 h-4 w-4 shrink-0" />
           <p>Bản demo: dữ liệu chỉ lưu trong RAM trình duyệt, tải lại trang sẽ về danh sách mẫu. Muốn lưu vĩnh viễn thì nối database sau.</p>
         </motion.div>
-        <div className="mt-6 grid w-full min-w-0 gap-6 lg:grid-cols-5">
+        <div className="mt-6 grid w-full min-w-0 grid-cols-1 gap-6 lg:grid-cols-5">
           <motion.form
             ref={formRef}
             variants={fadeInUp}
@@ -120,7 +122,7 @@ export default function TrangAdmin() {
               {editingId ? <IconEdit className="h-4 w-4 text-accent" /> : <IconUpload className="h-4 w-4 text-accent" />}
               {editingId ? "Sửa đề" : "Thêm đề mới"}
             </h2>
-            <div>
+            <div className="min-w-0">
               <label htmlFor="mon" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">
                 Môn
               </label>
@@ -128,7 +130,7 @@ export default function TrangAdmin() {
                 id="mon"
                 value={mon}
                 onChange={(e) => setMon(e.target.value as Mon)}
-                className="w-full border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-accent"
+                className="w-full min-w-0 border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-accent"
               >
                 {DS_MON.map((m) => (
                   <option key={m} value={m}>
@@ -137,7 +139,7 @@ export default function TrangAdmin() {
                 ))}
               </select>
             </div>
-            <div>
+            <div className="min-w-0">
               <label htmlFor="ten" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">
                 Tên đề
               </label>
@@ -147,12 +149,12 @@ export default function TrangAdmin() {
                 value={ten}
                 onChange={(e) => setTen(e.target.value)}
                 placeholder="VD: Đề thi thử THPT 2026 môn Toán - Lần 2"
-                className="w-full border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
+                className="w-full min-w-0 border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
               />
             </div>
             <motion.label
               htmlFor="tep-pdf"
-              whileHover={{ scale: 1.01 }}
+              whileHover={hover ? { scale: 1.01 } : undefined}
               transition={spring}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -164,7 +166,7 @@ export default function TrangAdmin() {
                 setDangKeo(false);
                 chonTep(e.dataTransfer.files?.[0]);
               }}
-              className={`block cursor-pointer border-2 border-dashed p-6 text-center transition-colors duration-300 ${
+              className={`block min-w-0 cursor-pointer border-2 border-dashed p-6 text-center transition-colors duration-300 ${
                 dangKeo ? "border-accent bg-accent-wash shadow-stamp" : "border-ink/40 bg-paper hover:border-accent hover:shadow-stamp"
               }`}
             >
@@ -204,7 +206,7 @@ export default function TrangAdmin() {
               <motion.button
                 whileTap={buttonTap}
                 type="submit"
-                className="flex flex-1 items-center justify-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent"
+                className="flex flex-1 items-center justify-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent"
               >
                 {editingId ? <IconCheck className="h-4 w-4" /> : <IconPlus className="h-4 w-4" />}
                 {editingId ? "Cập nhật" : "Thêm đề"}
@@ -231,7 +233,7 @@ export default function TrangAdmin() {
                 <EmptyState tieuDe="Chưa có đề nào" moTa="Thêm đề đầu tiên bằng form bên cạnh nhé." />
               </div>
             ) : (
-              <ul className="mt-4 space-y-3">
+              <ul className="mt-4 min-w-0 space-y-3">
                 <AnimatePresence>
                   {danhSach.map((d, i) => (
                     <motion.li
@@ -240,8 +242,8 @@ export default function TrangAdmin() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 24, transition: { duration: 0.2, ease: EASE } }}
                       transition={{ duration: 0.35, ease: EASE, delay: Math.min(i * 0.04, 0.4) }}
-                      whileHover={{ x: 4, transition: { duration: 0.2, ease: EASE, delay: 0 } }}
-                      className="sheet flex items-center gap-3 p-4 pl-8 shadow-paper"
+                      whileHover={hover ? { x: 4, transition: { duration: 0.2, ease: EASE, delay: 0 } } : undefined}
+                      className="sheet flex min-w-0 items-center gap-3 p-4 pl-8 shadow-paper"
                     >
                       <span className="grid h-10 w-10 shrink-0 place-items-center border border-ink/30 bg-paper text-ink">
                         <IconFile className="h-4 w-4" />
