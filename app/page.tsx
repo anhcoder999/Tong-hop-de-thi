@@ -8,12 +8,14 @@ import EmptyState from "@/components/EmptyState";
 import { DeCardSkeleton } from "@/components/Skeleton";
 import { DS_DE, DS_TAB, type Tab } from "@/lib/data";
 import { buttonTap, EASE, fadeInUp, spring, staggerContainer } from "@/lib/animations";
+import { useHoverCapable } from "@/lib/useHover";
 const khongDau = (s: string) =>
   s.normalize("NFD").replace(/[̀ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
 export default function TrangChu() {
   const [tuKhoa, setTuKhoa] = useState("");
   const [tab, setTab] = useState<Tab>("Tất cả");
   const [dangTai, setDangTai] = useState(true);
+  const hover = useHoverCapable();
   useEffect(() => {
     const t = setTimeout(() => setDangTai(false), 500);
     return () => clearTimeout(t);
@@ -86,7 +88,7 @@ export default function TrangChu() {
                 <motion.button
                   key={t}
                   whileTap={buttonTap}
-                  whileHover={{ y: -1 }}
+                  whileHover={hover ? { y: -1 } : undefined}
                   transition={spring}
                   onClick={() => setTab(t)}
                   className={`relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${
