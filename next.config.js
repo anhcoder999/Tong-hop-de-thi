@@ -1,7 +1,14 @@
 /** @type {import('next').NextConfig} */
-// Cấu hình Next.js: bật strict mode để bắt lỗi React sớm, ẩn header lộ framework
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  async headers() {
+    return [
+      {
+        source: "/:path(.*\\.pdf)",
+        headers: [{ key: "Access-Control-Allow-Origin", value: "*" }],
+      },
+    ];
+  },
 };
-module.exports = nextConfig;
+module.exports = nextConfig;;
