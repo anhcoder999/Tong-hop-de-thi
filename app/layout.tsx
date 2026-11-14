@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro, Lora } from "next/font/google";
 import Link from "next/link";
 import { IconSeal } from "@/components/Icons";
+import Guard from "@/components/Guard";
 import Navbar from "@/components/Navbar";
 import PageTransition from "@/components/PageTransition";
 import "./globals.css";
@@ -39,12 +40,15 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: "#F3EDE2",
 };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" className={`${lora.variable} ${be.variable}`}>
       <body className="flex min-h-screen flex-col font-sans text-ink antialiased">
+        <Guard />
         <Navbar />
         <PageTransition>{children}</PageTransition>
         <footer className="border-t-2 border-ink bg-paper-light/70">
