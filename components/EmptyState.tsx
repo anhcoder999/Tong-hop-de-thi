@@ -1,6 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
-import { SearchX } from "lucide-react";
+import { IconSearchX } from "@/components/Icons";
 import { buttonTap, EASE, fadeInUp } from "@/lib/animations";
 interface Props {
   tieuDe?: string;
@@ -17,24 +17,23 @@ export default function EmptyState({
       variants={fadeInUp}
       initial="hidden"
       animate="visible"
-      className="glass flex flex-col items-center gap-3 rounded-xl px-6 py-14 text-center shadow-soft"
+      className="flex flex-col items-center gap-3 border border-dashed border-ink/40 bg-paper-light/60 px-6 py-14 text-center"
     >
-      {/* Icon nhún nhảy nhẹ lặp vô hạn cho đỡ trống trải */}
       <motion.div
         animate={{ y: [0, -8, 0] }}
         transition={{ duration: 1.6, repeat: Infinity, ease: EASE }}
-        className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-500"
+        className="grid h-14 w-14 place-items-center border border-ink/30 text-accent"
       >
-        <SearchX size={26} />
+        <IconSearchX className="h-6 w-6" />
       </motion.div>
-      <h3 className="text-base font-bold text-slate-800">{tieuDe}</h3>
-      <p className="max-w-xs text-sm text-slate-500">{moTa}</p>
+      <h3 className="font-display text-xl font-bold text-ink">{tieuDe}</h3>
+      <p className="max-w-xs text-sm text-ink-soft">{moTa}</p>
       {onReset && (
         <motion.button
           whileTap={buttonTap}
           type="button"
           onClick={onReset}
-          className="mt-2 rounded-2xl bg-brand-gradient px-5 py-2.5 text-sm font-semibold text-white shadow-soft transition-shadow hover:shadow-lift"
+          className="mt-2 border border-ink bg-ink px-5 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent"
         >
           Xóa bộ lọc
         </motion.button>
