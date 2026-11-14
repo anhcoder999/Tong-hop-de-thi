@@ -94,9 +94,9 @@ export default function TrangAdmin() {
     setThongBao("Đã xóa đề.");
   };
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-8 sm:pt-10">
-      <motion.div variants={staggerContainer} initial="hidden" animate="visible">
-        <motion.header variants={fadeInUp} className="border-b-2 border-ink pb-5">
+    <div className="mx-auto w-full min-w-0 max-w-6xl overflow-x-clip px-4 pb-16 pt-8 sm:pt-10">
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="w-full min-w-0">
+        <motion.header variants={fadeInUp} className="w-full border-b-2 border-ink pb-5">
           <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
             Trang <span className="text-accent">quản trị</span>
           </h1>
@@ -104,17 +104,17 @@ export default function TrangAdmin() {
         </motion.header>
         <motion.div
           variants={fadeInUp}
-          className="mt-4 flex items-start gap-2.5 border border-accent/50 bg-accent-wash p-3.5 text-sm text-accent-deep"
+          className="mt-4 flex w-full items-start gap-2.5 border border-accent/50 bg-accent-wash p-3.5 text-sm text-accent-deep"
         >
           <IconAlert className="mt-0.5 h-4 w-4 shrink-0" />
           <p>Bản demo: dữ liệu chỉ lưu trong RAM trình duyệt, tải lại trang sẽ về danh sách mẫu. Muốn lưu vĩnh viễn thì nối database sau.</p>
         </motion.div>
-        <div className="mt-6 grid gap-6 lg:grid-cols-5">
+        <div className="mt-6 grid w-full min-w-0 gap-6 lg:grid-cols-5">
           <motion.form
             ref={formRef}
             variants={fadeInUp}
             onSubmit={guiForm}
-            className="h-fit scroll-mt-24 space-y-4 border border-ink/25 bg-paper-light p-5 shadow-paper lg:col-span-2"
+            className="h-fit min-w-0 scroll-mt-24 space-y-4 border border-ink/25 bg-paper-light p-5 shadow-paper lg:col-span-2"
           >
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
               {editingId ? <IconEdit className="h-4 w-4 text-accent" /> : <IconUpload className="h-4 w-4 text-accent" />}
@@ -150,8 +150,10 @@ export default function TrangAdmin() {
                 className="w-full border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
               />
             </div>
-            <label
+            <motion.label
               htmlFor="tep-pdf"
+              whileHover={{ scale: 1.01 }}
+              transition={spring}
               onDragOver={(e) => {
                 e.preventDefault();
                 setDangKeo(true);
@@ -162,7 +164,7 @@ export default function TrangAdmin() {
                 setDangKeo(false);
                 chonTep(e.dataTransfer.files?.[0]);
               }}
-              className={`block cursor-pointer border-2 border-dashed p-6 text-center transition-all duration-300 ${
+              className={`block cursor-pointer border-2 border-dashed p-6 text-center transition-colors duration-300 ${
                 dangKeo ? "border-accent bg-accent-wash shadow-stamp" : "border-ink/40 bg-paper hover:border-accent hover:shadow-stamp"
               }`}
             >
@@ -190,7 +192,7 @@ export default function TrangAdmin() {
                   e.target.value = "";
                 }}
               />
-            </label>
+            </motion.label>
             <AnimatePresence>
               {thongBao && (
                 <motion.p initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-sm font-medium text-accent">
@@ -220,7 +222,7 @@ export default function TrangAdmin() {
               )}
             </div>
           </motion.form>
-          <motion.section variants={fadeInUp} className="lg:col-span-3">
+          <motion.section variants={fadeInUp} className="min-w-0 lg:col-span-3">
             <h2 className="font-display text-lg font-bold text-ink">
               Danh sách đề <span className="text-ink-faint">({danhSach.length})</span>
             </h2>
@@ -229,16 +231,16 @@ export default function TrangAdmin() {
                 <EmptyState tieuDe="Chưa có đề nào" moTa="Thêm đề đầu tiên bằng form bên cạnh nhé." />
               </div>
             ) : (
-              <motion.ul layout className="mt-4 space-y-3">
+              <ul className="mt-4 space-y-3">
                 <AnimatePresence>
-                  {danhSach.map((d) => (
+                  {danhSach.map((d, i) => (
                     <motion.li
                       key={d.id}
-                      layout
-                      initial={{ opacity: 0, x: -32 }}
+                      initial={{ opacity: 0, x: -24 }}
                       animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 32, transition: { duration: 0.2, ease: EASE } }}
-                      transition={spring}
+                      exit={{ opacity: 0, x: 24, transition: { duration: 0.2, ease: EASE } }}
+                      transition={{ duration: 0.35, ease: EASE, delay: Math.min(i * 0.04, 0.4) }}
+                      whileHover={{ x: 4, transition: { duration: 0.2, ease: EASE, delay: 0 } }}
                       className="sheet flex items-center gap-3 p-4 pl-8 shadow-paper"
                     >
                       <span className="grid h-10 w-10 shrink-0 place-items-center border border-ink/30 bg-paper text-ink">
@@ -281,7 +283,7 @@ export default function TrangAdmin() {
                     </motion.li>
                   ))}
                 </AnimatePresence>
-              </motion.ul>
+              </ul>
             )}
           </motion.section>
         </div>
