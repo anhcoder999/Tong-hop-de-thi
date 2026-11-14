@@ -1,31 +1,27 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Sparkles, X } from "lucide-react";
+import { IconClose, IconSearch, IconSeal, InkLine } from "@/components/Icons";
 import DeCard from "@/components/DeCard";
 import EmptyState from "@/components/EmptyState";
 import { DeCardSkeleton } from "@/components/Skeleton";
 import { DS_DE, DS_TAB, type Tab } from "@/lib/data";
 import { buttonTap, fadeInUp, spring, staggerContainer } from "@/lib/animations";
-// Bỏ dấu tiếng Việt để gõ "toan" vẫn tìm ra "Toán", tối ưu cho mobile
 const khongDau = (s: string) =>
-  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
+  s.normalize("NFD").replace(/[̀ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
 export default function TrangChu() {
   const [tuKhoa, setTuKhoa] = useState("");
   const [tab, setTab] = useState<Tab>("Tất cả");
   const [dangTai, setDangTai] = useState(true);
-  // Giả lập gọi API lần đầu để khoe skeleton shimmer, nối API thật thì thay chỗ này
   useEffect(() => {
     const t = setTimeout(() => setDangTai(false), 500);
     return () => clearTimeout(t);
   }, []);
-  // Đếm số đề mỗi môn, hiển thị ngay trên tab
   const demTheoMon = useMemo(() => {
     const m = new Map<string, number>();
     DS_DE.forEach((d) => m.set(d.mon, (m.get(d.mon) ?? 0) + 1));
     return m;
   }, []);
-  // Lọc kép: theo môn đang chọn + theo từ khóa tên đề
   const ketQua = useMemo(() => {
     const tu = khongDau(tuKhoa.trim());
     return DS_DE.filter((d) => (tab === "Tất cả" || d.mon === tab) && khongDau(d.ten).includes(tu));
@@ -33,62 +29,69 @@ export default function TrangChu() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-8 sm:pt-12">
       <motion.div variants={staggerContainer} initial="hidden" animate="visible">
-        <motion.header variants={fadeInUp} className="text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
-            <Sparkles size={13} />
-            Cập nhật mỗi ngày - Miễn phí 100%
-          </span>
-          <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-5xl">
-            Website <span className="text-gradient">Tổng Hợp Đề Thi</span>
+        <motion.header variants={fadeInUp} className="border-b-2 border-ink pb-6">
+          <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-ink-soft">
+            <span>Kì thi tốt nghiệp THPT</span>
+            <span>Năm 2026</span>
+          </div>
+          <h1 className="mt-4 font-display text-4xl font-bold leading-tight tracking-tight text-ink sm:text-6xl">
+            Tổng hợp{" "}
+            <span className="relative inline-block text-accent">
+              đề thi
+              <span className="absolute inset-x-0 -bottom-1 text-accent">
+                <InkLine className="h-2 w-full" />
+              </span>
+            </span>
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-slate-500 sm:text-base">
+          <p className="mt-4 max-w-xl text-sm text-ink-soft sm:text-base">
             Kho đề Toán, Văn, Anh, Sử, Địa, KTPL chọn lọc. Xem PDF trực tiếp, tải về ôn luyện ngay trên điện thoại.
           </p>
+          <span className="mt-4 inline-flex -rotate-1 items-center gap-1.5 border border-accent/70 bg-accent-wash px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-deep">
+            <IconSeal className="h-3.5 w-3.5" />
+            Lưu hành miễn phí
+          </span>
         </motion.header>
-        <motion.div variants={fadeInUp} className="relative mx-auto mt-8 max-w-xl">
-          <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+        <motion.div variants={fadeInUp} className="relative mt-8 max-w-xl">
+          <IconSearch className="pointer-events-none absolute left-1 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" />
           <input
             type="text"
             value={tuKhoa}
             onChange={(e) => setTuKhoa(e.target.value)}
             placeholder="Tìm đề theo tên... (gõ không dấu cũng được)"
             aria-label="Tìm đề theo tên"
-            className="w-full rounded-2xl border border-slate-200 bg-white/80 px-11 py-3.5 text-sm shadow-soft outline-none backdrop-blur transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
+            className="w-full border-b-2 border-ink/40 bg-transparent py-3 pl-7 pr-8 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
           />
           {tuKhoa && (
             <motion.button
               whileTap={buttonTap}
               onClick={() => setTuKhoa("")}
               aria-label="Xóa từ khóa"
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-ink-faint transition-colors hover:text-accent"
             >
-              <X size={16} />
+              <IconClose className="h-4 w-4" />
             </motion.button>
           )}
         </motion.div>
-        <motion.div variants={fadeInUp} className="-mx-4 mt-6 overflow-x-auto px-4 no-scrollbar">
-          <div className="flex w-max min-w-full gap-1.5 border-b border-slate-200/80 pb-px sm:justify-center">
+        <motion.div variants={fadeInUp} className="-mx-4 mt-8 overflow-x-auto px-4 no-scrollbar">
+          <div className="flex w-max min-w-full gap-6 border-b border-ink/20">
             {DS_TAB.map((t) => {
-              const dangChon = tab === t;
+              const active = tab === t;
               const soDe = t === "Tất cả" ? DS_DE.length : demTheoMon.get(t) ?? 0;
               return (
                 <motion.button
                   key={t}
                   whileTap={buttonTap}
                   onClick={() => setTab(t)}
-                  className={`relative whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                    dangChon ? "bg-brand-50 text-brand-700" : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                  className={`relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${
+                    active ? "text-accent" : "text-ink-soft hover:text-ink"
                   }`}
                 >
                   {t}
-                  <span className={`ml-1.5 text-xs ${dangChon ? "text-brand-400" : "text-slate-400"}`}>{soDe}</span>
-                  {/* layoutId giúp gạch chân trượt mượt từ tab cũ sang tab mới */}
-                  {dangChon && (
-                    <motion.span
-                      layoutId="tab-underline"
-                      transition={spring}
-                      className="absolute inset-x-3 -bottom-[3px] h-0.5 rounded-full bg-brand-gradient"
-                    />
+                  <sup className="ml-1 text-[10px] text-ink-faint">{soDe}</sup>
+                  {active && (
+                    <motion.span layoutId="tab-ink" transition={spring} className="absolute inset-x-0 -bottom-px text-accent">
+                      <InkLine className="h-1.5 w-full" />
+                    </motion.span>
                   )}
                 </motion.button>
               );
@@ -96,8 +99,8 @@ export default function TrangChu() {
           </div>
         </motion.div>
       </motion.div>
-      <p className="mt-6 text-sm text-slate-500">
-        Tìm thấy <b className="text-slate-800">{dangTai ? "..." : ketQua.length}</b> đề
+      <p className="mt-6 text-xs uppercase tracking-[0.18em] text-ink-soft">
+        Mục lục · <b className="text-ink">{dangTai ? "..." : ketQua.length}</b> đề
       </p>
       {dangTai ? (
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -115,7 +118,6 @@ export default function TrangChu() {
           />
         </div>
       ) : (
-        // key theo tab: đổi môn là dàn card stagger lại từ đầu, mỗi card cách nhau 50ms
         <motion.div
           key={tab}
           variants={staggerContainer}
