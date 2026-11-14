@@ -1,26 +1,38 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* Nền trắng xám nhạt + vệt sáng xanh nhẹ ở đỉnh trang, thuần CSS nên không tốn JS */
 body {
-  background-color: #f8fafc;
-  background-image: radial-gradient(55rem 26rem at 50% -8rem, rgba(59, 130, 246, 0.09), transparent);
+  background-color: #f3ede2;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg, rgba(33, 29, 24, 0.05) 0 1px, transparent 1px 32px),
+    repeating-linear-gradient(90deg, rgba(33, 29, 24, 0.05) 0 1px, transparent 1px 32px);
 }
-/* Kính mờ dùng chung cho card, navbar, khung PDF */
 @layer components {
-  .glass {
-    @apply border border-white/60 bg-white/70 backdrop-blur-xl;
+  .sheet {
+    position: relative;
+    border: 1px solid rgba(33, 29, 24, 0.24);
+    border-top-right-radius: 26px;
+    background: #faf6ec;
   }
-  .text-gradient {
-    @apply bg-brand-gradient bg-clip-text text-transparent;
+  .sheet::before {
+    content: "";
+    position: absolute;
+    left: 14px;
+    top: 12px;
+    bottom: 12px;
+    width: 1px;
+    background: rgba(168, 35, 28, 0.35);
   }
   .skeleton {
-    @apply relative overflow-hidden rounded-lg bg-slate-200/80;
+    position: relative;
+    overflow: hidden;
+    background: rgba(33, 29, 24, 0.1);
   }
   .skeleton::after {
     content: "";
-    @apply absolute inset-0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(250, 246, 236, 0.7), transparent);
     transform: translateX(-100%);
     animation: shimmer 1.6s infinite;
   }
@@ -32,36 +44,32 @@ body {
     display: none;
   }
 }
-/* Shimmer chạy ngang cho hiệu ứng loading */
 @keyframes shimmer {
   100% {
     transform: translateX(100%);
   }
 }
-/* Thanh cuộn mảnh màu xanh cho toàn trang */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #bfdbfe;
+  background: #d8cdb6;
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #93c5fd;
+  background: #a8231c;
 }
-/* Bôi đen chữ và viền focus đồng bộ màu thương hiệu */
 ::selection {
-  background: #bfdbfe;
-  color: #1e3a8a;
+  background: #f3e0da;
+  color: #7c150f;
 }
 :focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #a8231c;
   outline-offset: 2px;
 }
-/* Tôn trọng người dùng tắt hiệu ứng trong hệ điều hành */
 @media (prefers-reduced-motion: reduce) {
   .skeleton::after {
     animation: none;
   }
-    }
+}
