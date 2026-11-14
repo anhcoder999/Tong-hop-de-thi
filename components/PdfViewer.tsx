@@ -70,7 +70,7 @@ export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
           className="h-[80vh] w-full border-0 bg-white"
         />
       </div>
-      <p className="mt-3 text-xs text-slate-400">Mẹo: nếu PDF vẫn không hiển thị, bấm "Mở tab mới" để xem trực tiếp.</p>
+      <p className="mt-3 text-xs text-slate-400">Mẹo: nếu PDF vẫn không hiển thị, bấm &quot;Mở tab mới&quot; để xem trực tiếp.</p>
     </div>
   );
 }
