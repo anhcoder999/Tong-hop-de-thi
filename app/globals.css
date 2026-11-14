@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* Nền trắng xám nhạt + vệt sáng xanh nhẹ ở đỉnh trang, thuần CSS nên không tốn JS */
+body {
+  background-color: #f8fafc;
+  background-image: radial-gradient(55rem 26rem at 50% -8rem, rgba(59, 130, 246, 0.09), transparent);
+}
+/* Kính mờ dùng chung cho card, navbar, khung PDF */
+@layer components {
+  .glass {
+    @apply border border-white/60 bg-white/70 backdrop-blur-xl;
+  }
+  .text-gradient {
+    @apply bg-brand-gradient bg-clip-text text-transparent;
+  }
+  .skeleton {
+    @apply relative overflow-hidden rounded-lg bg-slate-200/80;
+  }
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+    transform: translateX(-100%);
+    animation: shimmer 1.6s infinite;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+/* Shimmer chạy ngang cho hiệu ứng loading */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+/* Thanh cuộn mảnh màu xanh cho toàn trang */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #bfdbfe;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #93c5fd;
+}
+/* Bôi đen chữ và viền focus đồng bộ màu thương hiệu */
+::selection {
+  background: #bfdbfe;
+  color: #1e3a8a;
+}
+:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+/* Tôn trọng người dùng tắt hiệu ứng trong hệ điều hành */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+    }
