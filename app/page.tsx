@@ -6,7 +6,7 @@ import InkDraw from "@/components/InkDraw";
 import DeCard from "@/components/DeCard";
 import EmptyState from "@/components/EmptyState";
 import { DeCardSkeleton } from "@/components/Skeleton";
-import { khongDau, laNhom, MON_DAY_DU, monTrongLoc, NHOM_MON, type DeThi, type Loc } from "@/lib/data";
+import { DS_TAB, khongDau, type DeThi, type Tab } from "@/lib/data";
 import { buttonTap, EASE, fadeInUp, spring, staggerContainer } from "@/lib/animations";
 import { useHoverCapable } from "@/lib/useHover";
 import { useAuth } from "@/lib/auth";
@@ -19,7 +19,7 @@ export default function TrangChu() {
   const [dangTai, setDangTai] = useState(true);
   const [loi, setLoi] = useState("");
   const [tuKhoa, setTuKhoa] = useState("");
-  const [loc, setLoc] = useState<Loc>("Tất cả");
+  const [tab, setTab] = useState<Tab>("Tất cả");
   const [sapXep, setSapXep] = useState<SapXep>("moi");
   const tai = useCallback(async () => {
     setDangTai(true);
@@ -40,17 +40,15 @@ export default function TrangChu() {
     ds.forEach((d) => m.set(d.mon, (m.get(d.mon) ?? 0) + 1));
     return m;
   }, [ds]);
-  const demNhom = useCallback((mon: string[]) => mon.reduce((s, m) => s + (demTheoMon.get(m) ?? 0), 0), [demTheoMon]);
   const ketQua = useMemo(() => {
     const tu = khongDau(tuKhoa);
-    const trongLoc = monTrongLoc(loc);
-    const arr = ds.filter((d) => trongLoc.includes(d.mon) && (!tu || khongDau(d.ten).includes(tu)));
+    const loc = ds.filter((d) => (tab === "Tất cả" || d.mon === tab) && (!tu || khongDau(d.ten).includes(tu)));
+    const arr = [...loc];
     if (sapXep === "moi") arr.sort((a, b) => b.ngay.localeCompare(a.ngay));
     if (sapXep === "cu") arr.sort((a, b) => a.ngay.localeCompare(b.ngay));
     if (sapXep === "ten") arr.sort((a, b) => a.ten.localeCompare(b.ten, "vi"));
     return arr;
-  }, [ds, loc, tuKhoa, sapXep]);
-  const nhanLoc = loc === "Tất cả" ? "toàn kho" : laNhom(loc) ? `nhóm ${NHOM_MON.find((n) => n.id === loc)?.ten ?? ""}` : MON_DAY_DU[loc];
+  }, [ds, tab, tuKhoa, sapXep]);
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl px-4 pb-16 pt-8 sm:pt-12">
       <motion.div variants={staggerContainer} initial="hidden" animate="visible">
@@ -69,7 +67,7 @@ export default function TrangChu() {
             </span>
           </h1>
           <p className="mt-4 max-w-xl text-sm text-ink-soft sm:text-base">
-            Kho đề 12 môn xếp theo từng nhóm. Xem PDF và DOCX trực tiếp, tải về ôn luyện ngay trên điện thoại.
+            Kho đề 12 môn chọn lọc. Xem PDF và DOCX trực tiếp, tải về ôn luyện ngay trên điện thoại.
           </p>
           <motion.span variants={fadeInUp} className="mt-4 inline-flex -rotate-1 items-center gap-1.5 border border-accent/70 bg-accent-wash px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-deep">
             <IconSeal className="h-3.5 w-3.5" />
@@ -94,70 +92,27 @@ export default function TrangChu() {
           )}
         </motion.div>
         <motion.div variants={fadeInUp} className="-mx-4 mt-8 overflow-x-auto px-4 no-scrollbar">
-          <div className="flex w-max min-w-full items-stretch border-b border-ink/20">
-            <div className="flex flex-col justify-end gap-1.5 pr-4">
-              <span className="text-[10px] uppercase tracking-[0.18em] text-ink-faint">Toàn kho</span>
-              <motion.button
-                whileTap={buttonTap}
-                whileHover={hover ? { y: -1 } : undefined}
-                transition={spring}
-                onClick={() => setLoc("Tất cả")}
-                className={`relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${loc === "Tất cả" ? "text-accent" : "text-ink-soft hover:text-ink"}`}
-              >
-                Tất cả
-                <sup className="ml-1 text-[10px] text-ink-faint">{ds.length}</sup>
-                {loc === "Tất cả" && (
-                  <motion.span layoutId="tab-ink" transition={spring} className="absolute inset-x-0 -bottom-px text-accent">
-                    <InkLine className="h-1.5 w-full" />
-                  </motion.span>
-                )}
-              </motion.button>
-            </div>
-            {NHOM_MON.map((n) => {
-              const nhomDangChon = loc === n.id;
-              const trongNhom = !laNhom(loc) && loc !== "Tất cả" && n.mon.includes(loc);
+          <div className="flex w-max min-w-full gap-6 border-b border-ink/20">
+            {DS_TAB.map((t) => {
+              const active = tab === t;
+              const soDe = t === "Tất cả" ? ds.length : demTheoMon.get(t) ?? 0;
               return (
-                <div key={n.id} className="flex flex-col justify-end gap-1.5 border-l border-dashed border-ink/25 px-4">
-                  <motion.button
-                    whileTap={buttonTap}
-                    onClick={() => setLoc(n.id)}
-                    title={`Xem cả nhóm ${n.ten}`}
-                    className={`relative whitespace-nowrap pb-0.5 text-left text-[10px] uppercase tracking-[0.18em] transition-colors ${nhomDangChon ? "text-accent" : trongNhom ? "text-ink" : "text-ink-faint hover:text-ink-soft"}`}
-                  >
-                    {n.ten}
-                    <sup className="ml-1 text-[9px]">{demNhom(n.mon)}</sup>
-                    {nhomDangChon && (
-                      <motion.span layoutId="nhom-ink" transition={spring} className="absolute inset-x-0 -bottom-0.5 text-accent">
-                        <InkLine className="h-1 w-full" />
-                      </motion.span>
-                    )}
-                  </motion.button>
-                  <div className="flex gap-4">
-                    {n.mon.map((m) => {
-                      const active = loc === m;
-                      const soDe = demTheoMon.get(m) ?? 0;
-                      return (
-                        <motion.button
-                          key={m}
-                          whileTap={buttonTap}
-                          whileHover={hover ? { y: -1 } : undefined}
-                          transition={spring}
-                          onClick={() => setLoc(m)}
-                          title={MON_DAY_DU[m]}
-                          className={`relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${active ? "text-accent" : soDe === 0 ? "text-ink-faint/70 hover:text-ink-soft" : "text-ink-soft hover:text-ink"}`}
-                        >
-                          {m}
-                          <sup className="ml-1 text-[10px] text-ink-faint">{soDe}</sup>
-                          {active && (
-                            <motion.span layoutId="tab-ink" transition={spring} className="absolute inset-x-0 -bottom-px text-accent">
-                              <InkLine className="h-1.5 w-full" />
-                            </motion.span>
-                          )}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
+                <motion.button
+                  key={t}
+                  whileTap={buttonTap}
+                  whileHover={hover ? { y: -1 } : undefined}
+                  transition={spring}
+                  onClick={() => setTab(t)}
+                  className={`relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${active ? "text-accent" : soDe === 0 ? "text-ink-faint/70 hover:text-ink-soft" : "text-ink-soft hover:text-ink"}`}
+                >
+                  {t}
+                  <sup className="ml-1 text-[10px] text-ink-faint">{soDe}</sup>
+                  {active && (
+                    <motion.span layoutId="tab-ink" transition={spring} className="absolute inset-x-0 -bottom-px text-accent">
+                      <InkLine className="h-1.5 w-full" />
+                    </motion.span>
+                  )}
+                </motion.button>
               );
             })}
           </div>
@@ -165,7 +120,7 @@ export default function TrangChu() {
       </motion.div>
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs uppercase tracking-[0.18em] text-ink-soft">
-          Mục lục {nhanLoc} ·{" "}
+          Mục lục ·{" "}
           <motion.b key={dangTai ? "load" : ketQua.length} initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.3, ease: EASE }} className="inline-block text-ink">
             {dangTai ? "..." : ketQua.length}
           </motion.b>{" "}
@@ -210,15 +165,14 @@ export default function TrangChu() {
       ) : ketQua.length === 0 ? (
         <div className="mt-4">
           <EmptyState
-            moTa={`Chưa có đề nào khớp ${nhanLoc}. Thử nhóm khác hoặc xóa từ khóa.`}
             onReset={() => {
               setTuKhoa("");
-              setLoc("Tất cả");
+              setTab("Tất cả");
             }}
           />
         </div>
       ) : (
-        <motion.div key={`${loc}-${sapXep}`} variants={staggerContainer} initial="hidden" animate="visible" className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div key={`${tab}-${sapXep}`} variants={staggerContainer} initial="hidden" animate="visible" className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {ketQua.map((d) => (
             <DeCard key={d.id} de={d} />
           ))}
