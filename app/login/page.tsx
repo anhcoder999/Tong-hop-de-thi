@@ -2,12 +2,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { IconSeal, InkLine } from "@/components/Icons";
+import { IconArrowRight, IconSeal, InkLine } from "@/components/Icons";
 import { buttonTap, EASE, fadeInUp, spring, staggerContainer } from "@/lib/animations";
 import { useAuth } from "@/lib/auth";
 type CheDo = "login" | "register";
 export default function TrangDangNhap() {
-  const { user, isAdmin, loading, signIn, signUp, signOut } = useAuth();
+  const { user, hoSo, isAdmin, loading, signIn, signUp, signOut } = useAuth();
   const [cheDo, setCheDo] = useState<CheDo>("login");
   const [email, setEmail] = useState("");
   const [matKhau, setMatKhau] = useState("");
@@ -51,7 +51,7 @@ export default function TrangDangNhap() {
           <h1 className="mt-4 font-display text-3xl font-bold tracking-tight text-ink">
             {cheDo === "login" ? "Đăng nhập" : "Đăng ký"}
           </h1>
-          <p className="mt-2 text-sm text-ink-soft">Học sinh xem đề không cần tài khoản. Tài khoản chỉ dành cho người quản lý kho đề.</p>
+          <p className="mt-2 text-sm text-ink-soft">Học sinh xem đề không cần tài khoản. Tài khoản dùng để lưu hồ sơ, riêng mục quản trị chỉ dành cho quản trị viên.</p>
         </motion.header>
         {loading ? (
           <motion.p variants={fadeInUp} className="mt-8 text-center text-sm text-ink-faint">
@@ -60,26 +60,35 @@ export default function TrangDangNhap() {
         ) : user ? (
           <motion.div variants={fadeInUp} className="sheet mt-8 space-y-4 p-5 pl-8 shadow-paper">
             <p className="text-sm text-ink-soft">Đang đăng nhập bằng</p>
-            <p className="truncate font-display text-lg font-bold text-ink">{user.email}</p>
+            <p className="truncate font-display text-lg font-bold text-ink">{hoSo?.ho_ten?.trim() || user.email}</p>
             <span className={`inline-block border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${isAdmin ? "border-accent/70 text-accent" : "border-ink/40 text-ink-soft"}`}>
               {isAdmin ? "Quản trị viên" : "Người dùng"}
             </span>
-            <div className="flex flex-wrap gap-2.5 pt-1">
+            <div className="flex flex-col gap-2.5 pt-1">
+              <Link href="/tai-khoan">
+                <motion.span whileTap={buttonTap} className="flex items-center justify-between gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent">
+                  Trang cá nhân
+                  <IconArrowRight className="h-4 w-4" />
+                </motion.span>
+              </Link>
               {isAdmin && (
-                <Link href="/admin" className="flex-1">
-                  <motion.span whileTap={buttonTap} className="flex items-center justify-center border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent">
+                <Link href="/admin">
+                  <motion.span whileTap={buttonTap} className="flex items-center justify-between gap-2 border border-accent bg-accent-wash px-4 py-2.5 text-sm font-semibold text-accent-deep transition-colors active:bg-accent active:text-paper-light hover:bg-accent hover:text-paper-light">
                     Vào quản trị
+                    <IconArrowRight className="h-4 w-4" />
                   </motion.span>
                 </Link>
               )}
-              <Link href="/" className="flex-1">
-                <motion.span whileTap={buttonTap} className="flex items-center justify-center border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
-                  Về trang chủ
-                </motion.span>
-              </Link>
-              <motion.button whileTap={buttonTap} type="button" onClick={() => signOut()} className="border border-ink/40 bg-paper px-4 py-2.5 text-sm font-semibold text-ink-soft transition-colors hover:bg-paper-deep">
-                Đăng xuất
-              </motion.button>
+              <div className="flex gap-2.5">
+                <Link href="/" className="flex-1">
+                  <motion.span whileTap={buttonTap} className="flex items-center justify-center border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
+                    Về trang chủ
+                  </motion.span>
+                </Link>
+                <motion.button whileTap={buttonTap} type="button" onClick={() => signOut()} className="border border-ink/40 bg-paper px-4 py-2.5 text-sm font-semibold text-ink-soft transition-colors hover:bg-paper-deep">
+                  Đăng xuất
+                </motion.button>
+              </div>
             </div>
           </motion.div>
         ) : (
