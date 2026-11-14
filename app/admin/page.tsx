@@ -1,12 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, Edit, ExternalLink, FileText, PlusCircle, Save, Trash2, Upload, X } from "lucide-react";
+import { IconAlert, IconCheck, IconClose, IconEdit, IconExternal, IconFile, IconPlus, IconTrash, IconUpload } from "@/components/Icons";
 import EmptyState from "@/components/EmptyState";
 import { DS_DE, DS_MON, formatNgay, type DeThi, type Mon } from "@/lib/data";
 import { buttonTap, EASE, fadeInUp, spring, staggerContainer } from "@/lib/animations";
 export default function TrangAdmin() {
-  // Demo: toàn bộ dữ liệu nằm trong React state, tải lại trang sẽ về danh sách mẫu
   const [danhSach, setDanhSach] = useState<DeThi[]>([...DS_DE]);
   const [mon, setMon] = useState<Mon>("Toán");
   const [ten, setTen] = useState("");
@@ -16,12 +15,11 @@ export default function TrangAdmin() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [thongBao, setThongBao] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
-  // Gom các blob URL để thu hồi bộ nhớ khi rời trang, tránh rò rỉ RAM
   const blobUrls = useRef<string[]>([]);
   useEffect(() => {
-    return () => blobUrls.current.forEach((u) => URL.revokeObjectURL(u));
+    const urls = blobUrls.current;
+    return () => urls.forEach((u) => URL.revokeObjectURL(u));
   }, []);
-  // Thông báo tự tắt sau 3 giây cho gọn giao diện
   useEffect(() => {
     if (!thongBao) return;
     const t = setTimeout(() => setThongBao(""), 3000);
@@ -34,7 +32,6 @@ export default function TrangAdmin() {
     setTenTep("");
     setEditingId(null);
   };
-  // Nhận file PDF: kiểm tra định dạng + dung lượng rồi tạo URL xem tạm trong trình duyệt
   const chonTep = (f: File | null | undefined) => {
     if (!f) return;
     if (f.type !== "application/pdf") {
@@ -64,7 +61,6 @@ export default function TrangAdmin() {
     }
     if (editingId) {
       const cu = danhSach.find((d) => d.id === editingId);
-      // Thay PDF mới thì thu hồi blob cũ cho nhẹ bộ nhớ
       if (cu && cu.urlPdf.startsWith("blob:") && cu.urlPdf !== urlPdf) URL.revokeObjectURL(cu.urlPdf);
       setDanhSach((ds) => ds.map((d) => (d.id === editingId ? { ...d, mon, ten: tenChuan, urlPdf } : d)));
       setThongBao("Đã cập nhật đề ✓");
@@ -100,17 +96,17 @@ export default function TrangAdmin() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-8 sm:pt-10">
       <motion.div variants={staggerContainer} initial="hidden" animate="visible">
-        <motion.header variants={fadeInUp}>
-          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-            Trang <span className="text-gradient">quản trị</span>
+        <motion.header variants={fadeInUp} className="border-b-2 border-ink pb-5">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+            Trang <span className="text-accent">quản trị</span>
           </h1>
-          <p className="mt-2 text-sm text-slate-500">Thêm, sửa, xóa đề thi trong kho.</p>
+          <p className="mt-2 text-sm text-ink-soft">Thêm, sửa, xóa đề thi trong kho.</p>
         </motion.header>
         <motion.div
           variants={fadeInUp}
-          className="mt-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/80 p-3.5 text-sm text-amber-800"
+          className="mt-4 flex items-start gap-2.5 border border-accent/50 bg-accent-wash p-3.5 text-sm text-accent-deep"
         >
-          <AlertCircle size={17} className="mt-0.5 shrink-0" />
+          <IconAlert className="mt-0.5 h-4 w-4 shrink-0" />
           <p>Bản demo: dữ liệu chỉ lưu trong RAM trình duyệt, tải lại trang sẽ về danh sách mẫu. Muốn lưu vĩnh viễn thì nối database sau.</p>
         </motion.div>
         <div className="mt-6 grid gap-6 lg:grid-cols-5">
@@ -118,21 +114,21 @@ export default function TrangAdmin() {
             ref={formRef}
             variants={fadeInUp}
             onSubmit={guiForm}
-            className="glass h-fit scroll-mt-24 space-y-4 rounded-xl p-5 shadow-soft lg:col-span-2"
+            className="h-fit scroll-mt-24 space-y-4 border border-ink/25 bg-paper-light p-5 shadow-paper lg:col-span-2"
           >
-            <h2 className="flex items-center gap-2 text-base font-bold">
-              {editingId ? <Edit size={17} className="text-brand-600" /> : <Upload size={17} className="text-brand-600" />}
+            <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
+              {editingId ? <IconEdit className="h-4 w-4 text-accent" /> : <IconUpload className="h-4 w-4 text-accent" />}
               {editingId ? "Sửa đề" : "Thêm đề mới"}
             </h2>
             <div>
-              <label htmlFor="mon" className="mb-1.5 block text-sm font-medium text-slate-600">
+              <label htmlFor="mon" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">
                 Môn
               </label>
               <select
                 id="mon"
                 value={mon}
                 onChange={(e) => setMon(e.target.value as Mon)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
+                className="w-full border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-accent"
               >
                 {DS_MON.map((m) => (
                   <option key={m} value={m}>
@@ -142,7 +138,7 @@ export default function TrangAdmin() {
               </select>
             </div>
             <div>
-              <label htmlFor="ten" className="mb-1.5 block text-sm font-medium text-slate-600">
+              <label htmlFor="ten" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">
                 Tên đề
               </label>
               <input
@@ -151,10 +147,9 @@ export default function TrangAdmin() {
                 value={ten}
                 onChange={(e) => setTen(e.target.value)}
                 placeholder="VD: Đề thi thử THPT 2026 môn Toán - Lần 2"
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
+                className="w-full border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
               />
             </div>
-            {/* Vùng kéo thả PDF: viền glow khi hover hoặc đang kéo file vào */}
             <label
               htmlFor="tep-pdf"
               onDragOver={(e) => {
@@ -167,25 +162,23 @@ export default function TrangAdmin() {
                 setDangKeo(false);
                 chonTep(e.dataTransfer.files?.[0]);
               }}
-              className={`block cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition-all duration-300 ${
-                dangKeo
-                  ? "border-brand-500 bg-brand-50/70 shadow-glow"
-                  : "border-slate-300 bg-white/60 hover:border-brand-400 hover:shadow-glow"
+              className={`block cursor-pointer border-2 border-dashed p-6 text-center transition-all duration-300 ${
+                dangKeo ? "border-accent bg-accent-wash shadow-stamp" : "border-ink/40 bg-paper hover:border-accent hover:shadow-stamp"
               }`}
             >
               <motion.div animate={dangKeo ? { scale: 1.06 } : { scale: 1 }} transition={spring} className="flex flex-col items-center gap-2">
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-gradient text-white shadow-lift">
-                  <Upload size={20} />
+                <span className="grid h-12 w-12 place-items-center border border-ink bg-ink text-paper-light">
+                  <IconUpload className="h-5 w-5" />
                 </span>
                 {tenTep ? (
-                  <span className="flex max-w-full items-center gap-1.5 text-sm font-semibold text-brand-700">
-                    <FileText size={15} className="shrink-0" />
+                  <span className="flex max-w-full items-center gap-1.5 text-sm font-semibold text-accent">
+                    <IconFile className="h-4 w-4 shrink-0" />
                     <span className="truncate">{tenTep}</span>
                   </span>
                 ) : (
-                  <span className="text-sm font-semibold text-slate-700">Kéo thả PDF vào đây</span>
+                  <span className="text-sm font-semibold text-ink">Kéo thả PDF vào đây</span>
                 )}
-                <span className="text-xs text-slate-400">hoặc bấm để chọn file - tối đa 20MB</span>
+                <span className="text-xs text-ink-faint">hoặc bấm để chọn file · tối đa 20MB</span>
               </motion.div>
               <input
                 id="tep-pdf"
@@ -200,12 +193,7 @@ export default function TrangAdmin() {
             </label>
             <AnimatePresence>
               {thongBao && (
-                <motion.p
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="text-sm font-medium text-brand-700"
-                >
+                <motion.p initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-sm font-medium text-accent">
                   {thongBao}
                 </motion.p>
               )}
@@ -214,9 +202,9 @@ export default function TrangAdmin() {
               <motion.button
                 whileTap={buttonTap}
                 type="submit"
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition-shadow hover:shadow-lift"
+                className="flex flex-1 items-center justify-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent"
               >
-                {editingId ? <Save size={16} /> : <PlusCircle size={16} />}
+                {editingId ? <IconCheck className="h-4 w-4" /> : <IconPlus className="h-4 w-4" />}
                 {editingId ? "Cập nhật" : "Thêm đề"}
               </motion.button>
               {editingId && (
@@ -224,17 +212,17 @@ export default function TrangAdmin() {
                   whileTap={buttonTap}
                   type="button"
                   onClick={resetForm}
-                  className="flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                  className="flex items-center gap-1.5 border border-ink/40 bg-paper px-4 py-2.5 text-sm font-semibold text-ink-soft transition-colors hover:bg-paper-deep"
                 >
-                  <X size={15} />
+                  <IconClose className="h-4 w-4" />
                   Hủy
                 </motion.button>
               )}
             </div>
           </motion.form>
           <motion.section variants={fadeInUp} className="lg:col-span-3">
-            <h2 className="text-base font-bold">
-              Danh sách đề <span className="text-slate-400">({danhSach.length})</span>
+            <h2 className="font-display text-lg font-bold text-ink">
+              Danh sách đề <span className="text-ink-faint">({danhSach.length})</span>
             </h2>
             {danhSach.length === 0 ? (
               <div className="mt-4">
@@ -244,7 +232,6 @@ export default function TrangAdmin() {
               <motion.ul layout className="mt-4 space-y-3">
                 <AnimatePresence>
                   {danhSach.map((d) => (
-                    // Mỗi item trượt từ trái vào, xóa thì trượt sang phải rồi biến mất
                     <motion.li
                       key={d.id}
                       layout
@@ -252,14 +239,14 @@ export default function TrangAdmin() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 32, transition: { duration: 0.2, ease: EASE } }}
                       transition={spring}
-                      className="glass flex items-center gap-3 rounded-xl p-4 shadow-soft"
+                      className="sheet flex items-center gap-3 p-4 pl-8 shadow-paper"
                     >
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
-                        <FileText size={18} />
+                      <span className="grid h-10 w-10 shrink-0 place-items-center border border-ink/30 bg-paper text-ink">
+                        <IconFile className="h-4 w-4" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-slate-800">{d.ten}</p>
-                        <p className="mt-0.5 text-xs text-slate-400">
+                        <p className="truncate text-sm font-semibold text-ink">{d.ten}</p>
+                        <p className="mt-0.5 text-xs uppercase tracking-[0.12em] text-ink-faint">
                           {d.mon} · {formatNgay(d.ngay)}
                         </p>
                       </div>
@@ -269,27 +256,27 @@ export default function TrangAdmin() {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Mở PDF"
-                        className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                        className="border border-transparent p-2 text-ink-faint transition-colors hover:border-ink/30 hover:text-ink"
                       >
-                        <ExternalLink size={16} />
+                        <IconExternal className="h-4 w-4" />
                       </motion.a>
                       <motion.button
                         whileTap={buttonTap}
                         type="button"
                         onClick={() => sua(d)}
                         aria-label="Sửa đề"
-                        className="rounded-lg p-2 text-brand-600 transition-colors hover:bg-brand-50"
+                        className="border border-transparent p-2 text-ink transition-colors hover:border-accent hover:text-accent"
                       >
-                        <Edit size={16} />
+                        <IconEdit className="h-4 w-4" />
                       </motion.button>
                       <motion.button
                         whileTap={buttonTap}
                         type="button"
                         onClick={() => xoa(d.id)}
                         aria-label="Xóa đề"
-                        className="rounded-lg p-2 text-rose-500 transition-colors hover:bg-rose-50"
+                        className="border border-transparent p-2 text-accent transition-colors hover:border-accent hover:bg-accent-wash"
                       >
-                        <Trash2 size={16} />
+                        <IconTrash className="h-4 w-4" />
                       </motion.button>
                     </motion.li>
                   ))}
@@ -301,4 +288,4 @@ export default function TrangAdmin() {
       </motion.div>
     </div>
   );
-  }
+}
