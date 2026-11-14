@@ -2,16 +2,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Download, ExternalLink, Loader2 } from "lucide-react";
+import { IconArrowLeft, IconDownload, IconExternal, IconLoader } from "@/components/Icons";
 import Skeleton from "@/components/Skeleton";
 import { buttonTap, EASE } from "@/lib/animations";
-
 export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
   const router = useRouter();
   const [daTai, setDaTai] = useState(false);
-  // Google Docs Viewer render PDF qua server Google, hoạt động trên mọi trình duyệt
   const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
-
   return (
     <div className="mt-6">
       <div className="flex flex-wrap items-center gap-2.5">
@@ -19,9 +16,9 @@ export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
           whileTap={buttonTap}
           type="button"
           onClick={() => router.push("/")}
-          className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-soft transition-colors hover:bg-slate-50"
+          className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-paper"
         >
-          <ArrowLeft size={16} />
+          <IconArrowLeft className="h-4 w-4" />
           Quay lại
         </motion.button>
         <motion.a
@@ -30,9 +27,9 @@ export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
           download
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 rounded-2xl bg-brand-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-soft transition-shadow hover:shadow-lift"
+          className="flex items-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent"
         >
-          <Download size={16} />
+          <IconDownload className="h-4 w-4" />
           Tải PDF
         </motion.a>
         <motion.a
@@ -40,21 +37,21 @@ export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-soft transition-colors hover:bg-slate-50"
+          className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-paper"
         >
-          <ExternalLink size={16} />
+          <IconExternal className="h-4 w-4" />
           Mở tab mới
         </motion.a>
       </div>
-      <div className="glass relative mt-4 overflow-hidden rounded-xl shadow-soft">
+      <div className="relative mt-4 overflow-hidden border border-ink/25 bg-paper-light shadow-paper">
         {!daTai && (
-          <div className="absolute inset-0 z-10 space-y-3 bg-white p-5">
+          <div className="absolute inset-0 z-10 space-y-3 bg-paper-light p-5">
             <Skeleton className="h-7 w-2/3" />
             <Skeleton className="h-4 w-1/2" />
             <Skeleton className="h-4 w-5/6" />
-            <Skeleton className="h-[55%] w-full rounded-xl" />
-            <div className="flex items-center justify-center gap-2 pt-2 text-sm text-slate-400">
-              <Loader2 size={16} className="animate-spin text-brand-500" />
+            <Skeleton className="h-[55%] w-full" />
+            <div className="flex items-center justify-center gap-2 pt-2 text-sm text-ink-faint">
+              <IconLoader className="h-4 w-4 animate-spin text-accent" />
               Đang tải đề...
             </div>
           </div>
@@ -67,10 +64,10 @@ export default function PdfViewer({ url, ten }: { url: string; ten: string }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: daTai ? 1 : 0 }}
           transition={{ duration: 0.5, ease: EASE }}
-          className="h-[80vh] w-full border-0 bg-white"
+          className="h-[80vh] w-full border-0 bg-paper-light"
         />
       </div>
-      <p className="mt-3 text-xs text-slate-400">Mẹo: nếu PDF vẫn không hiển thị, bấm &quot;Mở tab mới&quot; để xem trực tiếp.</p>
+      <p className="mt-3 text-xs text-ink-faint">Mẹo: nếu khung trống, bấm Mở tab mới để xem trực tiếp.</p>
     </div>
   );
 }
