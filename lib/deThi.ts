@@ -1,5 +1,5 @@
 import { BUCKET, supabase } from "@/lib/supabase";
-import { khongDau, MON_SLUG, type DeThi, type Loai, type Mon } from "@/lib/data";
+import { chuanMon, khongDau, MON_SLUG, type DeThi, type Loai, type Mon } from "@/lib/data";
 export const MAX_BYTES = 20 * 1024 * 1024;
 const MIME: Record<Loai, string> = {
   pdf: "application/pdf",
@@ -19,7 +19,7 @@ function idNgauNhien(): string {
 function docRow(r: Record<string, unknown>): DeThi {
   return {
     id: String(r.id),
-    mon: r.mon as Mon,
+    mon: chuanMon(String(r.mon ?? "")),
     ten: String(r.ten),
     ngay: String(r.ngay),
     urlPdf: String(r.url_file),
@@ -40,10 +40,10 @@ export async function layDeTheoId(id: string): Promise<DeThi | null> {
   return data ? docRow(data as Record<string, unknown>) : null;
 }
 export async function kiemTraTrung(mon: Mon, ten: string, boQuaId?: string): Promise<boolean> {
-  const { data, error } = await supabase.from("de_thi").select("id,ten").eq("mon", mon);
+  const { data, error } = await supabase.from("de_thi").select("id,ten,mon");
   if (error) throw new Error(error.message);
   const chuan = khongDau(ten);
-  return (data ?? []).some((r) => String(r.id) !== boQuaId && khongDau(String(r.ten)) === chuan);
+  return (data ?? []).some((r) => String(r.id) !== boQuaId && chuanMon(String(r.mon ?? "")) === mon && khongDau(String(r.ten)) === chuan);
 }
 async function taiLen(file: File, mon: Mon, loai: Loai) {
   const duongDan = `${MON_SLUG[mon]}/${idNgauNhien()}.${loai}`;
