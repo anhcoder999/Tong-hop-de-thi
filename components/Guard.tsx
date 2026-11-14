@@ -17,10 +17,6 @@ export default function Guard() {
         e.preventDefault();
         return;
       }
-      if (mod && (k === "+" || k === "-" || k === "=" || k === "0")) {
-        e.preventDefault();
-        return;
-      }
       if (mod && (k === "c" || k === "x" || k === "v" || k === "a")) {
         if (!editable(e.target)) e.preventDefault();
         return;
@@ -30,15 +26,6 @@ export default function Guard() {
         if (navigator.clipboard) navigator.clipboard.writeText("").catch(() => undefined);
       }
     };
-    const onWheel = (e: WheelEvent) => {
-      if (e.ctrlKey) e.preventDefault();
-    };
-    const onTouch = (e: TouchEvent) => {
-      if (e.touches.length > 1) e.preventDefault();
-    };
-    const onGesture = (e: Event) => e.preventDefault();
-    const onBlur = () => root.classList.add("peek");
-    const onFocus = () => root.classList.remove("peek");
     let hit = false;
     const probe = {
       get id() {
@@ -62,15 +49,9 @@ export default function Guard() {
     doc.addEventListener("selectstart", blockEditable);
     doc.addEventListener("dragstart", blockEditable);
     doc.addEventListener("keydown", onKey);
-    doc.addEventListener("wheel", onWheel, { passive: false });
-    doc.addEventListener("touchmove", onTouch, { passive: false });
-    doc.addEventListener("gesturestart", onGesture);
-    doc.addEventListener("gesturechange", onGesture);
-    window.addEventListener("blur", onBlur);
-    window.addEventListener("focus", onFocus);
     return () => {
       window.clearInterval(iv);
-      root.classList.remove("guarded", "peek");
+      root.classList.remove("guarded");
       doc.removeEventListener("contextmenu", blockEditable);
       doc.removeEventListener("copy", blockEditable);
       doc.removeEventListener("cut", blockEditable);
@@ -78,12 +59,6 @@ export default function Guard() {
       doc.removeEventListener("selectstart", blockEditable);
       doc.removeEventListener("dragstart", blockEditable);
       doc.removeEventListener("keydown", onKey);
-      doc.removeEventListener("wheel", onWheel);
-      doc.removeEventListener("touchmove", onTouch);
-      doc.removeEventListener("gesturestart", onGesture);
-      doc.removeEventListener("gesturechange", onGesture);
-      window.removeEventListener("blur", onBlur);
-      window.removeEventListener("focus", onFocus);
     };
   }, []);
   if (!chan) return null;
