@@ -8,7 +8,6 @@ import {useAuth} from "@/lib/auth";
 import {supabase} from "@/lib/supabase";
 import {buttonTap, fadeInUp, spring, staggerContainer, stampIn} from "@/lib/animations";
 type TB = {id: string; noi_dung: string; url_anh: string};
-const KHOA_DA_XEM = "dethi.tb.daxem";
 const GIAY_O = {backgroundImage: "linear-gradient(rgba(31,26,20,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(31,26,20,0.045) 1px, transparent 1px)", backgroundSize: "22px 22px"};
 function DaiPhongBi() {
   return (
@@ -47,22 +46,23 @@ export default function ThongBaoPopup() {
       return;
     }
     let alive = true;
-    setMan("chao");
+    const daChao = localStorage.getItem(`dethi.chao.daxem.${uid}`) === "1";
     supabase.from("thong_bao").select("id,noi_dung,url_anh").order("created_at", {ascending: false}).limit(1).maybeSingle().then(({data}) => {
-      if (alive) setTb(data as TB | null);
+      if (!alive) return;
+      const t = (data as TB | null) ?? null;
+      setTb(t);
+      if (!daChao) setMan("chao");
+      else setMan(t ? "tb" : "dong");
     });
     return () => {
       alive = false;
     };
   }, [uid, loading]);
   const dongChao = () => {
-    if (tb && localStorage.getItem(KHOA_DA_XEM) !== tb.id) setMan("tb");
-    else setMan("dong");
+    if (uid) localStorage.setItem(`dethi.chao.daxem.${uid}`, "1");
+    setMan(tb ? "tb" : "dong");
   };
-  const dongTb = () => {
-    if (tb) localStorage.setItem(KHOA_DA_XEM, tb.id);
-    setMan("dong");
-  };
+  const dongTb = () => setMan("dong");
   return (
     <AnimatePresence>
       {man !== "dong" && (
@@ -118,7 +118,7 @@ export default function ThongBaoPopup() {
                     Vào kho đề
                     <IconArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </motion.button>
-                  <motion.p variants={fadeInUp} className="mt-2 text-[10px] text-ink-faint">Tắt thiệp để xem thông báo từ quản trị.</motion.p>
+                  <motion.p variants={fadeInUp} className="mt-2 text-[10px] text-ink-faint">Thiệp chỉ hiện một lần. Thông báo quản trị sẽ hiện mỗi lần vào kho.</motion.p>
                 </motion.div>
               ) : tb ? (
                 <div>
