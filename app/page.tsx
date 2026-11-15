@@ -1,19 +1,19 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { IconClose, IconRefresh, IconSearch, IconSeal, IconSort, InkLine } from "@/components/Icons";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {motion} from "framer-motion";
+import {IconClose, IconRefresh, IconSearch, IconSeal, IconSort, InkLine} from "@/components/Icons";
 import InkDraw from "@/components/InkDraw";
 import DeCard from "@/components/DeCard";
 import EmptyState from "@/components/EmptyState";
-import { DeCardSkeleton } from "@/components/Skeleton";
-import { khongDau, laNhom, MON_DAY_DU, monTrongLoc, NHOM_MON, type DeThi, type Loc } from "@/lib/data";
-import { buttonTap, EASE, fadeInUp, spring, staggerContainer } from "@/lib/animations";
-import { useHoverCapable } from "@/lib/useHover";
-import { useAuth } from "@/lib/auth";
-import { layDanhSach } from "@/lib/deThi";
+import {DeCardSkeleton} from "@/components/Skeleton";
+import {khongDau, laNhom, MON_DAY_DU, monTrongLoc, NHOM_MON, type DeThi, type Loc} from "@/lib/data";
+import {buttonTap, EASE, fadeInUp, spring, staggerContainer} from "@/lib/animations";
+import {useHoverCapable} from "@/lib/useHover";
+import {useAuth} from "@/lib/auth";
+import {layDanhSach} from "@/lib/deThi";
 type SapXep = "moi" | "cu" | "ten";
 export default function TrangChu() {
-  const { isAdmin } = useAuth();
+  const {isAdmin} = useAuth();
   const hover = useHoverCapable();
   const [ds, setDs] = useState<DeThi[]>([]);
   const [dangTai, setDangTai] = useState(true);
@@ -48,7 +48,9 @@ export default function TrangChu() {
     if (sapXep === "moi") arr.sort((a, b) => b.ngay.localeCompare(a.ngay));
     if (sapXep === "cu") arr.sort((a, b) => a.ngay.localeCompare(b.ngay));
     if (sapXep === "ten") arr.sort((a, b) => a.ten.localeCompare(b.ten, "vi"));
-    return arr;
+    const ghim = arr.filter((d) => d.ghimAt).sort((a, b) => String(a.ghimAt).localeCompare(String(b.ghimAt)));
+    const thuong = arr.filter((d) => !d.ghimAt);
+    return [...ghim, ...thuong];
   }, [ds, loc, tuKhoa, sapXep]);
   const nhanLoc = loc === "Tất cả" ? "toàn kho" : laNhom(loc) ? `nhóm ${NHOM_MON.find((n) => n.id === loc)?.ten ?? ""}` : MON_DAY_DU[loc];
   return (
@@ -99,7 +101,7 @@ export default function TrangChu() {
               <span className="text-[10px] uppercase tracking-[0.18em] text-ink-faint">Toàn kho</span>
               <motion.button
                 whileTap={buttonTap}
-                whileHover={hover ? { y: -1 } : undefined}
+                whileHover={hover ? {y: -1} : undefined}
                 transition={spring}
                 onClick={() => setLoc("Tất cả")}
                 className={`relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${loc === "Tất cả" ? "text-accent" : "text-ink-soft hover:text-ink"}`}
@@ -140,7 +142,7 @@ export default function TrangChu() {
                         <motion.button
                           key={m}
                           whileTap={buttonTap}
-                          whileHover={hover ? { y: -1 } : undefined}
+                          whileHover={hover ? {y: -1} : undefined}
                           transition={spring}
                           onClick={() => setLoc(m)}
                           title={MON_DAY_DU[m]}
@@ -166,7 +168,7 @@ export default function TrangChu() {
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs uppercase tracking-[0.18em] text-ink-soft">
           Mục lục {nhanLoc} ·{" "}
-          <motion.b key={dangTai ? "load" : ketQua.length} initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.3, ease: EASE }} className="inline-block text-ink">
+          <motion.b key={dangTai ? "load" : ketQua.length} initial={{y: 8, opacity: 0}} animate={{y: 0, opacity: 1}} transition={{duration: 0.3, ease: EASE}} className="inline-block text-ink">
             {dangTai ? "..." : ketQua.length}
           </motion.b>{" "}
           đề
@@ -193,7 +195,7 @@ export default function TrangChu() {
         </div>
       ) : dangTai ? (
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {Array.from({length: 6}).map((_, i) => (
             <DeCardSkeleton key={i} />
           ))}
         </div>
