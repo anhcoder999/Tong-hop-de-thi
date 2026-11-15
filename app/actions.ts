@@ -2,10 +2,6 @@
 import {randomUUID} from "node:crypto";
 import {adminUid, BUCKET, hubClient, hubCuaMon, hubCuaPath} from "@/lib/server";
 import {MON_SLUG, type Loai, type Mon} from "@/lib/data";
-const MIME: Record<Loai, string> = {
-  pdf: "application/pdf",
-  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-};
 const NAM_GIU_LINK = 31536000;
 const ANH_DUOI = ["png", "jpg", "jpeg", "webp", "gif"];
 export type LinkUpload = {ok: true; path: string; signedUrl: string} | {ok: false; error: string};
@@ -111,4 +107,3 @@ export async function xoaThongBao(id: string): Promise<KetQua> {
   if (data?.duong_dan) await hubClient("MAIN").storage.from(BUCKET).remove([String(data.duong_dan)]);
   return {ok: true};
 }
-export {MIME};
