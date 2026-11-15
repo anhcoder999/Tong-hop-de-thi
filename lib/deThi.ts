@@ -1,7 +1,11 @@
 import {supabase} from "@/lib/supabase";
-import {capNhatDe, ghiDe, MIME, xoaDeServer, xoaFile, xinLinkUpload} from "@/app/actions";
+import {capNhatDe, ghiDe, xoaDeServer, xoaFile, xinLinkUpload} from "@/app/actions";
 import {chuanMon, khongDau, type DeThi, type Loai, type Mon} from "@/lib/data";
 export const MAX_BYTES = 20 * 1024 * 1024;
+const MIME: Record<Loai, string> = {
+  pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+};
 export function duoiFile(name: string): Loai | null {
   const n = name.toLowerCase();
   if (n.endsWith(".pdf")) return "pdf";
