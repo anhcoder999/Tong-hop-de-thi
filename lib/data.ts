@@ -12,6 +12,7 @@ export interface DeThi {
   duongDan: string | null;
   kichThuoc: number | null;
   tenGoc: string | null;
+  ghimAt?: string | null;
 }
 export const NHOM_MON: {id: NhomMon; ten: string; mon: Mon[]}[] = [
   {id: "bat-buoc", ten: "Bắt buộc", mon: ["Toán", "Văn", "Anh"]},
