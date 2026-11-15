@@ -1,24 +1,29 @@
 "use client";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { IconArrowRight, IconCalendar, MonIcon } from "@/components/Icons";
-import { formatDungLuong, formatNgay, MON_DAY_DU, tenNhom, type DeThi } from "@/lib/data";
-import { buttonTap, cardHover, fadeInUp, stampIn, tapCard } from "@/lib/animations";
-import { useHoverCapable } from "@/lib/useHover";
-export default function DeCard({ de }: { de: DeThi }) {
+import {motion} from "framer-motion";
+import {IconArrowRight, IconCalendar, MonIcon} from "@/components/Icons";
+import {formatDungLuong, formatNgay, MON_DAY_DU, tenNhom, type DeThi} from "@/lib/data";
+import {buttonTap, cardHover, fadeInUp, stampIn, tapCard} from "@/lib/animations";
+import {useHoverCapable} from "@/lib/useHover";
+export default function DeCard({de}: {de: DeThi}) {
   const hover = useHoverCapable();
   return (
     <motion.article
-      variants={{ ...fadeInUp, ...cardHover }}
+      variants={{...fadeInUp, ...cardHover}}
       whileHover={hover ? "hover" : undefined}
       whileTap={tapCard}
-      className="sheet group relative flex flex-col p-5 pl-8 shadow-paper transition-colors duration-300 hover:border-accent/60"
+      className={`sheet group relative flex flex-col p-5 pl-8 shadow-paper transition-colors duration-300 hover:border-accent/60 ${de.ghimAt ? "border-accent/70 bg-accent-wash/30" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
         <span title={MON_DAY_DU[de.mon]} className="grid h-11 w-11 place-items-center border border-ink/30 bg-paper text-ink transition-all duration-300 group-hover:-rotate-3 group-hover:border-accent group-hover:text-accent">
           <MonIcon mon={de.mon} className="h-6 w-6" />
         </span>
         <div className="flex flex-col items-end gap-1">
+          {de.ghimAt && (
+            <motion.span variants={stampIn} className="-rotate-2 border border-ink bg-ink px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-paper-light">
+              Ghim
+            </motion.span>
+          )}
           <motion.span variants={stampIn} title={MON_DAY_DU[de.mon]} className="border border-accent/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">
             {de.mon}
           </motion.span>
