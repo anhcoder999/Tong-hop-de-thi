@@ -3,12 +3,12 @@ import {useCallback, useEffect, useState} from "react";
 import Image from "next/image";
 import {motion} from "framer-motion";
 import {IconLoader, IconSeal, IconTrash, IconUpload} from "@/components/Icons";
-import {supabase} from "@/lib/supabase";
+import {BUCKET, supabase} from "@/lib/supabase";
 import {dangThongBao, xoaThongBao, xinLinkAnhThongBao} from "@/app/actions";
 import {buttonTap, fadeInUp} from "@/lib/animations";
 import {formatDungLuong} from "@/lib/data";
 type TB = {id: string; noi_dung: string; url_anh: string; created_at: string};
-type AnhNen = {blob: Blob; duoi: string; contentType: string; w: number; h: number};
+type AnhNen = {blob: Blob; duoi: string; w: number; h: number};
 const ANH_DUOI = ["png", "jpg", "jpeg", "webp", "gif"];
 function duoiTuFile(file: File): string {
   const n = (file.name.split(".").pop() ?? "").toLowerCase();
@@ -28,7 +28,7 @@ async function nenAnh(file: File): Promise<AnhNen | null> {
     h = src.height;
   } catch {
     src = await new Promise<HTMLImageElement>((res, rej) => {
-      const img = new Image();
+      const img = document.createElement("img");
       const u = URL.createObjectURL(file);
       img.onload = () => {
         URL.revokeObjectURL(u);
@@ -64,28 +64,13 @@ async function nenAnh(file: File): Promise<AnhNen | null> {
   if (webp && webp.type === "image/webp" && webp.size < file.size) {
     canvas.width = 0;
     canvas.height = 0;
-    return {blob: webp, duoi: "webp", contentType: "image/webp", w, h};
+    return {blob: webp, duoi: "webp", w, h};
   }
   const jpg = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", 0.92));
   canvas.width = 0;
   canvas.height = 0;
-  if (jpg && jpg.size < file.size) return {blob: jpg, duoi: "jpg", contentType: "image/jpeg", w, h};
+  if (jpg && jpg.size < file.size) return {blob: jpg, duoi: "jpg", w, h};
   return null;
-}
-function taiAnh(blob: Blob, url: string, contentType: string, onProgress: (p: number) => void): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", contentType);
-    xhr.timeout = 120000;
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-    };
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload ảnh thất bại: ${xhr.status}`)));
-    xhr.onerror = () => reject(new Error("Lỗi mạng khi upload ảnh."));
-    xhr.ontimeout = () => reject(new Error("Upload ảnh quá 120s."));
-    xhr.send(blob);
-  });
 }
 export default function ThongBaoAdmin() {
   const [ds, setDs] = useState<TB[]>([]);
@@ -93,7 +78,6 @@ export default function ThongBaoAdmin() {
   const [file, setFile] = useState<File | null>(null);
   const [dangGui, setDangGui] = useState(false);
   const [giaiDoan, setGiaiDoan] = useState("");
-  const [tienDo, setTienDo] = useState(0);
   const [daNen, setDaNen] = useState("");
   const [bao, setBao] = useState("");
   const tai = useCallback(async () => {
@@ -112,21 +96,18 @@ export default function ThongBaoAdmin() {
     }
     setDangGui(true);
     setBao("");
-    setTienDo(0);
     setDaNen("");
     try {
       let path: string | null = null;
       if (file) {
         let blob: Blob = file;
         let duoi = duoiTuFile(file);
-        let contentType = file.type || "image/jpeg";
         if (file.type !== "image/gif" && file.size > 300 * 1024) {
           setGiaiDoan("Đang nén ảnh, giữ độ phân giải gốc...");
           const nen = await nenAnh(file);
           if (nen) {
             blob = nen.blob;
             duoi = nen.duoi;
-            contentType = nen.contentType;
             setDaNen(`${formatDungLuong(file.size)} → ${formatDungLuong(nen.blob.size)} · ${nen.w}×${nen.h}px`);
           } else {
             setDaNen(`Giữ nguyên bản gốc ${formatDungLuong(file.size)}`);
@@ -136,7 +117,16 @@ export default function ThongBaoAdmin() {
         const link = await xinLinkAnhThongBao(duoi);
         if (!link.ok) throw new Error(link.error);
         setGiaiDoan("Đang tải ảnh lên kho...");
-        await taiAnh(blob, link.signedUrl, contentType, setTienDo);
+        let hen: ReturnType<typeof setTimeout> | undefined;
+        const timeout = new Promise<never>((_, rej) => {
+          hen = setTimeout(() => rej(new Error("Upload ảnh quá 120s.")), 120000);
+        });
+        try {
+          const kqUp = await Promise.race([supabase.storage.from(BUCKET).uploadToSignedUrl(link.path, link.token, blob), timeout]);
+          if (kqUp.error) throw new Error(kqUp.error.message);
+        } finally {
+          clearTimeout(hen);
+        }
         path = link.path;
       }
       setGiaiDoan("Đang ghi thông báo...");
@@ -152,7 +142,6 @@ export default function ThongBaoAdmin() {
     } finally {
       setDangGui(false);
       setGiaiDoan("");
-      setTienDo(0);
     }
   };
   const xoa = async (id: string) => {
@@ -181,11 +170,11 @@ export default function ThongBaoAdmin() {
           {daNen && <p className="text-[11px] uppercase tracking-[0.1em] text-accent-deep">{daNen}</p>}
           <motion.button whileTap={buttonTap} type="submit" disabled={dangGui} className="flex w-full items-center justify-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent disabled:opacity-50 sm:w-auto">
             {dangGui ? <IconLoader className="h-4 w-4 animate-spin" /> : <IconSeal className="h-4 w-4" />}
-            {dangGui ? `${giaiDoan}${tienDo > 0 && tienDo < 100 ? ` · ${tienDo}%` : ""}` : "Đăng thông báo"}
+            {dangGui ? (giaiDoan || "Đang đăng...") : "Đăng thông báo"}
           </motion.button>
           {dangGui && (
             <div className="h-1 w-full overflow-hidden bg-ink/15">
-              <motion.div animate={{width: `${tienDo}%`}} transition={{duration: 0.2}} className="h-full bg-accent" />
+              <motion.div animate={{x: ["-100%", "100%"]}} transition={{duration: 1.1, repeat: Infinity, ease: "linear"}} className="h-full w-1/2 bg-accent" />
             </div>
           )}
           {bao && <p className="border border-accent/50 bg-accent-wash p-2.5 text-xs text-accent-deep">{bao}</p>}
