@@ -5,6 +5,7 @@ import {MON_SLUG, type Loai, type Mon} from "@/lib/data";
 const NAM_GIU_LINK = 31536000;
 const ANH_DUOI = ["png", "jpg", "jpeg", "webp", "gif"];
 export type LinkUpload = {ok: true; path: string; signedUrl: string} | {ok: false; error: string};
+export type LinkAnh = {ok: true; path: string; token: string} | {ok: false; error: string};
 export type KetQuaGhi = {ok: true; row: Record<string, unknown>} | {ok: false; error: string};
 export type KetQua = {ok: boolean; error?: string};
 export async function xinLinkUpload(mon: Mon, loai: Loai): Promise<LinkUpload> {
@@ -75,14 +76,14 @@ export async function boGhimDe(id: string): Promise<KetQua> {
   const {error} = await hubClient("MAIN").from("de_thi").update({ghim_at: null}).eq("id", id);
   return error ? {ok: false, error: error.message} : {ok: true};
 }
-export async function xinLinkAnhThongBao(duoi: string): Promise<LinkUpload> {
+export async function xinLinkAnhThongBao(duoi: string): Promise<LinkAnh> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
   if (!ANH_DUOI.includes(duoi)) return {ok: false, error: "Ảnh chỉ nhận png, jpg, webp, gif."};
   const path = `thong-bao/${randomUUID()}.${duoi}`;
   const {data, error} = await hubClient("MAIN").storage.from(BUCKET).createSignedUploadUrl(path);
   if (error || !data) return {ok: false, error: error?.message ?? "Không tạo được link upload ảnh."};
-  return {ok: true, path, signedUrl: data.signedUrl};
+  return {ok: true, path, token: data.token};
 }
 export async function dangThongBao(input: {noiDung: string; path: string | null}): Promise<KetQua> {
   const uid = await adminUid();
