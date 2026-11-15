@@ -1,49 +1,49 @@
-import type { Metadata, Viewport } from "next";
-import { Be_Vietnam_Pro, Lora } from "next/font/google";
+import type {Metadata, Viewport} from "next";
+import {Be_Vietnam_Pro, Lora} from "next/font/google";
 import Link from "next/link";
-import { IconSeal } from "@/components/Icons";
+import {IconSeal} from "@/components/Icons";
 import Guard from "@/components/Guard";
 import Navbar from "@/components/Navbar";
 import PageTransition from "@/components/PageTransition";
-import { AuthProvider } from "@/lib/auth";
+import ThongBaoPopup from "@/components/ThongBaoPopup";
+import {AuthProvider} from "@/lib/auth";
 import "./globals.css";
 const lora = Lora({
   subsets: ["latin", "vietnamese"],
   weight: ["600", "700"],
   style: ["normal", "italic"],
   variable: "--font-lora",
-  display: "swap",
+  display: "swap"
 });
 const be = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-be",
-  display: "swap",
+  display: "swap"
 });
 export const metadata: Metadata = {
   metadataBase: new URL("https://tong-hop-de-thi.vercel.app"),
   title: {
     default: "Đề.Thi — Tổng hợp đề thi THPT",
-    template: "%s | Đề.Thi",
+    template: "%s | Đề.Thi"
   },
-  description:
-    "Kho đề thi Toán, Văn, Anh, Sử, Địa, KTPL chọn lọc, xem PDF trực tiếp và tải miễn phí, tối ưu cho điện thoại.",
+  description: "Kho đề thi Toán, Văn, Anh, Sử, Địa, KTPL chọn lọc, xem PDF trực tiếp và tải miễn phí, tối ưu cho điện thoại.",
   keywords: ["đề thi", "đề thi thử", "THPT", "Toán", "Văn", "Anh", "Sử", "Địa", "KTPL", "ôn thi"],
   openGraph: {
     type: "website",
     locale: "vi_VN",
     siteName: "Đề.Thi",
     title: "Đề.Thi — Tổng hợp đề thi THPT",
-    description: "Kho đề thi chọn lọc, xem và tải PDF miễn phí ngay trên điện thoại.",
+    description: "Kho đề thi chọn lọc, xem và tải PDF miễn phí ngay trên điện thoại."
   },
-  robots: { index: true, follow: true },
+  robots: {index: true, follow: true}
 };
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#F3EDE2",
+  themeColor: "#F3EDE2"
 };
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="vi" className={`${lora.variable} ${be.variable}`}>
       <body className="flex min-h-screen flex-col font-sans text-ink antialiased">
@@ -51,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Guard />
           <Navbar />
           <PageTransition>{children}</PageTransition>
+          <ThongBaoPopup />
           <footer className="border-t-2 border-ink bg-paper-light/70">
             <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 sm:flex-row">
               <div className="flex items-center gap-2">
