@@ -12,6 +12,7 @@ export default function ThongBaoAdmin() {
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [dangGui, setDangGui] = useState(false);
+  const [giaiDoan, setGiaiDoan] = useState("");
   const [bao, setBao] = useState("");
   const tai = useCallback(async () => {
     const {data} = await supabase.from("thong_bao").select("id,noi_dung,url_anh,created_at").order("created_at", {ascending: false});
@@ -32,13 +33,22 @@ export default function ThongBaoAdmin() {
     try {
       let path: string | null = null;
       if (file) {
+        setGiaiDoan("Đang xin link upload...");
         const duoi = (file.name.split(".").pop() ?? "").toLowerCase();
         const link = await xinLinkAnhThongBao(duoi);
         if (!link.ok) throw new Error(link.error);
-        const res = await fetch(link.signedUrl, {method: "PUT", body: file, headers: {"Content-Type": file.type}});
-        if (!res.ok) throw new Error(`Upload ảnh thất bại: ${res.status}`);
+        setGiaiDoan("Đang tải ảnh lên kho...");
+        const ctrl = new AbortController();
+        const hen = setTimeout(() => ctrl.abort(), 60000);
+        try {
+          const res = await fetch(link.signedUrl, {method: "PUT", body: file, headers: {"Content-Type": file.type}, signal: ctrl.signal, cache: "no-store"});
+          if (!res.ok) throw new Error(`Upload ảnh thất bại: ${res.status}`);
+        } finally {
+          clearTimeout(hen);
+        }
         path = link.path;
       }
+      setGiaiDoan("Đang ghi thông báo...");
       const kq = await dangThongBao({noiDung: text, path});
       if (!kq.ok) throw new Error(kq.error ?? "Không đăng được thông báo.");
       setText("");
@@ -46,9 +56,10 @@ export default function ThongBaoAdmin() {
       setBao("Đã đăng thông báo, member đăng nhập sẽ thấy popup.");
       await tai();
     } catch (err) {
-      setBao(err instanceof Error ? err.message : "Lỗi đăng thông báo.");
+      setBao(err instanceof Error && err.name === "AbortError" ? "Upload ảnh quá 60s (mạng chậm hoặc ảnh nặng). Thử ảnh nhỏ hơn." : err instanceof Error ? err.message : "Lỗi đăng thông báo.");
     } finally {
       setDangGui(false);
+      setGiaiDoan("");
     }
   };
   const xoa = async (id: string) => {
@@ -76,7 +87,7 @@ export default function ThongBaoAdmin() {
           </label>
           <motion.button whileTap={buttonTap} type="submit" disabled={dangGui} className="flex items-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent disabled:opacity-50">
             {dangGui ? <IconLoader className="h-4 w-4 animate-spin" /> : <IconSeal className="h-4 w-4" />}
-            {dangGui ? "Đang đăng..." : "Đăng thông báo"}
+            {dangGui ? (giaiDoan || "Đang đăng...") : "Đăng thông báo"}
           </motion.button>
           {bao && <p className="border border-accent/50 bg-accent-wash p-2.5 text-xs text-accent-deep">{bao}</p>}
         </form>
