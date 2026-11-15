@@ -45,6 +45,17 @@ export async function kiemTraTrung(mon: Mon, ten: string, boQuaId?: string): Pro
   const chuan = khongDau(ten);
   return (data ?? []).some((r) => String(r.id) !== boQuaId && chuanMon(String(r.mon ?? "")) === mon && khongDau(String(r.ten)) === chuan);
 }
+async function chuanBiFile(file: File, loai: Loai, onStage?: (s: string) => void): Promise<File> {
+  if (loai !== "pdf") return file;
+  try {
+    onStage?.("Đang nén PDF, giữ chữ sắc nét...");
+    const {nenPdf} = await import("./nenPdf");
+    const blob = await nenPdf(file, onStage);
+    return new File([blob], file.name, {type: "application/pdf"});
+  } catch {
+    return file;
+  }
+}
 async function taiLen(file: File, mon: Mon, loai: Loai): Promise<string> {
   const link = await xinLinkUpload(mon, loai);
   if (!link.ok) throw new Error(link.error);
@@ -62,10 +73,11 @@ function xacThuc(file: File): Loai {
 export type NhapDe = {mon: Mon; ten: string; ngay: string};
 export async function themDe(input: NhapDe, file: File, onStage?: (s: string) => void): Promise<DeThi> {
   const loai = xacThuc(file);
+  const tep = await chuanBiFile(file, loai, onStage);
   onStage?.("Đang tải file lên kho...");
-  const path = await taiLen(file, input.mon, loai);
+  const path = await taiLen(tep, input.mon, loai);
   onStage?.("Đang ghi thông tin đề...");
-  const kq = await ghiDe({mon: input.mon, ten: input.ten, ngay: input.ngay, loai, path, kichThuoc: file.size, tenGoc: file.name});
+  const kq = await ghiDe({mon: input.mon, ten: input.ten, ngay: input.ngay, loai, path, kichThuoc: tep.size, tenGoc: file.name});
   if (!kq.ok) {
     await xoaFile(path);
     throw new Error(kq.error);
@@ -79,9 +91,10 @@ export async function suaDe(id: string, input: NhapDe, file: File | null, onStag
   let tenGoc: string | null = null;
   if (file) {
     loai = xacThuc(file);
+    const tep = await chuanBiFile(file, loai, onStage);
     onStage?.("Đang tải file mới...");
-    path = await taiLen(file, input.mon, loai);
-    kichThuoc = file.size;
+    path = await taiLen(tep, input.mon, loai);
+    kichThuoc = tep.size;
     tenGoc = file.name;
   }
   onStage?.("Đang cập nhật thông tin...");
