@@ -18,13 +18,17 @@ function docRow(r: Record<string, unknown>): DeThi {
     loai: r.loai === "docx" ? "docx" : "pdf",
     duongDan: (r.duong_dan as string | null) ?? null,
     kichThuoc: typeof r.kich_thuoc === "number" ? r.kich_thuoc : null,
-    tenGoc: (r.ten_goc as string | null) ?? null
+    tenGoc: (r.ten_goc as string | null) ?? null,
+    ghimAt: (r.ghim_at as string | null) ?? null
   };
+}
+function sapGhimTruoc(rows: DeThi[]): DeThi[] {
+  return rows.sort((a, b) => (a.ghimAt && b.ghimAt ? a.ghimAt.localeCompare(b.ghimAt) : a.ghimAt ? -1 : b.ghimAt ? 1 : 0));
 }
 export async function layDanhSach(): Promise<DeThi[]> {
   const {data, error} = await supabase.from("de_thi").select("*").order("created_at", {ascending: false});
   if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => docRow(r as Record<string, unknown>));
+  return sapGhimTruoc((data ?? []).map((r) => docRow(r as Record<string, unknown>)));
 }
 export async function layDeTheoId(id: string): Promise<DeThi | null> {
   const {data, error} = await supabase.from("de_thi").select("*").eq("id", id).maybeSingle();
