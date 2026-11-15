@@ -1,5 +1,3 @@
-import {createClient} from "@supabase/supabase-js";
+import {createBrowserClient} from "@supabase/ssr";
 export const BUCKET = "de-thi";
-export const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL_MAIN!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY_MAIN!, {
-  auth: {persistSession: true, autoRefreshToken: true, detectSessionInUrl: true}
-});
+export const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL_MAIN!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY_MAIN!);
