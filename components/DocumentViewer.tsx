@@ -4,14 +4,16 @@ import {useRouter} from "next/navigation";
 import {motion} from "framer-motion";
 import {IconArrowLeft, IconDownload, IconExternal, IconLoader} from "@/components/Icons";
 import Skeleton from "@/components/Skeleton";
-import {buttonTap, EASE} from "@/lib/animations";
+import {buttonTap} from "@/lib/animations";
 const WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 export default function DocumentViewer({url, ten}: {url: string; ten: string}) {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const docRef = useRef<any>(null);
   const taskRef = useRef<{cancel: () => void; promise: Promise<unknown>} | null>(null);
   const [pdf, setPdf] = useState<any>(null);
+  const [fit, setFit] = useState(0);
   const [trang, setTrang] = useState(1);
   const [tong, setTong] = useState(0);
   const [zoom, setZoom] = useState(1);
@@ -51,7 +53,23 @@ export default function DocumentViewer({url, ten}: {url: string; ten: string}) {
     };
   }, []);
   useEffect(() => {
-    if (!pdf || !canvasRef.current) return;
+    if (!pdf) return;
+    let alive = true;
+    const compute = async () => {
+      const page = await pdf.getPage(1);
+      const w = page.getViewport({scale: 1}).width;
+      const cw = wrapRef.current?.clientWidth ?? 0;
+      if (alive && cw > 0 && w > 0) setFit(cw / w);
+    };
+    void compute();
+    window.addEventListener("resize", compute);
+    return () => {
+      alive = false;
+      window.removeEventListener("resize", compute);
+    };
+  }, [pdf]);
+  useEffect(() => {
+    if (!pdf || fit <= 0 || !canvasRef.current) return;
     const canvas = canvasRef.current;
     let cancelled = false;
     (async () => {
@@ -59,7 +77,8 @@ export default function DocumentViewer({url, ten}: {url: string; ten: string}) {
       const page = await pdf.getPage(trang);
       if (cancelled) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 3);
-      const base = page.getViewport({scale: zoom});
+      const scale = fit * zoom;
+      const base = page.getViewport({scale});
       canvas.width = Math.max(1, Math.floor(base.width * dpr));
       canvas.height = Math.max(1, Math.floor(base.height * dpr));
       canvas.style.width = `${base.width}px`;
@@ -69,7 +88,7 @@ export default function DocumentViewer({url, ten}: {url: string; ten: string}) {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       if (taskRef.current) taskRef.current.cancel();
-      const task = page.render({canvasContext: ctx, viewport: page.getViewport({scale: zoom * dpr})});
+      const task = page.render({canvasContext: ctx, viewport: page.getViewport({scale: scale * dpr})});
       taskRef.current = task;
       await task.promise;
       if (!cancelled) setDangVe(false);
@@ -79,7 +98,7 @@ export default function DocumentViewer({url, ten}: {url: string; ten: string}) {
     return () => {
       cancelled = true;
     };
-  }, [pdf, trang, zoom]);
+  }, [pdf, fit, trang, zoom]);
   const viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(url)}`;
   return (
     <div className="mt-6">
@@ -110,11 +129,11 @@ export default function DocumentViewer({url, ten}: {url: string; ten: string}) {
           </motion.button>
         </div>
         <div className="flex items-center gap-2">
-          <motion.button whileTap={buttonTap} type="button" disabled={zoom <= 0.7} onClick={() => setZoom((z) => Math.max(0.7, Number((z - 0.2).toFixed(2))))} aria-label="Thu nhỏ" className="border border-ink/40 bg-paper px-3 py-1.5 text-sm font-bold text-ink-soft transition-colors disabled:opacity-40 hover:border-accent hover:text-accent">
+          <motion.button whileTap={buttonTap} type="button" disabled={zoom <= 0.5} onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.25).toFixed(2))))} aria-label="Thu nhỏ" className="border border-ink/40 bg-paper px-3 py-1.5 text-sm font-bold text-ink-soft transition-colors disabled:opacity-40 hover:border-accent hover:text-accent">
             −
           </motion.button>
           <span className="w-12 text-center text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft">{Math.round(zoom * 100)}%</span>
-          <motion.button whileTap={buttonTap} type="button" disabled={zoom >= 2.5} onClick={() => setZoom((z) => Math.min(2.5, Number((z + 0.2).toFixed(2))))} aria-label="Phóng to" className="border border-ink/40 bg-paper px-3 py-1.5 text-sm font-bold text-ink-soft transition-colors disabled:opacity-40 hover:border-accent hover:text-accent">
+          <motion.button whileTap={buttonTap} type="button" disabled={zoom >= 4} onClick={() => setZoom((z) => Math.min(4, Number((z + 0.25).toFixed(2))))} aria-label="Phóng to" className="border border-ink/40 bg-paper px-3 py-1.5 text-sm font-bold text-ink-soft transition-colors disabled:opacity-40 hover:border-accent hover:text-accent">
             +
           </motion.button>
         </div>
@@ -133,7 +152,7 @@ export default function DocumentViewer({url, ten}: {url: string; ten: string}) {
         ) : loi ? (
           <div className="border border-accent/50 bg-accent-wash p-5 text-sm text-accent-deep">{loi}</div>
         ) : (
-          <>
+          <div ref={wrapRef} className="w-full">
             <canvas ref={canvasRef} className="mx-auto block bg-white shadow-paper" />
             {dangVe && (
               <div className="pointer-events-none sticky bottom-2 mx-auto mt-2 flex w-max items-center gap-2 border border-ink/30 bg-paper-light px-3 py-1.5 text-xs text-ink-soft shadow-paper">
@@ -141,10 +160,10 @@ export default function DocumentViewer({url, ten}: {url: string; ten: string}) {
                 Đang vẽ trang {trang}...
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
-      <p className="mt-3 text-xs text-ink-faint">Bản render dùng độ phân giải màn hình nên chữ nét như trình đọc PDF trên máy. Dùng nút + / − để phóng to khi cần soi chi tiết.</p>
+      <p className="mt-3 text-xs text-ink-faint">Mặc định đề vừa khít chiều ngang màn hình, chữ nét theo độ phân giải máy. Dùng + / − để phóng to khi cần soi chi tiết, kéo ngang dọc tự do.</p>
     </div>
   );
 }
