@@ -1,143 +1,88 @@
 "use client";
-import { useState } from "react";
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { IconArrowRight, IconSeal, InkLine } from "@/components/Icons";
-import { buttonTap, EASE, fadeInUp, spring, staggerContainer } from "@/lib/animations";
-import { useAuth } from "@/lib/auth";
-type CheDo = "login" | "register";
+import {useState} from "react";
+import {motion} from "framer-motion";
+import {IconLoader, IconSeal} from "@/components/Icons";
+import Turnstile from "@/components/Turnstile";
+import {dangKy, dangNhap} from "@/app/actions";
+import {buttonTap, fadeInUp, staggerContainer} from "@/lib/animations";
 export default function TrangDangNhap() {
-  const { user, hoSo, isAdmin, loading, signIn, signUp, signOut } = useAuth();
-  const [cheDo, setCheDo] = useState<CheDo>("login");
+  const [cheDo, setCheDo] = useState<"nhap" | "ky">("nhap");
   const [email, setEmail] = useState("");
   const [matKhau, setMatKhau] = useState("");
-  const [loi, setLoi] = useState("");
-  const [tin, setTin] = useState("");
+  const [hoTen, setHoTen] = useState("");
+  const [token, setToken] = useState<string | null>(null);
+  const [resetKey, setResetKey] = useState(0);
   const [dangGui, setDangGui] = useState(false);
+  const [bao, setBao] = useState<{kieu: "ok" | "loi"; text: string} | null>(null);
   const gui = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoi("");
-    setTin("");
-    const mail = email.trim();
-    if (!mail || !matKhau) {
-      setLoi("Nhập đủ email và mật khẩu đã nhé.");
+    if (dangGui) return;
+    if (!email.trim() || !matKhau) {
+      setBao({kieu: "loi", text: "Nhập đủ email và mật khẩu."});
       return;
     }
-    if (matKhau.length < 6) {
-      setLoi("Mật khẩu tối thiểu 6 ký tự.");
+    if (!token) {
+      setBao({kieu: "loi", text: "Hoàn thành xác thực Turnstile trước đã."});
       return;
     }
     setDangGui(true);
-    const kq = cheDo === "login" ? await signIn(mail, matKhau) : await signUp(mail, matKhau);
+    setBao(null);
+    const kq = cheDo === "nhap" ? await dangNhap(email.trim(), matKhau, token) : await dangKy(email.trim(), matKhau, hoTen.trim(), token);
+    if (kq.ok) {
+      setBao({kieu: "ok", text: cheDo === "nhap" ? "Đăng nhập thành công, đang vào kho..." : "Tạo tài khoản thành công, đang vào kho..."});
+      window.location.assign("/");
+      return;
+    }
+    setBao({kieu: "loi", text: kq.error ?? "Có lỗi xảy ra."});
+    setResetKey((k) => k + 1);
+    setToken(null);
     setDangGui(false);
-    if (kq.loi) {
-      setLoi(kq.loi);
-      return;
-    }
-    if (kq.canXacNhan) {
-      setTin("Đăng ký xong. Hãy mở email và bấm link xác nhận, rồi quay lại đăng nhập.");
-      setCheDo("login");
-      return;
-    }
-    setMatKhau("");
   };
   return (
-    <div className="mx-auto w-full min-w-0 max-w-md px-4 pb-16 pt-10 sm:pt-16">
-      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="w-full min-w-0">
-        <motion.header variants={fadeInUp} className="text-center">
-          <span className="mx-auto grid h-12 w-12 place-items-center border border-ink/40 bg-paper-light text-ink">
-            <IconSeal className="h-6 w-6" />
-          </span>
-          <h1 className="mt-4 font-display text-3xl font-bold tracking-tight text-ink">
-            {cheDo === "login" ? "Đăng nhập" : "Đăng ký"}
+    <div className="mx-auto grid w-full max-w-md flex-1 place-items-center px-4 py-12">
+      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="w-full">
+        <motion.div variants={fadeInUp} className="sheet border-2 border-ink bg-paper-light p-6 shadow-lift sm:p-8">
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-ink-faint">
+            <IconSeal className="h-4 w-4 text-accent" />
+            Kho đề THPT
+          </div>
+          <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-ink">
+            {cheDo === "nhap" ? "Đăng nhập" : "Tạo tài khoản"}
           </h1>
-          <p className="mt-2 text-sm text-ink-soft">Học sinh xem đề không cần tài khoản. Tài khoản dùng để lưu hồ sơ, riêng mục quản trị chỉ dành cho quản trị viên.</p>
-        </motion.header>
-        {loading ? (
-          <motion.p variants={fadeInUp} className="mt-8 text-center text-sm text-ink-faint">
-            Đang kiểm tra phiên...
-          </motion.p>
-        ) : user ? (
-          <motion.div variants={fadeInUp} className="sheet mt-8 space-y-4 p-5 pl-8 shadow-paper">
-            <p className="text-sm text-ink-soft">Đang đăng nhập bằng</p>
-            <p className="truncate font-display text-lg font-bold text-ink">{hoSo?.ho_ten?.trim() || user.email}</p>
-            <span className={`inline-block border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${isAdmin ? "border-accent/70 text-accent" : "border-ink/40 text-ink-soft"}`}>
-              {isAdmin ? "Quản trị viên" : "Người dùng"}
-            </span>
-            <div className="flex flex-col gap-2.5 pt-1">
-              <Link href="/tai-khoan">
-                <motion.span whileTap={buttonTap} className="flex items-center justify-between gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent">
-                  Trang cá nhân
-                  <IconArrowRight className="h-4 w-4" />
-                </motion.span>
-              </Link>
-              {isAdmin && (
-                <Link href="/admin">
-                  <motion.span whileTap={buttonTap} className="flex items-center justify-between gap-2 border border-accent bg-accent-wash px-4 py-2.5 text-sm font-semibold text-accent-deep transition-colors active:bg-accent active:text-paper-light hover:bg-accent hover:text-paper-light">
-                    Vào quản trị
-                    <IconArrowRight className="h-4 w-4" />
-                  </motion.span>
-                </Link>
-              )}
-              <div className="flex gap-2.5">
-                <Link href="/" className="flex-1">
-                  <motion.span whileTap={buttonTap} className="flex items-center justify-center border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
-                    Về trang chủ
-                  </motion.span>
-                </Link>
-                <motion.button whileTap={buttonTap} type="button" onClick={() => signOut()} className="border border-ink/40 bg-paper px-4 py-2.5 text-sm font-semibold text-ink-soft transition-colors hover:bg-paper-deep">
-                  Đăng xuất
-                </motion.button>
+          <p className="mt-2 text-sm text-ink-soft">Thành viên được xem và tải toàn bộ kho đề. Quản trị viên có thêm quyền tải đề, ghim đề và đăng thông báo.</p>
+          <div className="mt-5 grid grid-cols-2 border border-ink/30">
+            {(["nhap", "ky"] as const).map((c) => (
+              <button key={c} type="button" onClick={() => {
+                setCheDo(c);
+                setBao(null);
+              }} className={`py-2 text-xs font-semibold uppercase tracking-[0.12em] transition-colors ${cheDo === c ? "bg-ink text-paper-light" : "bg-paper text-ink-soft hover:text-ink"}`}>
+                {c === "nhap" ? "Đăng nhập" : "Đăng ký"}
+              </button>
+            ))}
+          </div>
+          <form onSubmit={gui} className="mt-5 space-y-4">
+            {cheDo === "ky" && (
+              <div>
+                <label htmlFor="hoten" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">Tên hiển thị</label>
+                <input id="hoten" type="text" value={hoTen} onChange={(e) => setHoTen(e.target.value)} maxLength={60} placeholder="VD: Anh Lusilfer" className="w-full border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent" />
               </div>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.form variants={fadeInUp} onSubmit={gui} className="sheet mt-8 space-y-4 p-5 pl-8 shadow-paper">
-            <div className="flex gap-6 border-b border-ink/20">
-              {(["login", "register"] as CheDo[]).map((c) => (
-                <motion.button
-                  key={c}
-                  type="button"
-                  whileTap={buttonTap}
-                  onClick={() => {
-                    setCheDo(c);
-                    setLoi("");
-                    setTin("");
-                  }}
-                  className={`relative pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${cheDo === c ? "text-accent" : "text-ink-soft hover:text-ink"}`}
-                >
-                  {c === "login" ? "Đăng nhập" : "Đăng ký"}
-                  {cheDo === c && (
-                    <motion.span layoutId="auth-ink" transition={spring} className="absolute inset-x-0 -bottom-px text-accent">
-                      <InkLine className="h-1.5 w-full" />
-                    </motion.span>
-                  )}
-                </motion.button>
-              ))}
-            </div>
-            <div className="min-w-0">
+            )}
+            <div>
               <label htmlFor="email" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">Email</label>
-              <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ban@vidu.com" className="w-full min-w-0 border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent" />
+              <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="ban@email.com" className="w-full border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent" />
             </div>
-            <div className="min-w-0">
+            <div>
               <label htmlFor="matkhau" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">Mật khẩu</label>
-              <input id="matkhau" type="password" autoComplete={cheDo === "login" ? "current-password" : "new-password"} value={matKhau} onChange={(e) => setMatKhau(e.target.value)} placeholder="Tối thiểu 6 ký tự" className="w-full min-w-0 border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent" />
+              <input id="matkhau" type="password" value={matKhau} onChange={(e) => setMatKhau(e.target.value)} autoComplete={cheDo === "nhap" ? "current-password" : "new-password"} placeholder="••••••••" className="w-full border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent" />
             </div>
-            {loi && (
-              <motion.p initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: EASE }} className="border border-accent/50 bg-accent-wash p-3 text-sm text-accent-deep">
-                {loi}
-              </motion.p>
-            )}
-            {tin && (
-              <motion.p initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: EASE }} className="border border-ink/30 bg-paper p-3 text-sm text-ink-soft">
-                {tin}
-              </motion.p>
-            )}
-            <motion.button whileTap={buttonTap} type="submit" disabled={dangGui} className="flex w-full items-center justify-center border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent disabled:opacity-60">
-              {dangGui ? "Đang xử lý..." : cheDo === "login" ? "Đăng nhập" : "Tạo tài khoản"}
+            <Turnstile onChange={setToken} resetKey={resetKey} />
+            <motion.button whileTap={buttonTap} type="submit" disabled={dangGui} className="flex w-full items-center justify-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent disabled:opacity-50">
+              {dangGui ? <IconLoader className="h-4 w-4 animate-spin" /> : <IconSeal className="h-4 w-4" />}
+              {dangGui ? "Đang xử lý..." : cheDo === "nhap" ? "Đăng nhập" : "Tạo tài khoản"}
             </motion.button>
-          </motion.form>
-        )}
+            {bao && <p className={`border p-2.5 text-xs ${bao.kieu === "loi" ? "border-danger/60 bg-danger/10 text-danger" : "border-ok/60 bg-ok/10 text-ok"}`}>{bao.text}</p>}
+          </form>
+        </motion.div>
       </motion.div>
     </div>
   );
