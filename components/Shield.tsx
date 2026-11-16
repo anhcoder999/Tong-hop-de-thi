@@ -5,6 +5,7 @@ const KHOA_THEME = "dethi.theme";
 const CSS = "*{-webkit-touch-callout:none!important}html,body,input,textarea,select,[contenteditable]{-webkit-user-select:none!important;user-select:none!important}";
 const trongPdf = (t: EventTarget | null) => t instanceof Element && !!t.closest("[data-pdf-zoom]");
 const nat = (fn: unknown) => typeof fn === "function" && /\{\s*\[native code\]\s*\}/.test(Function.prototype.toString.call(fn));
+const hopLe = (src: string) => src.startsWith(location.origin) || src.startsWith("https://cdn.jsdelivr.net") || src.startsWith("https://challenges.cloudflare.com");
 export default function Shield() {
   const [chan, setChan] = useState(false);
   const [toi, setToi] = useState(false);
@@ -67,8 +68,8 @@ export default function Shield() {
     const mo = new MutationObserver((ds) => {
       for (const d of ds) {
         for (const n of Array.from(d.addedNodes)) {
-          if (n instanceof HTMLScriptElement && n.src && !n.src.startsWith(location.origin) && !n.src.startsWith("https://cdn.jsdelivr.net")) setChan(true);
-          if (n instanceof HTMLIFrameElement && n.src && !n.src.startsWith(location.origin)) setChan(true);
+          if (n instanceof HTMLScriptElement && n.src && !hopLe(n.src)) setChan(true);
+          if (n instanceof HTMLIFrameElement && n.src && !hopLe(n.src)) setChan(true);
         }
       }
     });
