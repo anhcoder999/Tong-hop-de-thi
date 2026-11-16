@@ -69,8 +69,9 @@ export default function DocumentViewer({url, ten}: {url: string; ten: string}) {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       if (taskRef.current) taskRef.current.cancel();
-      taskRef.current = page.render({canvasContext: ctx, viewport: page.getViewport({scale: zoom * dpr})});
-      await taskRef.current.promise;
+      const task = page.render({canvasContext: ctx, viewport: page.getViewport({scale: zoom * dpr})});
+      taskRef.current = task;
+      await task.promise;
       if (!cancelled) setDangVe(false);
     })().catch(() => {
       if (!cancelled) setDangVe(false);
