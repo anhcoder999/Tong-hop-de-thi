@@ -1,10 +1,10 @@
 import type {Metadata} from "next";
 import Link from "next/link";
 import {notFound} from "next/navigation";
-import {IconCalendar, IconChevron} from "@/components/Icons";
+import {IconCalendar, IconChevron, IconDownload, IconEye} from "@/components/Icons";
 import DocumentViewer from "@/components/DocumentViewer";
 import {chuanMon, formatDungLuong, formatNgay, MON_DAY_DU, tenNhom, type DeThi} from "@/lib/data";
-import {authClient, BUCKET, hubClient, hubCuaPath} from "@/lib/server";
+import {authClient, BUCKET, hubClient, hubCuaPath, uidBiBan} from "@/lib/server";
 export const dynamic = "force-dynamic";
 interface Props {
   params: {id: string};
@@ -23,7 +23,9 @@ async function layDe(id: string): Promise<DeThi | null> {
     duongDan: (r.duong_dan as string | null) ?? null,
     kichThuoc: typeof r.kich_thuoc === "number" ? r.kich_thuoc : null,
     tenGoc: (r.ten_goc as string | null) ?? null,
-    ghimAt: (r.ghim_at as string | null) ?? null
+    ghimAt: (r.ghim_at as string | null) ?? null,
+    luotXem: typeof r.luot_xem === "number" ? r.luot_xem : 0,
+    luotTai: typeof r.luot_tai === "number" ? r.luot_tai : 0
   };
 }
 export async function generateMetadata({params}: Props): Promise<Metadata> {
@@ -48,8 +50,19 @@ export default async function TrangXemDe({params}: Props) {
       </div>
     );
   }
+  if (await uidBiBan()) {
+    return (
+      <div className="mx-auto w-full min-w-0 max-w-xl px-4 pb-16 pt-16">
+        <div className="sheet border-danger p-6 pl-9 shadow-paper">
+          <h1 className="font-display text-3xl font-bold tracking-tight text-danger">Tài khoản bị khóa</h1>
+          <p className="mt-3 text-sm text-ink-soft">Tài khoản của bạn đã bị quản trị viên hạn chế truy cập kho đề. Liên hệ quản trị để được mở lại.</p>
+        </div>
+      </div>
+    );
+  }
   const de = await layDe(params.id);
   if (!de) notFound();
+  await hubClient("MAIN").rpc("tang_xem", {uid: de.id});
   let url = de.urlPdf;
   if (de.duongDan) {
     const {data: signed} = await hubClient(hubCuaPath(de.duongDan)).storage.from(BUCKET).createSignedUrl(de.duongDan, 3600);
@@ -58,9 +71,7 @@ export default async function TrangXemDe({params}: Props) {
   return (
     <div className="mx-auto w-full min-w-0 max-w-5xl px-4 pb-16 pt-6 sm:pt-10">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-soft">
-        <Link href="/" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">
-          Trang chủ
-        </Link>
+        <Link href="/" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">Trang chủ</Link>
         <IconChevron className="h-3 w-3 text-ink-faint" />
         <span>{tenNhom(de.mon)}</span>
         <IconChevron className="h-3 w-3 text-ink-faint" />
@@ -71,9 +82,7 @@ export default async function TrangXemDe({params}: Props) {
       <header className="mt-4 border-b-2 border-ink pb-5">
         <h1 className="font-display text-3xl font-bold leading-tight tracking-tight text-ink sm:text-4xl">{de.ten}</h1>
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <span title={MON_DAY_DU[de.mon]} className="-rotate-2 border border-accent/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">
-            {de.mon}
-          </span>
+          <span title={MON_DAY_DU[de.mon]} className="-rotate-2 border border-accent/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">{de.mon}</span>
           <span className="text-[11px] uppercase tracking-[0.14em] text-ink-soft">{MON_DAY_DU[de.mon]}</span>
           <span className="border border-ink/40 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-soft">PDF</span>
           <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-faint">
@@ -81,9 +90,17 @@ export default async function TrangXemDe({params}: Props) {
             {formatNgay(de.ngay)}
           </span>
           <span className="text-xs uppercase tracking-[0.12em] text-ink-faint">{formatDungLuong(de.kichThuoc)}</span>
+          <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-faint" title="Lượt xem">
+            <IconEye className="h-3.5 w-3.5" />
+            {(de.luotXem ?? 0) + 1}
+          </span>
+          <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-faint" title="Lượt tải">
+            <IconDownload className="h-3.5 w-3.5" />
+            {de.luotTai ?? 0}
+          </span>
         </div>
       </header>
-      <DocumentViewer url={url} ten={de.ten} />
+      <DocumentViewer url={url} ten={de.ten} id={de.id} />
     </div>
   );
 }
