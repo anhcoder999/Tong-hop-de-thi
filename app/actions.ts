@@ -1,6 +1,7 @@
 "use server";
 import {randomUUID} from "node:crypto";
-import {adminUid, BUCKET, hubClient, hubCuaMon, hubCuaPath} from "@/lib/server";
+import {adminUid, authClient, BUCKET, hubClient, hubCuaMon, hubCuaPath} from "@/lib/server";
+import {xacThucTurnstile} from "@/lib/turnstile";
 import {MON_SLUG, type Loai, type Mon} from "@/lib/data";
 const NAM_GIU_LINK = 31536000;
 const ANH_DUOI = ["png", "jpg", "jpeg", "webp", "gif"];
@@ -9,7 +10,18 @@ export type LinkAnh = {ok: true; path: string; token: string} | {ok: false; erro
 export type KetQuaGhi = {ok: true; row: Record<string, unknown>} | {ok: false; error: string};
 export type KetQua = {ok: boolean; error?: string};
 export type NguoiDung = {id: string; email: string; ho_ten: string | null; role: string; banned: boolean; created_at: string};
-export async function xinLinkUpload(mon: Mon, loai: Loai): Promise<LinkUpload> {
+export async function dangNhap(email: string, password: string, token: string): Promise<KetQua> {
+  if (!(await xacThucTurnstile(token))) return {ok: false, error: "Xác thực Turnstile thất bại. Thử lại."};
+  const {error} = await authClient().auth.signInWithPassword({email, password});
+  return error ? {ok: false, error: error.message} : {ok: true};
+}
+export async function dangKy(email: string, password: string, hoTen: string, token: string): Promise<KetQua> {
+  if (!(await xacThucTurnstile(token))) return {ok: false, error: "Xác thực Turnstile thất bại. Thử lại."};
+  const {error} = await authClient().auth.signUp({email, password, options: {data: {ho_ten: hoTen}}});
+  return error ? {ok: false, error: error.message} : {ok: true};
+}
+export async function xinLinkUpload(mon: Mon, loai: Loai, token: string): Promise<LinkUpload> {
+  if (!(await xacThucTurnstile(token))) return {ok: false, error: "Xác thực Turnstile thất bại. Tải lại trang."};
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
   const path = `${MON_SLUG[mon]}/${randomUUID()}.${loai}`;
