@@ -2,7 +2,7 @@ import type {Metadata, Viewport} from "next";
 import {Be_Vietnam_Pro, Lora} from "next/font/google";
 import Link from "next/link";
 import {IconSeal} from "@/components/Icons";
-import Guard from "@/components/Guard";
+import Shield from "@/components/Shield";
 import Navbar from "@/components/Navbar";
 import PageTransition from "@/components/PageTransition";
 import ThongBaoPopup from "@/components/ThongBaoPopup";
@@ -41,14 +41,16 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   themeColor: "#F3EDE2"
 };
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="vi" className={`${lora.variable} ${be.variable}`}>
+    <html lang="vi" className={`${lora.variable} ${be.variable}`} suppressHydrationWarning>
       <body className="flex min-h-screen flex-col font-sans text-ink antialiased">
         <AuthProvider>
-          <Guard />
+          <Shield />
           <Navbar />
           <PageTransition>{children}</PageTransition>
           <ThongBaoPopup />
@@ -63,12 +65,8 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
                 </span>
               </div>
               <nav className="flex items-center gap-5 text-sm text-ink-soft">
-                <Link href="/" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">
-                  Trang chủ
-                </Link>
-                <Link href="/login" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">
-                  Tài khoản
-                </Link>
+                <Link href="/" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">Trang chủ</Link>
+                <Link href="/login" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">Tài khoản</Link>
               </nav>
               <p className="text-xs uppercase tracking-[0.16em] text-ink-faint">© 2026 Đề.Thi</p>
             </div>
