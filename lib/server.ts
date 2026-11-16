@@ -45,7 +45,14 @@ export async function adminUid(): Promise<string | null> {
   const {data, error} = await authClient().auth.getClaims();
   const uid = data?.claims?.sub;
   if (error || !uid) return null;
-  const {data: hoSo} = await hubClient("MAIN").from("profiles").select("role").eq("id", uid).maybeSingle();
-  return hoSo?.role === "admin" ? uid : null;
+  const {data: hoSo} = await hubClient("MAIN").from("profiles").select("role,banned").eq("id", uid).maybeSingle();
+  return hoSo?.role === "admin" && !hoSo?.banned ? uid : null;
+}
+export async function uidBiBan(): Promise<boolean> {
+  const {data, error} = await authClient().auth.getClaims();
+  const uid = data?.claims?.sub;
+  if (error || !uid) return false;
+  const {data: hoSo} = await hubClient("MAIN").from("profiles").select("banned").eq("id", uid).maybeSingle();
+  return !!hoSo?.banned;
 }
 export {BUCKET};
