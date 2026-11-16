@@ -2,6 +2,7 @@ import type {Config} from "tailwindcss";
 const mau = (v: string) => `rgb(var(${v}) / <alpha-value>)`;
 const config: Config = {
   darkMode: "class",
+  future: {hoverOnlyWhenSupported: true},
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
     extend: {
