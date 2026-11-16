@@ -5,7 +5,6 @@ import {AnimatePresence, motion} from "framer-motion";
 import {IconAlert, IconCheck, IconClose, IconDownload, IconEdit, IconExternal, IconEye, IconFile, IconLoader, IconPlus, IconRefresh, IconSearch, IconSeal, IconSort, IconTrash, IconUndo, IconUpload, MonIcon} from "@/components/Icons";
 import EmptyState from "@/components/EmptyState";
 import Skeleton from "@/components/Skeleton";
-import Turnstile from "@/components/Turnstile";
 import {formatDungLuong, formatNgay, homNay, khongDau, MON_DAY_DU, MON_SLUG, monTrongLoc, NHOM_MON, tenNhom, type DeThi, type Loc, type Mon} from "@/lib/data";
 import {buttonTap, EASE, fadeInUp, spring, staggerContainer} from "@/lib/animations";
 import {useHoverCapable} from "@/lib/useHover";
@@ -32,8 +31,6 @@ export default function AdminPanel() {
   const [dangGui, setDangGui] = useState(false);
   const [giaiDoan, setGiaiDoan] = useState("");
   const [bao, setBao] = useState<{kieu: "ok" | "loi"; text: string} | null>(null);
-  const [turnstile, setTurnstile] = useState<string | null>(null);
-  const [resetTurnstile, setResetTurnstile] = useState(0);
   const [tuKhoa, setTuKhoa] = useState("");
   const [locMon, setLocMon] = useState<Loc>("Tất cả");
   const [sapXep, setSapXep] = useState<SapXep>("moi");
@@ -134,10 +131,6 @@ export default function AdminPanel() {
       setBao({kieu: "loi", text: "Chọn hoặc kéo thả file PDF vào khung."});
       return;
     }
-    if (tep && !turnstile) {
-      setBao({kieu: "loi", text: "Hoàn thành xác thực Turnstile trước khi tải file."});
-      return;
-    }
     setDangGui(true);
     setBao(null);
     try {
@@ -148,21 +141,17 @@ export default function AdminPanel() {
         return;
       }
       if (editingId) {
-        const moi = await suaDe(editingId, {mon, ten: tenChuan, ngay}, tep, setGiaiDoan, turnstile ?? "");
+        const moi = await suaDe(editingId, {mon, ten: tenChuan, ngay}, tep, setGiaiDoan);
         setDs((cur) => cur.map((d) => (d.id === moi.id ? moi : d)));
         setBao({kieu: "ok", text: "Đã cập nhật đề ✓"});
       } else {
-        const moi = await themDe({mon, ten: tenChuan, ngay}, tep as File, setGiaiDoan, turnstile ?? "");
+        const moi = await themDe({mon, ten: tenChuan, ngay}, tep as File, setGiaiDoan);
         setDs((cur) => [moi, ...cur]);
         setBao({kieu: "ok", text: "Đã tải đề lên kho ✓"});
       }
       resetForm();
-      setResetTurnstile((k) => k + 1);
-      setTurnstile(null);
     } catch (err) {
       setBao({kieu: "loi", text: err instanceof Error ? err.message : "Có lỗi khi lưu đề."});
-      setResetTurnstile((k) => k + 1);
-      setTurnstile(null);
     } finally {
       setDangGui(false);
       setGiaiDoan("");
@@ -327,7 +316,6 @@ export default function AdminPanel() {
               }} />
             </motion.label>
             {editingId && !tep && <p className="border border-ink/25 bg-paper p-2.5 text-[11px] text-ink-soft">Giữ nguyên file cũ. Chỉ chọn file mới khi muốn thay nội dung đề.</p>}
-            <Turnstile onChange={setTurnstile} resetKey={resetTurnstile} />
             <AnimatePresence>
               {dangGui && (
                 <motion.div initial={{opacity: 0, height: 0}} animate={{opacity: 1, height: "auto"}} exit={{opacity: 0, height: 0}} className="overflow-hidden">
