@@ -1,11 +1,15 @@
+const CDN = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174";
+const WORKER = `${CDN}/build/pdf.worker.min.js`;
+const CMAP = `${CDN}/cmaps/`;
+const FONTS = `${CDN}/standard_fonts/`;
 export async function nenPdf(file: File, onProgress?: (s: string) => void): Promise<Blob> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const pdfjs = await import("pdfjs-dist");
-  pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  pdfjs.GlobalWorkerOptions.workerSrc = WORKER;
   const {PDFDocument} = await import("pdf-lib");
   const src = await PDFDocument.load(bytes, {updateMetadata: false});
   const out = await PDFDocument.create();
-  const doc = await pdfjs.getDocument({data: bytes.slice()}).promise;
+  const doc = await pdfjs.getDocument({data: bytes.slice(), cMapUrl: CMAP, cMapPacked: true, standardFontDataUrl: FONTS}).promise;
   const n = doc.numPages;
   for (let i = 0; i < n; i++) {
     onProgress?.(`Đang nén PDF trang ${i + 1}/${n}...`);
