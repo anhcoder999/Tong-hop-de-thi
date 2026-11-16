@@ -8,6 +8,7 @@ export type LinkUpload = {ok: true; path: string; signedUrl: string} | {ok: fals
 export type LinkAnh = {ok: true; path: string; token: string} | {ok: false; error: string};
 export type KetQuaGhi = {ok: true; row: Record<string, unknown>} | {ok: false; error: string};
 export type KetQua = {ok: boolean; error?: string};
+export type NguoiDung = {id: string; email: string; ho_ten: string | null; role: string; banned: boolean; created_at: string};
 export async function xinLinkUpload(mon: Mon, loai: Loai): Promise<LinkUpload> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
@@ -107,4 +108,21 @@ export async function xoaThongBao(id: string): Promise<KetQua> {
   if (error) return {ok: false, error: error.message};
   if (data?.duong_dan) await hubClient("MAIN").storage.from(BUCKET).remove([String(data.duong_dan)]);
   return {ok: true};
+}
+export async function goiTai(id: string): Promise<void> {
+  await hubClient("MAIN").rpc("tang_tai", {uid: id});
+}
+export async function layNguoiDung(): Promise<{ok: true; ds: NguoiDung[]} | {ok: false; error: string}> {
+  const uid = await adminUid();
+  if (!uid) return {ok: false, error: "Không có quyền quản trị."};
+  const {data, error} = await hubClient("MAIN").from("profiles").select("id,email,ho_ten,role,banned,created_at").order("created_at", {ascending: false});
+  if (error) return {ok: false, error: error.message};
+  return {ok: true, ds: (data ?? []) as NguoiDung[]};
+}
+export async function banNguoiDung(id: string, banned: boolean): Promise<KetQua> {
+  const uid = await adminUid();
+  if (!uid) return {ok: false, error: "Không có quyền quản trị."};
+  if (id === uid) return {ok: false, error: "Không thể tự ban chính mình."};
+  const {error} = await hubClient("MAIN").from("profiles").update({banned}).eq("id", id);
+  return error ? {ok: false, error: error.message} : {ok: true};
 }
