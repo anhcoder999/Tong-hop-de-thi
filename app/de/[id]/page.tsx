@@ -4,7 +4,7 @@ import {notFound} from "next/navigation";
 import {IconCalendar, IconChevron, IconDownload, IconEye} from "@/components/Icons";
 import DocumentViewer from "@/components/DocumentViewer";
 import {chuanMon, formatDungLuong, formatNgay, MON_DAY_DU, tenNhom, type DeThi} from "@/lib/data";
-import {authClient, BUCKET, hubClient, hubCuaPath, uidBiBan} from "@/lib/server";
+import {authClient, BUCKET, hubClient, hubCuaPath} from "@/lib/server";
 export const dynamic = "force-dynamic";
 interface Props {
   params: {id: string};
@@ -50,7 +50,9 @@ export default async function TrangXemDe({params}: Props) {
       </div>
     );
   }
-  if (await uidBiBan()) {
+  const uid = String(data.claims.sub);
+  const [hoSo, de] = await Promise.all([hubClient("MAIN").from("profiles").select("banned").eq("id", uid).maybeSingle(), layDe(params.id)]);
+  if (hoSo.data?.banned) {
     return (
       <div className="mx-auto w-full min-w-0 max-w-xl px-4 pb-16 pt-16">
         <div className="sheet border-danger p-6 pl-9 shadow-paper">
@@ -60,14 +62,13 @@ export default async function TrangXemDe({params}: Props) {
       </div>
     );
   }
-  const de = await layDe(params.id);
   if (!de) notFound();
-  await hubClient("MAIN").rpc("tang_xem", {uid: de.id});
+  const [, signed] = await Promise.all([
+    hubClient("MAIN").rpc("tang_xem", {uid: de.id}),
+    de.duongDan ? hubClient(hubCuaPath(de.duongDan)).storage.from(BUCKET).createSignedUrl(de.duongDan, 3600) : Promise.resolve({data: null as {signedUrl: string} | null})
+  ]);
   let url = de.urlPdf;
-  if (de.duongDan) {
-    const {data: signed} = await hubClient(hubCuaPath(de.duongDan)).storage.from(BUCKET).createSignedUrl(de.duongDan, 3600);
-    if (signed?.signedUrl) url = signed.signedUrl;
-  }
+  if (signed.data?.signedUrl) url = signed.data.signedUrl;
   return (
     <div className="mx-auto w-full min-w-0 max-w-5xl px-4 pb-16 pt-6 sm:pt-10">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-soft">
