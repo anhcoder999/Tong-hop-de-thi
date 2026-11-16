@@ -5,7 +5,10 @@ import {motion} from "framer-motion";
 import {IconArrowLeft, IconDownload, IconExternal, IconLoader} from "@/components/Icons";
 import Skeleton from "@/components/Skeleton";
 import {buttonTap} from "@/lib/animations";
-const WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const CDN = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174";
+const WORKER = `${CDN}/build/pdf.worker.min.js`;
+const CMAP = `${CDN}/cmaps/`;
+const FONTS = `${CDN}/standard_fonts/`;
 export default function DocumentViewer({url, ten}: {url: string; ten: string}) {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -26,7 +29,7 @@ export default function DocumentViewer({url, ten}: {url: string; ten: string}) {
       try {
         const pdfjs = await import("pdfjs-dist");
         pdfjs.GlobalWorkerOptions.workerSrc = WORKER;
-        const doc = await pdfjs.getDocument({url}).promise;
+        const doc = await pdfjs.getDocument({url, cMapUrl: CMAP, cMapPacked: true, standardFontDataUrl: FONTS}).promise;
         if (!alive) {
           doc.destroy();
           return;
@@ -163,7 +166,7 @@ export default function DocumentViewer({url, ten}: {url: string; ten: string}) {
           </div>
         )}
       </div>
-      <p className="mt-3 text-xs text-ink-faint">Mặc định đề vừa khít chiều ngang màn hình, chữ nét theo độ phân giải máy. Dùng + / − để phóng to khi cần soi chi tiết, kéo ngang dọc tự do.</p>
+      <p className="mt-3 text-xs text-ink-faint">Hỗ trợ đủ tiếng Việt, Trung, Nhật, Hàn nhờ bảng ký tự CMap. Mặc định đề vừa khít chiều ngang, chữ nét theo độ phân giải máy; dùng + / − để soi chi tiết.</p>
     </div>
   );
 }
