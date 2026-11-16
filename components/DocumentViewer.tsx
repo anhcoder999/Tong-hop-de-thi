@@ -9,9 +9,9 @@ const WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worke
 export default function DocumentViewer({url, ten}: {url: string; ten: string}) {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const docRef = useRef<{destroy: () => void} | null>(null);
+  const docRef = useRef<any>(null);
   const taskRef = useRef<{cancel: () => void; promise: Promise<unknown>} | null>(null);
-  const [pdf, setPdf] = useState<{getPage: (n: number) => Promise<{getViewport: (o: {scale: number}) => {width: number; height: number}; render: (o: {canvasContext: CanvasRenderingContext2D; viewport: unknown}) => {cancel: () => void; promise: Promise<unknown>}}>; numPages: number} | null>(null);
+  const [pdf, setPdf] = useState<any>(null);
   const [trang, setTrang] = useState(1);
   const [tong, setTong] = useState(0);
   const [zoom, setZoom] = useState(1);
