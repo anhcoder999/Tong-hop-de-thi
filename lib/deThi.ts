@@ -4,13 +4,10 @@ import {chuanMon, khongDau, type DeThi, type Loai, type Mon} from "@/lib/data";
 export const MAX_BYTES = 20 * 1024 * 1024;
 const MIME: Record<Loai, string> = {
   pdf: "application/pdf",
-  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  docx: "application/pdf"
 };
 export function duoiFile(name: string): Loai | null {
-  const n = name.toLowerCase();
-  if (n.endsWith(".pdf")) return "pdf";
-  if (n.endsWith(".docx")) return "docx";
-  return null;
+  return name.toLowerCase().endsWith(".pdf") ? "pdf" : null;
 }
 function docRow(r: Record<string, unknown>): DeThi {
   return {
@@ -19,7 +16,7 @@ function docRow(r: Record<string, unknown>): DeThi {
     ten: String(r.ten),
     ngay: String(r.ngay),
     urlPdf: String(r.url_file),
-    loai: r.loai === "docx" ? "docx" : "pdf",
+    loai: "pdf",
     duongDan: (r.duong_dan as string | null) ?? null,
     kichThuoc: typeof r.kich_thuoc === "number" ? r.kich_thuoc : null,
     tenGoc: (r.ten_goc as string | null) ?? null,
@@ -45,8 +42,7 @@ export async function kiemTraTrung(mon: Mon, ten: string, boQuaId?: string): Pro
   const chuan = khongDau(ten);
   return (data ?? []).some((r) => String(r.id) !== boQuaId && chuanMon(String(r.mon ?? "")) === mon && khongDau(String(r.ten)) === chuan);
 }
-async function chuanBiFile(file: File, loai: Loai, onStage?: (s: string) => void): Promise<File> {
-  if (loai !== "pdf") return file;
+async function chuanBiFile(file: File, onStage?: (s: string) => void): Promise<File> {
   try {
     onStage?.("Đang nén PDF, giữ chữ sắc nét...");
     const {nenPdf} = await import("./nenPdf");
@@ -64,16 +60,15 @@ async function taiLen(file: File, mon: Mon, loai: Loai): Promise<string> {
   return link.path;
 }
 function xacThuc(file: File): Loai {
-  const loai = duoiFile(file.name);
-  if (!loai) throw new Error("Chỉ nhận file PDF hoặc DOCX.");
+  if (!duoiFile(file.name)) throw new Error("Chỉ nhận file PDF.");
   if (file.size > MAX_BYTES) throw new Error("File vượt quá 20MB.");
   if (file.size === 0) throw new Error("File rỗng, hãy chọn lại.");
-  return loai;
+  return "pdf";
 }
 export type NhapDe = {mon: Mon; ten: string; ngay: string};
 export async function themDe(input: NhapDe, file: File, onStage?: (s: string) => void): Promise<DeThi> {
   const loai = xacThuc(file);
-  const tep = await chuanBiFile(file, loai, onStage);
+  const tep = await chuanBiFile(file, onStage);
   onStage?.("Đang tải file lên kho...");
   const path = await taiLen(tep, input.mon, loai);
   onStage?.("Đang ghi thông tin đề...");
@@ -85,20 +80,19 @@ export async function themDe(input: NhapDe, file: File, onStage?: (s: string) =>
   return docRow(kq.row);
 }
 export async function suaDe(id: string, input: NhapDe, file: File | null, onStage?: (s: string) => void): Promise<DeThi> {
-  let loai: Loai = "pdf";
   let path: string | null = null;
   let kichThuoc: number | null = null;
   let tenGoc: string | null = null;
   if (file) {
-    loai = xacThuc(file);
-    const tep = await chuanBiFile(file, loai, onStage);
+    xacThuc(file);
+    const tep = await chuanBiFile(file, onStage);
     onStage?.("Đang tải file mới...");
-    path = await taiLen(tep, input.mon, loai);
+    path = await taiLen(tep, input.mon, "pdf");
     kichThuoc = tep.size;
     tenGoc = file.name;
   }
   onStage?.("Đang cập nhật thông tin...");
-  const kq = await capNhatDe(id, {mon: input.mon, ten: input.ten, ngay: input.ngay, loai, path, kichThuoc, tenGoc});
+  const kq = await capNhatDe(id, {mon: input.mon, ten: input.ten, ngay: input.ngay, loai: "pdf", path, kichThuoc, tenGoc});
   if (!kq.ok) {
     if (path) await xoaFile(path);
     throw new Error(kq.error);
