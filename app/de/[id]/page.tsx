@@ -3,7 +3,7 @@ import Link from "next/link";
 import {notFound} from "next/navigation";
 import {IconCalendar, IconChevron} from "@/components/Icons";
 import DocumentViewer from "@/components/DocumentViewer";
-import {chuanMon, formatDungLuong, formatNgay, MON_DAY_DU, tenNhom, type DeThi, type Loai} from "@/lib/data";
+import {chuanMon, formatDungLuong, formatNgay, MON_DAY_DU, tenNhom, type DeThi} from "@/lib/data";
 import {authClient, BUCKET, hubClient, hubCuaPath} from "@/lib/server";
 export const dynamic = "force-dynamic";
 interface Props {
@@ -19,10 +19,11 @@ async function layDe(id: string): Promise<DeThi | null> {
     ten: String(r.ten),
     ngay: String(r.ngay),
     urlPdf: String(r.url_file),
-    loai: (r.loai === "docx" ? "docx" : "pdf") as Loai,
+    loai: "pdf",
     duongDan: (r.duong_dan as string | null) ?? null,
     kichThuoc: typeof r.kich_thuoc === "number" ? r.kich_thuoc : null,
-    tenGoc: (r.ten_goc as string | null) ?? null
+    tenGoc: (r.ten_goc as string | null) ?? null,
+    ghimAt: (r.ghim_at as string | null) ?? null
   };
 }
 export async function generateMetadata({params}: Props): Promise<Metadata> {
@@ -74,7 +75,7 @@ export default async function TrangXemDe({params}: Props) {
             {de.mon}
           </span>
           <span className="text-[11px] uppercase tracking-[0.14em] text-ink-soft">{MON_DAY_DU[de.mon]}</span>
-          <span className="border border-ink/40 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-soft">{de.loai === "docx" ? "DOCX" : "PDF"}</span>
+          <span className="border border-ink/40 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-soft">PDF</span>
           <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-faint">
             <IconCalendar className="h-3.5 w-3.5" />
             {formatNgay(de.ngay)}
@@ -82,7 +83,7 @@ export default async function TrangXemDe({params}: Props) {
           <span className="text-xs uppercase tracking-[0.12em] text-ink-faint">{formatDungLuong(de.kichThuoc)}</span>
         </div>
       </header>
-      <DocumentViewer url={url} ten={de.ten} loai={de.loai} />
+      <DocumentViewer url={url} ten={de.ten} />
     </div>
   );
 }
