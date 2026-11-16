@@ -20,7 +20,9 @@ function docRow(r: Record<string, unknown>): DeThi {
     duongDan: (r.duong_dan as string | null) ?? null,
     kichThuoc: typeof r.kich_thuoc === "number" ? r.kich_thuoc : null,
     tenGoc: (r.ten_goc as string | null) ?? null,
-    ghimAt: (r.ghim_at as string | null) ?? null
+    ghimAt: (r.ghim_at as string | null) ?? null,
+    luotXem: typeof r.luot_xem === "number" ? r.luot_xem : 0,
+    luotTai: typeof r.luot_tai === "number" ? r.luot_tai : 0
   };
 }
 function sapGhimTruoc(rows: DeThi[]): DeThi[] {
@@ -52,8 +54,8 @@ async function chuanBiFile(file: File, onStage?: (s: string) => void): Promise<F
     return file;
   }
 }
-async function taiLen(file: File, mon: Mon, loai: Loai): Promise<string> {
-  const link = await xinLinkUpload(mon, loai);
+async function taiLen(file: File, mon: Mon, loai: Loai, token: string): Promise<string> {
+  const link = await xinLinkUpload(mon, loai, token);
   if (!link.ok) throw new Error(link.error);
   const res = await fetch(link.signedUrl, {method: "PUT", body: file, headers: {"Content-Type": MIME[loai], "x-upsert": "false"}});
   if (!res.ok) throw new Error(`Tải file thất bại: ${res.status}`);
@@ -66,11 +68,11 @@ function xacThuc(file: File): Loai {
   return "pdf";
 }
 export type NhapDe = {mon: Mon; ten: string; ngay: string};
-export async function themDe(input: NhapDe, file: File, onStage?: (s: string) => void): Promise<DeThi> {
+export async function themDe(input: NhapDe, file: File, onStage: ((s: string) => void) | undefined, token: string): Promise<DeThi> {
   const loai = xacThuc(file);
   const tep = await chuanBiFile(file, onStage);
   onStage?.("Đang tải file lên kho...");
-  const path = await taiLen(tep, input.mon, loai);
+  const path = await taiLen(tep, input.mon, loai, token);
   onStage?.("Đang ghi thông tin đề...");
   const kq = await ghiDe({mon: input.mon, ten: input.ten, ngay: input.ngay, loai, path, kichThuoc: tep.size, tenGoc: file.name});
   if (!kq.ok) {
@@ -79,7 +81,7 @@ export async function themDe(input: NhapDe, file: File, onStage?: (s: string) =>
   }
   return docRow(kq.row);
 }
-export async function suaDe(id: string, input: NhapDe, file: File | null, onStage?: (s: string) => void): Promise<DeThi> {
+export async function suaDe(id: string, input: NhapDe, file: File | null, onStage: ((s: string) => void) | undefined, token: string): Promise<DeThi> {
   let path: string | null = null;
   let kichThuoc: number | null = null;
   let tenGoc: string | null = null;
@@ -87,7 +89,7 @@ export async function suaDe(id: string, input: NhapDe, file: File | null, onStag
     xacThuc(file);
     const tep = await chuanBiFile(file, onStage);
     onStage?.("Đang tải file mới...");
-    path = await taiLen(tep, input.mon, "pdf");
+    path = await taiLen(tep, input.mon, "pdf", token);
     kichThuoc = tep.size;
     tenGoc = file.name;
   }
