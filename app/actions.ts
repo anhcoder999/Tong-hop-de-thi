@@ -20,8 +20,7 @@ export async function dangKy(email: string, password: string, hoTen: string, tok
   const {error} = await authClient().auth.signUp({email, password, options: {data: {ho_ten: hoTen}}});
   return error ? {ok: false, error: error.message} : {ok: true};
 }
-export async function xinLinkUpload(mon: Mon, loai: Loai, token: string): Promise<LinkUpload> {
-  if (!(await xacThucTurnstile(token))) return {ok: false, error: "Xác thực Turnstile thất bại. Tải lại trang."};
+export async function xinLinkUpload(mon: Mon, loai: Loai): Promise<LinkUpload> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
   const path = `${MON_SLUG[mon]}/${randomUUID()}.${loai}`;
