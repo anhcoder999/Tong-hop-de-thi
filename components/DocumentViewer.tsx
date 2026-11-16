@@ -42,7 +42,7 @@ export default function DocumentViewer({url, ten, id}: {url: string; ten: string
       try {
         const pdfjs = await import("pdfjs-dist");
         pdfjs.GlobalWorkerOptions.workerSrc = WORKER;
-        const doc = await pdfjs.getDocument({url, cMapUrl: CMAP, cMapPacked: true, standardFontDataUrl: FONTS}).promise;
+        const doc = await pdfjs.getDocument({url, cMapUrl: CMAP, cMapPacked: true, standardFontDataUrl: FONTS, disableAutoFetch: true, rangeChunkSize: 65536}).promise;
         if (!alive) {
           doc.destroy();
           return;
@@ -94,7 +94,7 @@ export default function DocumentViewer({url, ten, id}: {url: string; ten: string
       setDangVe(true);
       const page = await pdf.getPage(trang);
       if (cancelled) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const scale = fit * zoom;
       const base = page.getViewport({scale});
       const cssW = Math.floor(base.width);
@@ -242,7 +242,7 @@ export default function DocumentViewer({url, ten, id}: {url: string; ten: string
           </motion.button>
         </div>
         {ketQua.length > 0 && (
-          <ul className="mt-2 max-h-32 space-y-1 overflow-y-auto viewer-scroll">
+          <ul className="viewer-scroll mt-2 max-h-32 space-y-1 overflow-y-auto">
             {ketQua.map((k, i) => (
               <li key={`${k.trang}-${i}`}>
                 <button type="button" onClick={() => setTrang(k.trang)} className={`w-full truncate border px-2 py-1 text-left text-xs transition-colors ${trang === k.trang ? "border-accent bg-accent-wash text-accent-deep" : "border-ink/20 bg-paper text-ink-soft hover:border-accent"}`}>
