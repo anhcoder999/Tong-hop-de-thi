@@ -1,20 +1,19 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
-import { IconAlert, IconCheck, IconClose, IconDownload, IconEdit, IconExternal, IconEye, IconFile, IconLoader, IconPlus, IconRefresh, IconSearch, IconSeal, IconSort, IconTrash, IconUndo, IconUpload, MonIcon } from "@/components/Icons";
+import {AnimatePresence, motion} from "framer-motion";
+import {IconAlert, IconCheck, IconClose, IconDownload, IconEdit, IconExternal, IconEye, IconFile, IconLoader, IconPlus, IconRefresh, IconSearch, IconSeal, IconSort, IconTrash, IconUndo, IconUpload, MonIcon} from "@/components/Icons";
 import EmptyState from "@/components/EmptyState";
 import Skeleton from "@/components/Skeleton";
-import { formatDungLuong, formatNgay, homNay, khongDau, MON_DAY_DU, MON_SLUG, monTrongLoc, NHOM_MON, tenNhom, type DeThi, type Loc, type Mon } from "@/lib/data";
-import { buttonTap, EASE, fadeInUp, spring, staggerContainer } from "@/lib/animations";
-import { useHoverCapable } from "@/lib/useHover";
-import { useAuth } from "@/lib/auth";
-import { duoiFile, kiemTraTrung, layDanhSach, MAX_BYTES, suaDe, themDe, xoaDe } from "@/lib/deThi";
+import {formatDungLuong, formatNgay, homNay, khongDau, MON_DAY_DU, MON_SLUG, monTrongLoc, NHOM_MON, tenNhom, type DeThi, type Loc, type Mon} from "@/lib/data";
+import {buttonTap, EASE, fadeInUp, spring, staggerContainer} from "@/lib/animations";
+import {useHoverCapable} from "@/lib/useHover";
+import {useAuth} from "@/lib/auth";
+import {duoiFile, kiemTraTrung, layDanhSach, MAX_BYTES, suaDe, themDe, xoaDe} from "@/lib/deThi";
 type SapXep = "moi" | "cu" | "ten";
-type LocLoai = "all" | "pdf" | "docx";
-const KHOA_VIEW = "dethi.admin.view.v2";
+const KHOA_VIEW = "dethi.admin.view.v3";
 export default function AdminPanel() {
-  const { user, hoSo } = useAuth();
+  const {user, hoSo} = useAuth();
   const hover = useHoverCapable();
   const formRef = useRef<HTMLFormElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -31,10 +30,9 @@ export default function AdminPanel() {
   const [dangKeo, setDangKeo] = useState(false);
   const [dangGui, setDangGui] = useState(false);
   const [giaiDoan, setGiaiDoan] = useState("");
-  const [bao, setBao] = useState<{ kieu: "ok" | "loi"; text: string } | null>(null);
+  const [bao, setBao] = useState<{kieu: "ok" | "loi"; text: string} | null>(null);
   const [tuKhoa, setTuKhoa] = useState("");
   const [locMon, setLocMon] = useState<Loc>("Tất cả");
-  const [locLoai, setLocLoai] = useState<LocLoai>("all");
   const [sapXep, setSapXep] = useState<SapXep>("moi");
   const [chon, setChon] = useState<string[]>([]);
   const [choXoa, setChoXoa] = useState<DeThi[]>([]);
@@ -43,9 +41,8 @@ export default function AdminPanel() {
     try {
       const raw = localStorage.getItem(KHOA_VIEW);
       if (raw) {
-        const v = JSON.parse(raw) as { locMon?: Loc; locLoai?: LocLoai; sapXep?: SapXep };
+        const v = JSON.parse(raw) as {locMon?: Loc; sapXep?: SapXep};
         if (v.locMon) setLocMon(v.locMon);
-        if (v.locLoai) setLocLoai(v.locLoai);
         if (v.sapXep) setSapXep(v.sapXep);
       }
     } catch {
@@ -54,11 +51,11 @@ export default function AdminPanel() {
   }, []);
   useEffect(() => {
     try {
-      localStorage.setItem(KHOA_VIEW, JSON.stringify({ locMon, locLoai, sapXep }));
+      localStorage.setItem(KHOA_VIEW, JSON.stringify({locMon, sapXep}));
     } catch {
       setBao(null);
     }
-  }, [locMon, locLoai, sapXep]);
+  }, [locMon, sapXep]);
   const tai = useCallback(async () => {
     setDangTai(true);
     setLoiTai("");
@@ -89,9 +86,9 @@ export default function AdminPanel() {
     }
     if (thatBai.length) {
       setDs((cur) => [...thatBai, ...cur]);
-      setBao({ kieu: "loi", text: `Không xóa được ${thatBai.length} đề. Đã hoàn lại danh sách.` });
+      setBao({kieu: "loi", text: `Không xóa được ${thatBai.length} đề. Đã hoàn lại danh sách.`});
     } else {
-      setBao({ kieu: "ok", text: `Đã xóa vĩnh viễn ${items.length} đề và file trong kho ✓` });
+      setBao({kieu: "ok", text: `Đã xóa vĩnh viễn ${items.length} đề và file trong kho ✓`});
     }
   }, []);
   useEffect(() => {
@@ -111,27 +108,27 @@ export default function AdminPanel() {
   const chonTep = (f: File | null | undefined) => {
     if (!f) return;
     if (!duoiFile(f.name)) {
-      setBao({ kieu: "loi", text: "Chỉ nhận file PDF hoặc DOCX." });
+      setBao({kieu: "loi", text: "Chỉ nhận file PDF."});
       return;
     }
     if (f.size > MAX_BYTES) {
-      setBao({ kieu: "loi", text: "File vượt quá 20MB." });
+      setBao({kieu: "loi", text: "File vượt quá 20MB."});
       return;
     }
     setTep(f);
     setBao(null);
-    if (!ten.trim()) setTen(f.name.replace(/\.(pdf|docx)$/i, "").replace(/[-_]+/g, " ").slice(0, 120));
+    if (!ten.trim()) setTen(f.name.replace(/\.pdf$/i, "").replace(/[-_]+/g, " ").slice(0, 120));
   };
   const guiForm = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (dangGui) return;
     const tenChuan = ten.trim();
     if (!tenChuan) {
-      setBao({ kieu: "loi", text: "Nhập tên đề đã nhé." });
+      setBao({kieu: "loi", text: "Nhập tên đề đã nhé."});
       return;
     }
     if (!editingId && !tep) {
-      setBao({ kieu: "loi", text: "Chọn hoặc kéo thả file PDF/DOCX vào khung." });
+      setBao({kieu: "loi", text: "Chọn hoặc kéo thả file PDF vào khung."});
       return;
     }
     setDangGui(true);
@@ -140,21 +137,21 @@ export default function AdminPanel() {
       setGiaiDoan("Đang kiểm tra trùng...");
       const trung = await kiemTraTrung(mon, tenChuan, editingId ?? undefined);
       if (trung) {
-        setBao({ kieu: "loi", text: `Đã có đề tên này trong môn ${MON_DAY_DU[mon]}. Đổi tên hoặc sửa đề cũ.` });
+        setBao({kieu: "loi", text: `Đã có đề tên này trong môn ${MON_DAY_DU[mon]}. Đổi tên hoặc sửa đề cũ.`});
         return;
       }
       if (editingId) {
-        const moi = await suaDe(editingId, { mon, ten: tenChuan, ngay }, tep, setGiaiDoan);
+        const moi = await suaDe(editingId, {mon, ten: tenChuan, ngay}, tep, setGiaiDoan);
         setDs((cur) => cur.map((d) => (d.id === moi.id ? moi : d)));
-        setBao({ kieu: "ok", text: "Đã cập nhật đề ✓" });
+        setBao({kieu: "ok", text: "Đã cập nhật đề ✓"});
       } else {
-        const moi = await themDe({ mon, ten: tenChuan, ngay }, tep as File, setGiaiDoan);
+        const moi = await themDe({mon, ten: tenChuan, ngay}, tep as File, setGiaiDoan);
         setDs((cur) => [moi, ...cur]);
-        setBao({ kieu: "ok", text: "Đã tải đề lên kho ✓" });
+        setBao({kieu: "ok", text: "Đã tải đề lên kho ✓"});
       }
       resetForm();
     } catch (err) {
-      setBao({ kieu: "loi", text: err instanceof Error ? err.message : "Có lỗi khi lưu đề." });
+      setBao({kieu: "loi", text: err instanceof Error ? err.message : "Có lỗi khi lưu đề."});
     } finally {
       setDangGui(false);
       setGiaiDoan("");
@@ -168,7 +165,7 @@ export default function AdminPanel() {
     setTep(null);
     setChiTiet(null);
     if (fileRef.current) fileRef.current.value = "";
-    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    formRef.current?.scrollIntoView({behavior: "smooth", block: "start"});
   };
   const yeuCauXoa = (items: DeThi[]) => {
     if (!items.length) return;
@@ -193,21 +190,20 @@ export default function AdminPanel() {
     pendingRef.current = [];
     setChoXoa([]);
     setDs((cur) => [...items, ...cur]);
-    setBao({ kieu: "ok", text: "Đã hoàn tác, đề vẫn còn trong kho." });
+    setBao({kieu: "ok", text: "Đã hoàn tác, đề vẫn còn trong kho."});
   };
   const hienThi = useMemo(() => {
     const tu = khongDau(tuKhoa);
     const trongLoc = monTrongLoc(locMon);
-    const loc = ds.filter((d) => trongLoc.includes(d.mon) && (locLoai === "all" || d.loai === locLoai) && (!tu || khongDau(d.ten).includes(tu)));
+    const loc = ds.filter((d) => trongLoc.includes(d.mon) && (!tu || khongDau(d.ten).includes(tu)));
     if (sapXep === "moi") loc.sort((a, b) => b.ngay.localeCompare(a.ngay));
     if (sapXep === "cu") loc.sort((a, b) => a.ngay.localeCompare(b.ngay));
     if (sapXep === "ten") loc.sort((a, b) => a.ten.localeCompare(b.ten, "vi"));
     return loc;
-  }, [ds, tuKhoa, locMon, locLoai, sapXep]);
+  }, [ds, tuKhoa, locMon, sapXep]);
   const thongKe = useMemo(() => {
-    const pdf = ds.filter((d) => d.loai === "pdf").length;
     const bytes = ds.reduce((s, d) => s + (d.kichThuoc ?? 0), 0);
-    return { tong: ds.length, pdf, docx: ds.length - pdf, bytes };
+    return {tong: ds.length, bytes};
   }, [ds]);
   const tatCaChon = hienThi.length > 0 && hienThi.every((d) => chon.includes(d.id));
   const doiChon = (id: string) => setChon((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
@@ -219,7 +215,7 @@ export default function AdminPanel() {
           <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
             Trang <span className="text-accent">quản trị</span>
           </h1>
-          <p className="mt-2 text-sm text-ink-soft">Tải đề PDF và DOCX lên kho lưu trữ. File đặt tên ngẫu nhiên, xếp vào thư mục theo môn.</p>
+          <p className="mt-2 text-sm text-ink-soft">Tải đề PDF lên kho lưu trữ. File tự nén trước khi gửi, tên ngẫu nhiên, xếp vào thư mục theo môn.</p>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.12em] text-ink-faint">
             <span className="flex items-center gap-1.5 border border-accent/70 px-2 py-0.5 text-accent">
               <IconSeal className="h-3.5 w-3.5" />
@@ -228,12 +224,11 @@ export default function AdminPanel() {
             <span className="max-w-[16rem] truncate">{hoSo?.ho_ten?.trim() || hoSo?.email || user?.email}</span>
           </div>
         </motion.header>
-        <motion.div variants={fadeInUp} className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <motion.div variants={fadeInUp} className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {[
-            { nhan: "Tổng đề", giaTri: String(thongKe.tong) },
-            { nhan: "File PDF", giaTri: String(thongKe.pdf) },
-            { nhan: "File DOCX", giaTri: String(thongKe.docx) },
-            { nhan: "Dung lượng", giaTri: formatDungLuong(thongKe.bytes) },
+            {nhan: "Tổng đề", giaTri: String(thongKe.tong)},
+            {nhan: "File PDF", giaTri: String(thongKe.tong)},
+            {nhan: "Dung lượng", giaTri: formatDungLuong(thongKe.bytes)}
           ].map((s) => (
             <div key={s.nhan} className="border border-ink/25 bg-paper-light px-3 py-3 shadow-paper">
               <p className="text-[10px] uppercase tracking-[0.16em] text-ink-faint">{s.nhan}</p>
@@ -260,15 +255,7 @@ export default function AdminPanel() {
                       {n.mon.map((m) => {
                         const active = mon === m;
                         return (
-                          <motion.button
-                            key={m}
-                            type="button"
-                            whileTap={buttonTap}
-                            onClick={() => setMon(m)}
-                            aria-pressed={active}
-                            title={MON_DAY_DU[m]}
-                            className={`flex flex-col items-center gap-1 border px-1 py-2 transition-colors ${active ? "border-accent bg-accent-wash text-accent shadow-stamp" : "border-ink/25 bg-paper text-ink-soft hover:border-ink/50 hover:text-ink"}`}
-                          >
+                          <motion.button key={m} type="button" whileTap={buttonTap} onClick={() => setMon(m)} aria-pressed={active} title={MON_DAY_DU[m]} className={`flex flex-col items-center gap-1 border px-1 py-2 transition-colors ${active ? "border-accent bg-accent-wash text-accent shadow-stamp" : "border-ink/25 bg-paper text-ink-soft hover:border-ink/50 hover:text-ink"}`}>
                             <MonIcon mon={m} className="h-4 w-4" />
                             <span className="text-[11px] font-semibold uppercase tracking-[0.06em]">{m}</span>
                           </motion.button>
@@ -292,14 +279,21 @@ export default function AdminPanel() {
             </div>
             <motion.label
               htmlFor="tep"
-              whileHover={hover ? { scale: 1.01 } : undefined}
+              whileHover={hover ? {scale: 1.01} : undefined}
               transition={spring}
-              onDragOver={(e) => { e.preventDefault(); setDangKeo(true); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDangKeo(true);
+              }}
               onDragLeave={() => setDangKeo(false)}
-              onDrop={(e) => { e.preventDefault(); setDangKeo(false); chonTep(e.dataTransfer.files?.[0]); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDangKeo(false);
+                chonTep(e.dataTransfer.files?.[0]);
+              }}
               className={`block min-w-0 cursor-pointer border-2 border-dashed p-6 text-center transition-colors duration-300 ${dangKeo ? "border-accent bg-accent-wash shadow-stamp" : "border-ink/40 bg-paper hover:border-accent hover:shadow-stamp"}`}
             >
-              <motion.div animate={dangKeo ? { scale: 1.06 } : { scale: 1 }} transition={spring} className="flex flex-col items-center gap-2">
+              <motion.div animate={dangKeo ? {scale: 1.06} : {scale: 1}} transition={spring} className="flex flex-col items-center gap-2">
                 <span className="grid h-12 w-12 place-items-center border border-ink bg-ink text-paper-light">
                   <IconUpload className="h-5 w-5" />
                 </span>
@@ -312,24 +306,25 @@ export default function AdminPanel() {
                     <span className="text-[11px] uppercase tracking-[0.12em] text-ink-faint">{formatDungLuong(tep.size)}</span>
                   </span>
                 ) : (
-                  <span className="text-sm font-semibold text-ink">{editingId ? "Chọn file mới nếu muốn thay" : "Kéo thả PDF hoặc DOCX vào đây"}</span>
+                  <span className="text-sm font-semibold text-ink">{editingId ? "Chọn file mới nếu muốn thay" : "Kéo thả PDF vào đây"}</span>
                 )}
-                <span className="text-xs text-ink-faint">hoặc bấm để chọn file · tối đa 20MB</span>
+                <span className="text-xs text-ink-faint">hoặc bấm để chọn file · tối đa 20MB · tự nén trước khi upload</span>
               </motion.div>
-              <input ref={fileRef} id="tep" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="sr-only" onChange={(e) => { chonTep(e.target.files?.[0]); e.target.value = ""; }} />
+              <input ref={fileRef} id="tep" type="file" accept=".pdf,application/pdf" className="sr-only" onChange={(e) => {
+                chonTep(e.target.files?.[0]);
+                e.target.value = "";
+              }} />
             </motion.label>
-            {editingId && !tep && (
-              <p className="border border-ink/25 bg-paper p-2.5 text-[11px] text-ink-soft">Giữ nguyên file cũ. Chỉ chọn file mới khi muốn thay nội dung đề.</p>
-            )}
+            {editingId && !tep && <p className="border border-ink/25 bg-paper p-2.5 text-[11px] text-ink-soft">Giữ nguyên file cũ. Chỉ chọn file mới khi muốn thay nội dung đề.</p>}
             <AnimatePresence>
               {dangGui && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                <motion.div initial={{opacity: 0, height: 0}} animate={{opacity: 1, height: "auto"}} exit={{opacity: 0, height: 0}} className="overflow-hidden">
                   <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
                     <IconLoader className="h-3.5 w-3.5 animate-spin" />
                     {giaiDoan || "Đang xử lý..."}
                   </div>
                   <div className="mt-2 h-1 w-full overflow-hidden bg-ink/15">
-                    <motion.div animate={{ x: ["-100%", "100%"] }} transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }} className="h-full w-1/2 bg-accent" />
+                    <motion.div animate={{x: ["-100%", "100%"]}} transition={{duration: 1.1, repeat: Infinity, ease: "linear"}} className="h-full w-1/2 bg-accent" />
                   </div>
                 </motion.div>
               )}
@@ -367,7 +362,7 @@ export default function AdminPanel() {
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <select value={locMon} onChange={(e) => setLocMon(e.target.value as Loc)} aria-label="Lọc theo môn" className="min-w-0 border border-ink/30 bg-paper px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft outline-none focus:border-accent">
                   <option value="Tất cả">Tất cả môn</option>
                   {NHOM_MON.map((n) => (
@@ -378,11 +373,6 @@ export default function AdminPanel() {
                       ))}
                     </optgroup>
                   ))}
-                </select>
-                <select value={locLoai} onChange={(e) => setLocLoai(e.target.value as LocLoai)} aria-label="Lọc theo loại file" className="min-w-0 border border-ink/30 bg-paper px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft outline-none focus:border-accent">
-                  <option value="all">Mọi loại file</option>
-                  <option value="pdf">Chỉ PDF</option>
-                  <option value="docx">Chỉ DOCX</option>
                 </select>
                 <div className="flex items-center gap-2">
                   <IconSort className="h-4 w-4 shrink-0 text-ink-faint" />
@@ -409,7 +399,7 @@ export default function AdminPanel() {
               </div>
             ) : dangTai ? (
               <div className="mt-4 space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
+                {Array.from({length: 4}).map((_, i) => (
                   <Skeleton key={i} className="h-20 w-full" />
                 ))}
               </div>
@@ -419,7 +409,10 @@ export default function AdminPanel() {
               </div>
             ) : hienThi.length === 0 ? (
               <div className="mt-4">
-                <EmptyState onReset={() => { setTuKhoa(""); setLocMon("Tất cả"); setLocLoai("all"); }} />
+                <EmptyState onReset={() => {
+                  setTuKhoa("");
+                  setLocMon("Tất cả");
+                }} />
               </div>
             ) : (
               <ul className="mt-4 min-w-0 space-y-3">
@@ -428,10 +421,10 @@ export default function AdminPanel() {
                     <motion.li
                       key={d.id}
                       layout="position"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 24, transition: { duration: 0.2, ease: EASE } }}
-                      transition={{ duration: 0.3, ease: EASE, delay: Math.min(i * 0.03, 0.3) }}
+                      initial={{opacity: 0, x: -20}}
+                      animate={{opacity: 1, x: 0}}
+                      exit={{opacity: 0, x: 24, transition: {duration: 0.2, ease: EASE}}}
+                      transition={{duration: 0.3, ease: EASE, delay: Math.min(i * 0.03, 0.3)}}
                       className={`sheet flex min-w-0 items-center gap-2.5 p-4 pl-8 shadow-paper transition-colors ${chon.includes(d.id) ? "border-accent/70 bg-accent-wash/40" : ""}`}
                     >
                       <button type="button" onClick={() => doiChon(d.id)} aria-label="Chọn đề" className={`grid h-5 w-5 shrink-0 place-items-center border transition-colors ${chon.includes(d.id) ? "border-accent bg-accent text-paper-light" : "border-ink/40 text-transparent hover:border-accent"}`}>
@@ -443,7 +436,7 @@ export default function AdminPanel() {
                       <button type="button" onClick={() => setChiTiet(d)} className="min-w-0 flex-1 text-left">
                         <p className="truncate text-sm font-semibold text-ink">{d.ten}</p>
                         <p className="mt-0.5 truncate text-[11px] uppercase tracking-[0.1em] text-ink-faint">
-                          <span className="font-semibold text-accent">{d.mon}</span> · {formatNgay(d.ngay)} · {d.loai === "docx" ? "DOCX" : "PDF"} · {formatDungLuong(d.kichThuoc)}
+                          <span className="font-semibold text-accent">{d.mon}</span> · {formatNgay(d.ngay)} · PDF · {formatDungLuong(d.kichThuoc)}
                         </p>
                       </button>
                       <Link href={`/de/${d.id}`} aria-label="Xem đề" className="shrink-0 border border-transparent p-1.5 text-ink-faint transition-colors hover:border-ink/30 hover:text-ink">
@@ -465,7 +458,7 @@ export default function AdminPanel() {
       </motion.div>
       <AnimatePresence>
         {bao && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className={`fixed inset-x-4 bottom-4 z-[60] mx-auto flex max-w-lg items-start gap-2.5 border p-3.5 text-sm shadow-lift ${bao.kieu === "loi" ? "border-accent bg-accent-wash text-accent-deep" : "border-ink bg-ink text-paper-light"}`}>
+          <motion.div initial={{opacity: 0, y: 20}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: 20}} className={`fixed inset-x-4 bottom-4 z-[60] mx-auto flex max-w-lg items-start gap-2.5 border p-3.5 text-sm shadow-lift ${bao.kieu === "loi" ? "border-accent bg-accent-wash text-accent-deep" : "border-ink bg-ink text-paper-light"}`}>
             {bao.kieu === "loi" ? <IconAlert className="mt-0.5 h-4 w-4 shrink-0" /> : <IconCheck className="mt-0.5 h-4 w-4 shrink-0" />}
             <p className="min-w-0 flex-1">{bao.text}</p>
             <button type="button" onClick={() => setBao(null)} aria-label="Đóng thông báo" className="shrink-0 opacity-70 transition-opacity hover:opacity-100">
@@ -476,7 +469,7 @@ export default function AdminPanel() {
       </AnimatePresence>
       <AnimatePresence>
         {chon.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }} className="fixed inset-x-4 bottom-20 z-[55] mx-auto flex max-w-lg items-center gap-3 border border-ink bg-paper-light p-3 shadow-lift">
+          <motion.div initial={{opacity: 0, y: 24}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: 24}} className="fixed inset-x-4 bottom-20 z-[55] mx-auto flex max-w-lg items-center gap-3 border border-ink bg-paper-light p-3 shadow-lift">
             <span className="grid h-8 w-8 shrink-0 place-items-center border border-accent bg-accent-wash font-display text-sm font-bold text-accent">{chon.length}</span>
             <p className="min-w-0 flex-1 text-xs uppercase tracking-[0.1em] text-ink-soft">đề đang chọn</p>
             <motion.button whileTap={buttonTap} type="button" onClick={() => setChon([])} className="border border-ink/40 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft transition-colors hover:bg-paper-deep">
@@ -491,26 +484,26 @@ export default function AdminPanel() {
       </AnimatePresence>
       <AnimatePresence>
         {choXoa.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }} className="fixed inset-x-4 bottom-4 z-[70] mx-auto max-w-lg border-2 border-accent bg-paper-light shadow-lift">
+          <motion.div initial={{opacity: 0, y: 24}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: 24}} transition={spring} className="fixed inset-x-4 bottom-4 z-[70] mx-auto max-w-lg border-2 border-accent bg-paper-light shadow-lift">
             <div className="flex items-center gap-3 p-3.5">
               <IconTrash className="h-4 w-4 shrink-0 text-accent" />
               <p className="min-w-0 flex-1 text-sm text-ink">
                 Đang chờ xóa <b>{choXoa.length}</b> đề và file trong kho.
               </p>
-              <motion.button whileTap={buttonTap} type="button" onClick={hoanTac} className="flex shrink-0 items-center gap-1.5 border border-ink bg-ink px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent">
+              <motion.button whileTap={buttonTap} type="button" onClick={hoanTac} className="flex shrink-0 items-center gap-1.5 border border-ink bg-ink px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent">
                 <IconUndo className="h-3.5 w-3.5" />
                 Hoàn tác
               </motion.button>
             </div>
-            <motion.div initial={{ scaleX: 1 }} animate={{ scaleX: 0 }} transition={{ duration: 6, ease: "linear" }} className="h-1 origin-left bg-accent" />
+            <motion.div initial={{scaleX: 1}} animate={{scaleX: 0}} transition={{duration: 6, ease: "linear"}} className="h-1 origin-left bg-accent" />
           </motion.div>
         )}
       </AnimatePresence>
       <AnimatePresence>
         {chiTiet && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setChiTiet(null)} className="fixed inset-0 z-[80] bg-ink/45 backdrop-blur-sm" />
-            <motion.aside initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={spring} className="viewer-scroll fixed right-0 top-0 z-[81] flex h-full w-full max-w-md flex-col overflow-y-auto border-l-2 border-ink bg-paper shadow-lift">
+            <motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} onClick={() => setChiTiet(null)} className="fixed inset-0 z-[80] bg-ink/45 backdrop-blur-sm" />
+            <motion.aside initial={{x: "100%"}} animate={{x: 0}} exit={{x: "100%"}} transition={spring} className="viewer-scroll fixed right-0 top-0 z-[81] flex h-full w-full max-w-md flex-col overflow-y-auto border-l-2 border-ink bg-paper shadow-lift">
               <div className="flex items-start justify-between gap-3 border-b-2 border-ink p-5">
                 <div className="min-w-0">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-ink-faint">Chi tiết đề</p>
@@ -535,11 +528,11 @@ export default function AdminPanel() {
                 </div>
                 <dl className="border-t border-dashed border-ink/25">
                   {[
-                    { nhan: "Ngày đăng", giaTri: formatNgay(chiTiet.ngay) },
-                    { nhan: "Loại file", giaTri: chiTiet.loai === "docx" ? "DOCX · Word" : "PDF" },
-                    { nhan: "Dung lượng", giaTri: formatDungLuong(chiTiet.kichThuoc) },
-                    { nhan: "Tên file gốc", giaTri: chiTiet.tenGoc ?? "—" },
-                    { nhan: "Đường dẫn kho", giaTri: chiTiet.duongDan ?? "—" },
+                    {nhan: "Ngày đăng", giaTri: formatNgay(chiTiet.ngay)},
+                    {nhan: "Loại file", giaTri: "PDF"},
+                    {nhan: "Dung lượng", giaTri: formatDungLuong(chiTiet.kichThuoc)},
+                    {nhan: "Tên file gốc", giaTri: chiTiet.tenGoc ?? "—"},
+                    {nhan: "Đường dẫn kho", giaTri: chiTiet.duongDan ?? "—"}
                   ].map((r) => (
                     <div key={r.nhan} className="flex items-start justify-between gap-3 border-b border-dashed border-ink/20 py-2.5">
                       <dt className="shrink-0 text-xs uppercase tracking-[0.12em] text-ink-faint">{r.nhan}</dt>
@@ -554,7 +547,7 @@ export default function AdminPanel() {
                       Xem đề
                     </motion.span>
                   </Link>
-                  <motion.a whileTap={buttonTap} href={chiTiet.urlPdf} download={`${chiTiet.ten}.${chiTiet.loai}`} className="flex items-center justify-center gap-2 border border-ink bg-paper-light px-3 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-paper">
+                  <motion.a whileTap={buttonTap} href={chiTiet.urlPdf} download={`${chiTiet.ten}.pdf`} className="flex items-center justify-center gap-2 border border-ink bg-paper-light px-3 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-paper">
                     <IconDownload className="h-4 w-4" />
                     Tải file
                   </motion.a>
