@@ -22,19 +22,19 @@ const be = Be_Vietnam_Pro({
   display: "swap"
 });
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tong-hop-de-thi.vercel.app"),
+  metadataBase: new URL("https://deontap-one.vercel.app"),
   title: {
     default: "Đề.Thi — Tổng hợp đề thi THPT",
     template: "%s | Đề.Thi"
   },
-  description: "Kho đề thi Toán, Văn, Anh, Sử, Địa, KTPL chọn lọc, xem PDF trực tiếp và tải miễn phí, tối ưu cho điện thoại.",
-  keywords: ["đề thi", "đề thi thử", "THPT", "Toán", "Văn", "Anh", "Sử", "Địa", "KTPL", "ôn thi"],
+  description: "Kho đề thi THPT kèm đáp án, xem PDF trực tiếp và tải miễn phí, tối ưu cho điện thoại.",
+  keywords: ["đề thi", "đáp án", "đề thi thử", "THPT", "Toán", "Văn", "Anh", "Sử", "Địa", "KTPL", "ôn thi"],
   openGraph: {
     type: "website",
     locale: "vi_VN",
     siteName: "Đề.Thi",
     title: "Đề.Thi — Tổng hợp đề thi THPT",
-    description: "Kho đề thi chọn lọc, xem và tải PDF miễn phí ngay trên điện thoại."
+    description: "Kho đề thi chọn lọc kèm đáp án, xem và tải PDF miễn phí ngay trên điện thoại."
   },
   robots: {index: true, follow: true}
 };
@@ -43,12 +43,13 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#F3EDE2"
+  themeColor: "#FFFFFF"
 };
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="vi" className={`${lora.variable} ${be.variable}`} suppressHydrationWarning>
       <body className="flex min-h-screen flex-col font-sans text-ink antialiased">
+        <script dangerouslySetInnerHTML={{__html: "try{if(localStorage.getItem('dethi.theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}"}} />
         <AuthProvider>
           <Shield />
           <Navbar />
@@ -66,7 +67,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
               </div>
               <nav className="flex items-center gap-5 text-sm text-ink-soft">
                 <Link href="/" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">Trang chủ</Link>
-                <Link href="/login" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">Tài khoản</Link>
+                <Link href="/tai-khoan" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">Tài khoản</Link>
               </nav>
               <p className="text-xs uppercase tracking-[0.16em] text-ink-faint">© 2026 Đề.Thi</p>
             </div>
