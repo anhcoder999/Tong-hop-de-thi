@@ -2,37 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 :root {
-  --paper: 243 237 226;
-  --paper-light: 250 246 238;
-  --paper-deep: 232 224 209;
+  --paper: 255 255 255;
+  --paper-light: 252 251 249;
+  --paper-deep: 240 238 234;
   --ink: 31 26 20;
   --ink-soft: 90 82 70;
   --ink-faint: 150 141 126;
   --accent: 179 38 30;
   --accent-deep: 140 26 20;
-  --accent-wash: 246 230 226;
+  --accent-wash: 248 232 229;
   --ok: 34 120 70;
   --warn: 176 116 20;
   --danger: 179 38 30;
   --info: 40 90 180;
 }
 .dark {
-  --paper: 24 22 20;
-  --paper-light: 33 30 27;
-  --paper-deep: 42 38 34;
-  --ink: 236 230 220;
-  --ink-soft: 182 174 162;
-  --ink-faint: 122 114 102;
-  --accent: 226 92 80;
-  --accent-deep: 242 122 110;
+  --paper: 22 21 19;
+  --paper-light: 32 30 27;
+  --paper-deep: 44 40 36;
+  --ink: 238 233 224;
+  --ink-soft: 184 176 164;
+  --ink-faint: 124 116 104;
+  --accent: 228 94 82;
+  --accent-deep: 244 124 112;
   --accent-wash: 62 33 29;
   --ok: 96 190 130;
   --warn: 226 176 80;
-  --danger: 226 92 80;
+  --danger: 228 94 82;
   --info: 120 160 230;
 }
 html {
   color-scheme: light;
+  scroll-padding-top: 5.5rem;
   scrollbar-color: rgb(var(--ink-faint)) rgb(var(--paper-deep));
   scrollbar-width: thin;
 }
@@ -55,13 +56,13 @@ html::-webkit-scrollbar-thumb:hover {
 }
 body {
   @apply bg-paper font-sans text-ink antialiased;
-  background-image: linear-gradient(rgb(var(--ink) / 0.045) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--ink) / 0.045) 1px, transparent 1px);
-  background-size: 22px 22px;
+  background-image: linear-gradient(rgb(var(--ink) / 0.04) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--ink) / 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 .sheet {
   position: relative;
   background: rgb(var(--paper-light));
-  border: 1px solid rgb(var(--ink) / 0.2);
+  border: 1px solid rgb(var(--ink) / 0.18);
 }
 .sheet::before {
   content: "";
@@ -70,7 +71,7 @@ body {
   top: 0;
   bottom: 0;
   width: 1px;
-  background: rgb(var(--accent) / 0.35);
+  background: rgb(var(--accent) / 0.32);
 }
 .viewer-scroll {
   scrollbar-color: rgb(var(--ink-faint)) rgb(var(--paper-deep));
