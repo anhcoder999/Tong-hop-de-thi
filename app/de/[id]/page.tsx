@@ -1,7 +1,7 @@
 import type {Metadata} from "next";
 import Link from "next/link";
 import {notFound} from "next/navigation";
-import {IconCalendar, IconChevron, IconDownload, IconEye} from "@/components/Icons";
+import {IconCalendar, IconCheck, IconChevron, IconDownload, IconEye} from "@/components/Icons";
 import DocumentViewer from "@/components/DocumentViewer";
 import {chuanMon, formatDungLuong, formatNgay, MON_DAY_DU, tenNhom, type DeThi} from "@/lib/data";
 import {authClient, BUCKET, hubClient, hubCuaPath} from "@/lib/server";
@@ -25,13 +25,17 @@ async function layDe(id: string): Promise<DeThi | null> {
     tenGoc: (r.ten_goc as string | null) ?? null,
     ghimAt: (r.ghim_at as string | null) ?? null,
     luotXem: typeof r.luot_xem === "number" ? r.luot_xem : 0,
-    luotTai: typeof r.luot_tai === "number" ? r.luot_tai : 0
+    luotTai: typeof r.luot_tai === "number" ? r.luot_tai : 0,
+    urlDapAn: (r.url_dap_an as string | null) ?? null,
+    dapAnDuongDan: (r.dap_an_duong_dan as string | null) ?? null,
+    dapAnKichThuoc: typeof r.dap_an_kich_thuoc === "number" ? r.dap_an_kich_thuoc : null,
+    dapAnTenGoc: (r.dap_an_ten_goc as string | null) ?? null
   };
 }
 export async function generateMetadata({params}: Props): Promise<Metadata> {
   const de = await layDe(params.id);
   if (!de) return {title: "Không tìm thấy đề"};
-  const moTa = `Xem và tải ${de.ten} - môn ${MON_DAY_DU[de.mon]}, cập nhật ngày ${formatNgay(de.ngay)}.`;
+  const moTa = `Xem và tải ${de.ten} - môn ${MON_DAY_DU[de.mon]}${de.dapAnDuongDan ? ", kèm đáp án" : ""}, cập nhật ngày ${formatNgay(de.ngay)}.`;
   return {title: de.ten, description: moTa, openGraph: {title: de.ten, description: moTa, type: "article"}};
 }
 export default async function TrangXemDe({params}: Props) {
@@ -63,12 +67,14 @@ export default async function TrangXemDe({params}: Props) {
     );
   }
   if (!de) notFound();
-  const [, signed] = await Promise.all([
+  const rong = Promise.resolve({data: null as {signedUrl: string} | null});
+  const [, signedDe, signedDa] = await Promise.all([
     hubClient("MAIN").rpc("tang_xem", {uid: de.id}),
-    de.duongDan ? hubClient(hubCuaPath(de.duongDan)).storage.from(BUCKET).createSignedUrl(de.duongDan, 3600) : Promise.resolve({data: null as {signedUrl: string} | null})
+    de.duongDan ? hubClient(hubCuaPath(de.duongDan)).storage.from(BUCKET).createSignedUrl(de.duongDan, 3600) : rong,
+    de.dapAnDuongDan ? hubClient(hubCuaPath(de.dapAnDuongDan)).storage.from(BUCKET).createSignedUrl(de.dapAnDuongDan, 3600) : rong
   ]);
-  let url = de.urlPdf;
-  if (signed.data?.signedUrl) url = signed.data.signedUrl;
+  const url = signedDe.data?.signedUrl ?? de.urlPdf;
+  const urlDapAn = signedDa.data?.signedUrl ?? de.urlDapAn ?? null;
   return (
     <div className="mx-auto w-full min-w-0 max-w-5xl px-4 pb-16 pt-6 sm:pt-10">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-soft">
@@ -86,6 +92,14 @@ export default async function TrangXemDe({params}: Props) {
           <span title={MON_DAY_DU[de.mon]} className="-rotate-2 border border-accent/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">{de.mon}</span>
           <span className="text-[11px] uppercase tracking-[0.14em] text-ink-soft">{MON_DAY_DU[de.mon]}</span>
           <span className="border border-ink/40 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-soft">PDF</span>
+          {urlDapAn ? (
+            <span className="flex items-center gap-1.5 border border-ok/70 bg-ok/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ok">
+              <IconCheck className="h-3 w-3" />
+              Có đáp án
+            </span>
+          ) : (
+            <span className="border border-ink/25 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">Chưa có đáp án</span>
+          )}
           <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-faint">
             <IconCalendar className="h-3.5 w-3.5" />
             {formatNgay(de.ngay)}
@@ -101,7 +115,7 @@ export default async function TrangXemDe({params}: Props) {
           </span>
         </div>
       </header>
-      <DocumentViewer url={url} ten={de.ten} id={de.id} />
+      <DocumentViewer url={url} ten={de.ten} id={de.id} urlDapAn={urlDapAn} />
     </div>
   );
 }
