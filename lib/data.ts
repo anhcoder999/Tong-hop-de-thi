@@ -15,6 +15,10 @@ export interface DeThi {
   ghimAt?: string | null;
   luotXem?: number;
   luotTai?: number;
+  urlDapAn?: string | null;
+  dapAnDuongDan?: string | null;
+  dapAnKichThuoc?: number | null;
+  dapAnTenGoc?: string | null;
 }
 export const NHOM_MON: {id: NhomMon; ten: string; mon: Mon[]}[] = [
   {id: "bat-buoc", ten: "Bắt buộc", mon: ["Toán", "Văn", "Anh"]},
