@@ -7,18 +7,17 @@ import {buttonTap, fadeInUp, spring, staggerContainer, stampIn} from "@/lib/anim
 import {useAuth} from "@/lib/auth";
 function Sao({day, className}: {day: boolean; className?: string}) {
   return (
-    <svg viewBox="0 0 24 24" className={className ?? "h-6 w-6"} fill={day ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" className={className ?? "h-7 w-7"} fill={day ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
       <path d="M12 3.4l2.5 5.2 5.7.8-4.1 4 1 5.7-5.1-2.7-5.1 2.7 1-5.7-4.1-4 5.7-.8Z" />
     </svg>
   );
 }
 export default function DanhGia({deId, tenDe}: {deId: string; tenDe: string}) {
-  const {user, isAdmin} = useAuth();
-  const [tg, setTg] = useState<DanhGiaTong>({tb: 0, dem: 0, cuaToi: 0});
+  const {user, hoSo, isAdmin} = useAuth();
+  const [tg, setTg] = useState<DanhGiaTong>({tb: 0, dem: 0, cuaToi: 0, tong: 0});
   const [ds, setDs] = useState<BinhLuan[]>([]);
   const [dangTai, setDangTai] = useState(true);
   const [saoHover, setSaoHover] = useState(0);
-  const [dangGuiSao, setDangGuiSao] = useState(false);
   const [burst, setBurst] = useState(0);
   const [noiDung, setNoiDung] = useState("");
   const [dangGui, setDangGui] = useState(false);
@@ -37,37 +36,51 @@ export default function DanhGia({deId, tenDe}: {deId: string; tenDe: string}) {
     const t = setTimeout(() => setBao(null), 4000);
     return () => clearTimeout(t);
   }, [bao]);
-  const chamSao = async (s: number) => {
-    if (dangGuiSao) return;
+  const tenHien = hoSo?.ho_ten?.trim() || (user?.email ?? "Thành viên").split("@")[0];
+  const chamSao = (s: number) => {
     if (!user) {
       setBao({kieu: "loi", text: "Đăng nhập để đánh giá đề này nhé."});
       return;
     }
-    setDangGuiSao(true);
-    const kq = await danhGia(deId, s);
-    if (kq.ok) {
-      setBurst((b) => b + 1);
-      setBao({kieu: "ok", text: `Đã ghi nhận ${s} sao của cậu ✓`});
-      await tai();
-    } else setBao({kieu: "loi", text: kq.error ?? "Lỗi đánh giá."});
-    setDangGuiSao(false);
+    const truoc = tg;
+    const demMoi = truoc.cuaToi ? truoc.dem : truoc.dem + 1;
+    const tongMoi = truoc.tong - truoc.cuaToi + s;
+    setTg({tb: demMoi ? Math.round((tongMoi / demMoi) * 10) / 10 : 0, dem: demMoi, cuaToi: s, tong: tongMoi});
+    setBurst((b) => b + 1);
+    setBao({kieu: "ok", text: `Đã ghi nhận ${s} sao của cậu ✓`});
+    void danhGia(deId, s).then((kq) => {
+      if (!kq.ok) {
+        setTg(truoc);
+        setBao({kieu: "loi", text: kq.error ?? "Lỗi đánh giá, đã hoàn lại."});
+      }
+    });
   };
-  const gui = async (e: React.FormEvent<HTMLFormElement>) => {
+  const gui = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (dangGui) return;
     if (!user) {
       setBao({kieu: "loi", text: "Đăng nhập để gửi nhận xét nhé."});
       return;
     }
+    const txt = noiDung.trim();
+    if (txt.length < 3) {
+      setBao({kieu: "loi", text: "Nhận xét tối thiểu 3 ký tự."});
+      return;
+    }
+    const tam: BinhLuan = {id: `tam-${Date.now()}`, ten_nguoi: tenHien, noi_dung: txt, created_at: new Date().toISOString(), duyet: false, cuaToi: true};
+    setDs((cur) => [tam, ...cur]);
+    setNoiDung("");
+    setBao({kieu: "ok", text: "Đã gửi nhận xét, chờ quản trị duyệt là hiện công khai."});
     setDangGui(true);
-    setBao(null);
-    const kq = await binhLuan(deId, noiDung);
-    if (kq.ok) {
-      setNoiDung("");
-      setBao({kieu: "ok", text: "Đã gửi nhận xét, chờ quản trị duyệt là hiện công khai."});
-      await tai();
-    } else setBao({kieu: "loi", text: kq.error ?? "Lỗi gửi nhận xét."});
-    setDangGui(false);
+    void binhLuan(deId, txt).then((kq) => {
+      setDangGui(false);
+      if (kq.ok) void layBinhLuan(deId).then(setDs);
+      else {
+        setDs((cur) => cur.filter((b) => b.id !== tam.id));
+        setNoiDung(txt);
+        setBao({kieu: "loi", text: kq.error ?? "Lỗi gửi nhận xét."});
+      }
+    });
   };
   const saoHien = saoHover || tg.cuaToi;
   return (
@@ -82,11 +95,11 @@ export default function DanhGia({deId, tenDe}: {deId: string; tenDe: string}) {
       <motion.div variants={fadeInUp} className="mt-4 flex flex-wrap items-center gap-5">
         <div className="relative flex items-center gap-1" onMouseLeave={() => setSaoHover(0)}>
           {[1, 2, 3, 4, 5].map((s) => (
-            <motion.button key={s} whileTap={buttonTap} whileHover={{scale: 1.15, rotate: -6}} type="button" disabled={dangGuiSao} onMouseEnter={() => setSaoHover(s)} onClick={() => void chamSao(s)} aria-label={`${s} sao`} className={`relative transition-colors ${s <= saoHien ? "text-warn" : "text-ink-faint hover:text-warn"}`}>
+            <motion.button key={s} whileTap={{scale: 0.82}} whileHover={{scale: 1.18, rotate: -8}} transition={spring} type="button" onMouseEnter={() => setSaoHover(s)} onClick={() => chamSao(s)} aria-label={`${s} sao`} className={`relative transition-colors duration-150 ${s <= saoHien ? "text-warn" : "text-ink-faint hover:text-warn"}`}>
               <Sao day={s <= saoHien} />
               <AnimatePresence>
                 {burst > 0 && s === tg.cuaToi && (
-                  <motion.span key={burst} initial={{scale: 0.4, opacity: 0.9}} animate={{scale: 2.1, opacity: 0}} transition={{duration: 0.6, ease: "easeOut"}} className="pointer-events-none absolute inset-0 rounded-full border-2 border-warn" />
+                  <motion.span key={burst} initial={{scale: 0.4, opacity: 0.9}} animate={{scale: 2.2, opacity: 0}} exit={{opacity: 0}} transition={{duration: 0.55, ease: "easeOut"}} className="pointer-events-none absolute inset-0 rounded-full border-2 border-warn" />
                 )}
               </AnimatePresence>
             </motion.button>
@@ -96,20 +109,20 @@ export default function DanhGia({deId, tenDe}: {deId: string; tenDe: string}) {
           <motion.span key={tg.tb} initial={{y: 8, opacity: 0}} animate={{y: 0, opacity: 1}} transition={spring} className="font-display text-3xl font-bold text-ink">{tg.dem ? tg.tb.toFixed(1) : "—"}</motion.span>
           <span className="text-xs uppercase tracking-[0.14em] text-ink-faint">/5 · {tg.dem} lượt đánh giá</span>
         </div>
-        {tg.cuaToi > 0 && <motion.span variants={stampIn} className="-rotate-2 border border-warn/70 bg-warn/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-warn">Cậu chấm {tg.cuaToi} sao</motion.span>}
+        {tg.cuaToi > 0 && <motion.span key={tg.cuaToi} variants={stampIn} initial="hidden" animate="visible" className="-rotate-2 border border-warn/70 bg-warn/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-warn">Cậu chấm {tg.cuaToi} sao</motion.span>}
       </motion.div>
       <motion.form variants={fadeInUp} onSubmit={gui} className="mt-5 space-y-2.5">
         <textarea value={noiDung} onChange={(e) => setNoiDung(e.target.value)} maxLength={600} rows={3} placeholder="Nhận xét về đề: độ khó, câu sai đáp án, gợi ý ôn tập... (quản trị duyệt trước khi hiện)" className="w-full border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent" />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-[10px] uppercase tracking-[0.12em] text-ink-faint">{noiDung.length}/600</span>
-          <motion.button whileTap={buttonTap} type="submit" disabled={dangGui} className="nut-quet flex items-center gap-2 border border-ink bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent disabled:opacity-50">
+          <motion.button whileTap={buttonTap} type="submit" disabled={dangGui} className="nut-quet nut-nhan flex items-center gap-2 border border-ink bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent disabled:opacity-60">
             {dangGui ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : <IconSeal className="h-3.5 w-3.5" />}
-            Gửi nhận xét
+            {dangGui ? "Đang đồng bộ..." : "Gửi nhận xét"}
           </motion.button>
         </div>
         <AnimatePresence>
           {bao && (
-            <motion.p initial={{opacity: 0, y: 6}} animate={{opacity: 1, y: 0}} exit={{opacity: 0}} className={`border p-2.5 text-xs ${bao.kieu === "loi" ? "border-danger/60 bg-danger/10 text-danger" : "border-ok/60 bg-ok/10 text-ok"}`}>{bao.text}</motion.p>
+            <motion.p initial={{opacity: 0, y: 6}} animate={{opacity: 1, y: 0}} exit={{opacity: 0}} transition={{duration: 0.2}} className={`border p-2.5 text-xs ${bao.kieu === "loi" ? "border-danger/60 bg-danger/10 text-danger" : "border-ok/60 bg-ok/10 text-ok"}`}>{bao.text}</motion.p>
           )}
         </AnimatePresence>
       </motion.form>
@@ -125,7 +138,7 @@ export default function DanhGia({deId, tenDe}: {deId: string; tenDe: string}) {
           <ul className="viewer-scroll max-h-96 space-y-3 overflow-y-auto pr-1">
             <AnimatePresence initial={false}>
               {ds.map((b) => (
-                <motion.li key={b.id} layout initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} exit={{opacity: 0}} transition={spring} className="flex gap-3 border border-ink/20 bg-paper p-3">
+                <motion.li key={b.id} layout initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, scale: 0.96}} transition={spring} className="flex gap-3 border border-ink/20 bg-paper p-3">
                   <span className="grid h-9 w-9 shrink-0 place-items-center border border-ink/35 bg-paper-light font-display text-xs font-bold text-accent">{(b.ten_nguoi.trim() || "?").slice(0, 2).toUpperCase()}</span>
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-2 text-xs">
