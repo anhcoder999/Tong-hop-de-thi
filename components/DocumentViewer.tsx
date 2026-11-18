@@ -85,6 +85,10 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
     veLive(1);
     setZoom(kep(v));
   };
+  const quayLai = () => {
+    if (window.history.length > 1) router.back();
+    else router.push("/kho-de");
+  };
   useEffect(() => {
     danhDau(id);
   }, [id, danhDau]);
@@ -286,7 +290,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
     if (!t || t.kc <= 0 || e.touches.length !== 2) return;
     const dx = e.touches[0].clientX - e.touches[1].clientX;
     const dy = e.touches[0].clientY - e.touches[1].clientY;
-    const pending = kep(t.kc ? liveRef.current.base * (Math.hypot(dx, dy) / t.kc) : zoom);
+    const pending = kep(liveRef.current.base * (Math.hypot(dx, dy) / t.kc));
     liveRef.current.pending = pending;
     veLive(pending / liveRef.current.base);
   };
@@ -337,7 +341,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
       )}
       <div className="flex flex-wrap items-center gap-2.5">
         {!tapTrung && (
-          <motion.button whileTap={buttonTap} type="button" onClick={() => router.push("/")} className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
+          <motion.button whileTap={buttonTap} type="button" onClick={quayLai} className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
             <IconArrowLeft className="h-4 w-4" />
             Quay lại
           </motion.button>
