@@ -1,20 +1,46 @@
 "use client";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {useRouter} from "next/navigation";
-import {motion} from "framer-motion";
-import {IconArrowLeft, IconCheck, IconDownload, IconExternal, IconFile, IconLoader, IconSearch} from "@/components/Icons";
+import {AnimatePresence, motion} from "framer-motion";
+import {IconArrowLeft, IconCheck, IconClose, IconDownload, IconExternal, IconFile, IconLoader, IconSearch} from "@/components/Icons";
 import Skeleton from "@/components/Skeleton";
-import {buttonTap} from "@/lib/animations";
+import {buttonTap, spring} from "@/lib/animations";
 import {useDanhDau} from "@/lib/useDanhDau";
+import {useSoTay} from "@/lib/useSoTay";
 import {goiTai} from "@/app/actions";
 const CDN = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174";
 const WORKER = `${CDN}/build/pdf.worker.min.js`;
 const CMAP = `${CDN}/cmaps/`;
 const FONTS = `${CDN}/standard_fonts/`;
 type KetQuaTim = {trang: number; snippet: string};
+function IconGhim({day}: {day: boolean}) {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill={day ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+      <path d="M7 3.5h10v17l-5-3.6-5 3.6Z" />
+    </svg>
+  );
+}
+function IconSoTay() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 4.5h11a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3Z" />
+      <path d="M9 9h6M9 12.5h6M9 16h4" />
+    </svg>
+  );
+}
+function IconTapTrung({mo}: {mo: boolean}) {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      {mo ? <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /> : <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />}
+    </svg>
+  );
+}
 export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; ten: string; id: string; urlDapAn?: string | null}) {
   const router = useRouter();
   const {danhDau} = useDanhDau();
+  const soTay = useSoTay(id);
+  const soTayRef = useRef(soTay);
+  soTayRef.current = soTay;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -33,8 +59,15 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
   const [tuKhoa, setTuKhoa] = useState("");
   const [ketQua, setKetQua] = useState<KetQuaTim[]>([]);
   const [dangTim, setDangTim] = useState(false);
+  const [tapTrung, setTapTrung] = useState(false);
+  const [moSoTay, setMoSoTay] = useState(false);
+  const [tiepTuc, setTiepTuc] = useState<number | null>(null);
   const xemDapAn = nguon === "dapan" && !!urlDapAn;
   const src = xemDapAn ? (urlDapAn as string) : url;
+  const soGhim = soTay.bm.includes(trang);
+  const ghiChu = soTay.note[String(trang)] ?? "";
+  const trangGhiChu = useMemo(() => Object.keys(soTay.note).map(Number).filter((p) => (soTay.note[String(p)] ?? "").trim()).sort((a, b) => a - b), [soTay.note]);
+  const soMuc = soTay.bm.length + trangGhiChu.length;
   useEffect(() => {
     danhDau(id);
   }, [id, danhDau]);
@@ -47,6 +80,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
     setTrang(1);
     setZoom(1);
     setKetQua([]);
+    setTiepTuc(null);
     (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
@@ -58,6 +92,11 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
         }
         setPdf(doc);
         setTong(doc.numPages);
+        const last = soTayRef.current.last;
+        if (last > 1 && last <= doc.numPages) {
+          setTrang(last);
+          setTiepTuc(last);
+        }
         setDangTai(false);
       } catch {
         if (alive) {
@@ -72,11 +111,19 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
     };
   }, [src]);
   useEffect(() => {
+    if (!tiepTuc) return;
+    const t = setTimeout(() => setTiepTuc(null), 4000);
+    return () => clearTimeout(t);
+  }, [tiepTuc]);
+  useEffect(() => {
     if (!pdf) return;
     return () => {
       pdf.destroy();
     };
   }, [pdf]);
+  useEffect(() => {
+    soTay.setLast(trang);
+  }, [trang, soTay.setLast]);
   useEffect(() => {
     if (!pdf) return;
     let alive = true;
@@ -92,7 +139,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
       alive = false;
       window.removeEventListener("resize", compute);
     };
-  }, [pdf]);
+  }, [pdf, tapTrung, moSoTay]);
   useEffect(() => {
     if (!pdf || fit <= 0 || !canvasRef.current || !overlayRef.current || !boxRef.current) return;
     const canvas = canvasRef.current;
@@ -152,6 +199,29 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
       cancelled = true;
     };
   }, [pdf, fit, trang, zoom, tuKhoa]);
+  useEffect(() => {
+    const phim = (e: KeyboardEvent) => {
+      const t = e.target;
+      if (t instanceof HTMLElement && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      if (e.key === "Escape") {
+        if (tapTrung) setTapTrung(false);
+        else setMoSoTay(false);
+      }
+      if (e.key === "ArrowRight") setTrang((p) => Math.min(tong, p + 1));
+      if (e.key === "ArrowLeft") setTrang((p) => Math.max(1, p - 1));
+      if (e.key.toLowerCase() === "f") setTapTrung((v) => !v);
+    };
+    window.addEventListener("keydown", phim);
+    return () => window.removeEventListener("keydown", phim);
+  }, [tong, tapTrung]);
+  useEffect(() => {
+    if (!tapTrung) return;
+    const cu = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = cu;
+    };
+  }, [tapTrung]);
   const tim = async () => {
     if (!pdf || !tuKhoa.trim()) {
       setKetQua([]);
@@ -207,26 +277,53 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
   };
   const viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(src)}`;
   return (
-    <div className="mt-6">
+    <div className={tapTrung ? "fixed inset-0 z-[70] flex flex-col bg-paper p-3 sm:p-5" : "mt-6"}>
+      {tapTrung && (
+        <div className="mb-3 flex items-center justify-between gap-3 border-b-2 border-ink pb-2">
+          <p className="min-w-0 truncate font-display text-base font-bold text-ink">{ten}</p>
+          <motion.button whileTap={buttonTap} type="button" onClick={() => setTapTrung(false)} className="flex shrink-0 items-center gap-2 border border-ink bg-ink px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent">
+            <IconTapTrung mo />
+            Thoát (Esc)
+          </motion.button>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2.5">
-        <motion.button whileTap={buttonTap} type="button" onClick={() => router.push("/")} className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
-          <IconArrowLeft className="h-4 w-4" />
-          Quay lại
-        </motion.button>
+        {!tapTrung && (
+          <motion.button whileTap={buttonTap} type="button" onClick={() => router.push("/")} className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
+            <IconArrowLeft className="h-4 w-4" />
+            Quay lại
+          </motion.button>
+        )}
         <motion.a whileTap={buttonTap} href={src} download onClick={() => {
           if (!xemDapAn) void goiTai(id);
-        }} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent">
+        }} target="_blank" rel="noopener noreferrer" className="nut-quet flex items-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent">
           <IconDownload className="h-4 w-4" />
           {xemDapAn ? "Tải đáp án" : "Tải PDF"}
         </motion.a>
-        <motion.a whileTap={buttonTap} href={viewerUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
-          <IconExternal className="h-4 w-4" />
-          Mở tab mới
-        </motion.a>
+        {!tapTrung && (
+          <motion.a whileTap={buttonTap} href={viewerUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
+            <IconExternal className="h-4 w-4" />
+            Mở tab mới
+          </motion.a>
+        )}
         <motion.button whileTap={buttonTap} type="button" disabled={!urlDapAn} title={urlDapAn ? "Xem đáp án của đề này" : "Đề này chưa có đáp án"} onClick={() => setNguon((n) => (n === "de" ? "dapan" : "de"))} className={`flex items-center gap-2 border px-4 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${xemDapAn ? "border-ink bg-ink text-paper-light hover:border-accent hover:bg-accent" : "border-ok bg-ok/12 text-ok hover:bg-ok hover:text-paper-light"}`}>
           {xemDapAn ? <IconFile className="h-4 w-4" /> : <IconCheck className="h-4 w-4" />}
           {xemDapAn ? "Xem đề thi" : "Đáp án"}
         </motion.button>
+        <motion.button whileTap={buttonTap} type="button" onClick={() => setMoSoTay((v) => !v)} aria-expanded={moSoTay} className={`relative flex items-center gap-2 border px-4 py-2.5 text-sm font-semibold transition-colors ${moSoTay ? "border-warn bg-warn/15 text-warn" : "border-ink bg-paper-light text-ink hover:border-warn hover:text-warn"}`}>
+          <IconSoTay />
+          Sổ tay
+          {soMuc > 0 && <span className="grid h-5 min-w-5 place-items-center border border-warn bg-warn px-1 text-[10px] font-bold text-paper-light">{soMuc}</span>}
+        </motion.button>
+        {!tapTrung && (
+          <motion.button whileTap={buttonTap} type="button" onClick={() => setTapTrung(true)} title="Ẩn mọi thứ quanh, chỉ còn đề (phím F)" className="flex items-center gap-2 border border-info bg-info/12 px-4 py-2.5 text-sm font-semibold text-info transition-colors hover:bg-info hover:text-paper-light">
+            <IconTapTrung mo={false} />
+            Tập trung
+          </motion.button>
+        )}
+      </div>
+      <div className="mt-3 h-1 w-full overflow-hidden bg-ink/10">
+        <motion.div animate={{width: `${tong ? (trang / tong) * 100 : 0}%`}} transition={spring} className="h-full bg-gradient-to-r from-accent via-warn to-info" />
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border border-ink/25 bg-paper-light px-3 py-2">
         <div className="flex items-center gap-2">
@@ -234,6 +331,9 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
           <motion.button whileTap={buttonTap} type="button" disabled={trang <= 1} onClick={() => setTrang((t) => Math.max(1, t - 1))} className="border border-ink/40 bg-paper px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft transition-colors disabled:opacity-40 hover:border-accent hover:text-accent">Trước</motion.button>
           <span className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft">{dangTai ? "..." : `${trang}/${tong}`}</span>
           <motion.button whileTap={buttonTap} type="button" disabled={trang >= tong} onClick={() => setTrang((t) => Math.min(tong, t + 1))} className="border border-ink/40 bg-paper px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft transition-colors disabled:opacity-40 hover:border-accent hover:text-accent">Sau</motion.button>
+          <motion.button whileTap={buttonTap} type="button" onClick={() => soTay.toggleBm(trang)} title={soGhim ? "Bỏ ghim trang này" : "Ghim trang này vào sổ tay"} className={`border p-1.5 transition-colors ${soGhim ? "border-warn bg-warn/15 text-warn" : "border-ink/40 bg-paper text-ink-faint hover:border-warn hover:text-warn"}`}>
+            <IconGhim day={soGhim} />
+          </motion.button>
         </div>
         <div className="flex items-center gap-2">
           <motion.button whileTap={buttonTap} type="button" disabled={zoom <= 0.5} onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.25).toFixed(2))))} aria-label="Thu nhỏ" className="border border-ink/40 bg-paper px-3 py-1.5 text-sm font-bold text-ink-soft transition-colors disabled:opacity-40 hover:border-accent hover:text-accent">−</motion.button>
@@ -267,7 +367,58 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
         )}
         {tuKhoa && !dangTim && ketQua.length === 0 && <p className="mt-2 text-xs text-ink-faint">Không tìm thấy khớp. Thử từ ngắn hơn hoặc bỏ dấu.</p>}
       </div>
-      <div ref={wrapRef} data-pdf-zoom onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onWheel={onWheel} className="viewer-scroll relative mt-3 max-h-[80vh] overflow-auto border border-ink/25 bg-paper-light p-3 shadow-paper">
+      <AnimatePresence>
+        {moSoTay && (
+          <motion.div initial={{height: 0, opacity: 0}} animate={{height: "auto", opacity: 1}} exit={{height: 0, opacity: 0}} transition={spring} className="overflow-hidden">
+            <div className="mt-3 grid gap-3 border border-warn/40 bg-paper-light p-3 sm:grid-cols-2">
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">
+                  <IconGhim day />
+                  Trang đã ghim ({soTay.bm.length})
+                </p>
+                {soTay.bm.length === 0 ? (
+                  <p className="mt-2 text-xs text-ink-faint">Chưa ghim trang nào. Bấm icon bookmark cạnh số trang để ghim trang đang đọc.</p>
+                ) : (
+                  <ul className="viewer-scroll mt-2 max-h-36 space-y-1 overflow-y-auto pr-1">
+                    {[...soTay.bm].sort((a, b) => a - b).map((p) => (
+                      <li key={p} className="flex items-center gap-1.5">
+                        <button type="button" onClick={() => setTrang(p)} className={`min-w-0 flex-1 truncate border px-2 py-1 text-left text-xs transition-colors ${p === trang ? "border-warn bg-warn/15 text-warn" : "border-ink/20 bg-paper text-ink-soft hover:border-warn"}`}>
+                          Trang {p}{(soTay.note[String(p)] ?? "").trim() ? " · có ghi chú" : ""}
+                        </button>
+                        <button type="button" onClick={() => soTay.toggleBm(p)} aria-label={`Bỏ ghim trang ${p}`} className="shrink-0 border border-transparent p-1 text-ink-faint transition-colors hover:border-danger hover:text-danger">
+                          <IconClose className="h-3 w-3" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <motion.button whileTap={buttonTap} type="button" onClick={() => soTay.toggleBm(trang)} className={`mt-2 flex items-center gap-1.5 border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] transition-colors ${soGhim ? "border-warn bg-warn/15 text-warn hover:bg-warn hover:text-paper-light" : "border-ink bg-ink text-paper-light hover:border-warn hover:bg-warn"}`}>
+                  <IconGhim day={soGhim} />
+                  {soGhim ? `Bỏ ghim trang ${trang}` : `Ghim trang ${trang}`}
+                </motion.button>
+              </div>
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">
+                  <IconSoTay />
+                  Ghi chú trang {trang}
+                </p>
+                <textarea value={ghiChu} onChange={(e) => soTay.setNote(trang, e.target.value)} maxLength={1200} rows={4} placeholder="Ghi chú riêng của cậu cho trang này: câu hay sai, công thức cần nhớ... Tự lưu vào máy." className="mt-2 w-full border border-ink/30 bg-paper px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-warn" />
+                <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-ink-faint">{ghiChu.length}/1200 · tự lưu vào máy cậu</p>
+                {trangGhiChu.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {trangGhiChu.map((p) => (
+                      <button key={p} type="button" onClick={() => setTrang(p)} className={`border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] transition-colors ${p === trang ? "border-warn bg-warn/15 text-warn" : "border-ink/25 bg-paper text-ink-soft hover:border-warn hover:text-warn"}`}>
+                        Trang {p}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div ref={wrapRef} data-pdf-zoom onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onWheel={onWheel} className={`viewer-scroll relative mt-3 overflow-auto border border-ink/25 bg-paper-light p-3 shadow-paper ${tapTrung ? "min-h-0 flex-1" : "max-h-[80vh]"}`}>
         {dangTai ? (
           <div className="space-y-3 p-2">
             <Skeleton className="h-7 w-2/3" />
@@ -281,19 +432,27 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
         ) : loi ? (
           <div className="border border-accent/50 bg-accent-wash p-5 text-sm text-accent-deep">{loi}</div>
         ) : (
-          <div ref={boxRef} className="relative mx-auto">
+          <motion.div key={`${src}-${trang}`} initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} transition={spring} ref={boxRef} className="relative mx-auto">
             <canvas ref={canvasRef} className="block bg-white shadow-paper" />
             <canvas ref={overlayRef} className="pointer-events-none absolute inset-0" />
+            {soGhim && <motion.span initial={{scale: 0.6, opacity: 0}} animate={{scale: 1, opacity: 1}} transition={spring} className="absolute right-2 top-2 flex items-center gap-1 border border-warn bg-warn px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-paper-light shadow-stamp"><IconGhim day />Đã ghim</motion.span>}
             {dangVe && (
               <div className="pointer-events-none sticky bottom-2 mx-auto mt-2 flex w-max items-center gap-2 border border-ink/30 bg-paper-light px-3 py-1.5 text-xs text-ink-soft shadow-paper">
                 <IconLoader className="h-3.5 w-3.5 animate-spin text-accent" />
                 Đang vẽ trang {trang}...
               </div>
             )}
-          </div>
+          </motion.div>
         )}
+        <AnimatePresence>
+          {tiepTuc && (
+            <motion.div initial={{opacity: 0, y: 12}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: 12}} className="pointer-events-none sticky bottom-2 mx-auto mt-2 w-max border border-info bg-info/12 px-3 py-1.5 text-xs font-semibold text-info shadow-paper">
+              Tiếp tục đọc từ trang {tiepTuc} lần trước
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-      <p className="mt-3 text-xs text-ink-faint">{ten} · Vuốt ngang để chuyển trang, chụm hai ngón hoặc Ctrl+cuộn để phóng to riêng vùng PDF. Bấm Đáp án để đối chiếu lời giải, bấm lại để về đề.</p>
+      {!tapTrung && <p className="mt-3 text-xs text-ink-faint">Vuốt ngang chuyển trang · chụm hai ngón hoặc Ctrl+cuộn để zoom vùng đề · phím F bật tập trung, Esc thoát · mũi tên trái/phải chuyển trang. Sổ tay lưu ghim trang và ghi chú vào máy cậu.</p>}
     </div>
   );
 }
