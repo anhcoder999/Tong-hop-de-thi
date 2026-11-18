@@ -36,21 +36,36 @@ export default function Navbar() {
   const tienTrinh = useSpring(scrollYProgress, {stiffness: 170, damping: 30, mass: 0.4});
   const [toi, setToi] = useState(false);
   const [mo, setMo] = useState(false);
+  const [vong, setVong] = useState(0);
   useEffect(() => {
     setToi(document.documentElement.classList.contains("dark"));
   }, []);
   useEffect(() => {
     setMo(false);
   }, [duong]);
-  const doiTheme = () => {
+  const doiTheme = (e: React.MouseEvent<HTMLButtonElement>) => {
     const dark = !document.documentElement.classList.contains("dark");
-    document.documentElement.classList.toggle("dark", dark);
-    try {
-      localStorage.setItem(KHOA_THEME, dark ? "dark" : "light");
-    } catch {
+    const ap = () => {
+      document.documentElement.classList.toggle("dark", dark);
+      try {
+        localStorage.setItem(KHOA_THEME, dark ? "dark" : "light");
+      } catch {
+        setToi(dark);
+      }
       setToi(dark);
-    }
-    setToi(dark);
+      setVong((v) => v + 1);
+    };
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = r.left + r.width / 2;
+    const y = r.top + r.height / 2;
+    const ban = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    const root = document.documentElement;
+    root.style.setProperty("--tam-x", `${x}px`);
+    root.style.setProperty("--tam-y", `${y}px`);
+    root.style.setProperty("--ban-kinh", `${ban}px`);
+    const vt = document as Document & {startViewTransition?: (cb: () => void) => {finished: Promise<void>}};
+    if (vt.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) vt.startViewTransition(ap);
+    else ap();
   };
   const ten = hoSo?.ho_ten?.trim() || user?.email || "";
   const tu = ten.split(/\s+/).filter(Boolean);
@@ -80,7 +95,12 @@ export default function Navbar() {
               </Link>
             ))}
           </nav>
-          <motion.button whileTap={buttonTap} type="button" onClick={doiTheme} aria-label={toi ? "Chuyển nền sáng" : "Chuyển nền tối"} title={toi ? "Nền sáng" : "Nền tối"} className="grid h-10 w-10 place-items-center border border-ink/45 bg-paper-light text-ink transition-colors hover:border-accent hover:text-accent">
+          <motion.button whileTap={buttonTap} type="button" onClick={doiTheme} aria-label={toi ? "Chuyển nền sáng" : "Chuyển nền tối"} title={toi ? "Nền sáng" : "Nền tối"} className="relative grid h-10 w-10 place-items-center overflow-hidden border border-ink/45 bg-paper-light text-ink transition-colors hover:border-accent hover:text-accent">
+            <AnimatePresence>
+              {vong > 0 && (
+                <motion.span key={vong} initial={{scale: 0.3, opacity: 0.7}} animate={{scale: 2.6, opacity: 0}} exit={{opacity: 0}} transition={{duration: 0.6, ease: "easeOut"}} className={`pointer-events-none absolute inset-0 rounded-full border-2 ${toi ? "border-warn" : "border-info"}`} />
+              )}
+            </AnimatePresence>
             <motion.span key={toi ? "sang" : "toi"} initial={{rotate: -90, opacity: 0, scale: 0.6}} animate={{rotate: 0, opacity: 1, scale: 1}} transition={spring}>
               {toi ? <MatTroi /> : <MatTro />}
             </motion.span>
