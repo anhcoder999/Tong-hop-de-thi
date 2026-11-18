@@ -12,7 +12,7 @@ export type KetQuaGhi = {ok: true; row: Record<string, unknown>} | {ok: false; e
 export type KetQua = {ok: boolean; error?: string};
 export type NguoiDung = {id: string; email: string; ho_ten: string | null; role: string; banned: boolean; created_at: string};
 export type DapAnInput = {dapAnPath?: string | null; dapAnKichThuoc?: number | null; dapAnTenGoc?: string | null; xoaDapAn?: boolean};
-export type DanhGiaTong = {tb: number; dem: number; cuaToi: number};
+export type DanhGiaTong = {tb: number; dem: number; cuaToi: number; tong: number};
 export type BinhLuan = {id: string; ten_nguoi: string; noi_dung: string; created_at: string; duyet: boolean; cuaToi: boolean};
 export type ThongKe = {tongDe: number; tongDapAn: number; tongXem: number; tongTai: number; thanhVien: number; choDuyet: number; bytes: number; ngay: {ngay: string; xem: number; tai: number}[]; mon: {mon: Mon; xem: number; tai: number; de: number}[]; top: {id: string; ten: string; mon: Mon; xem: number; tai: number}[]};
 export async function dangNhap(email: string, password: string, token: string): Promise<KetQua> {
@@ -161,29 +161,26 @@ async function uidHienTai(): Promise<string | null> {
   return error ? null : (data?.claims?.sub ?? null);
 }
 export async function layDanhGia(deId: string): Promise<DanhGiaTong> {
-  const {data} = await hubClient("MAIN").from("danh_gia").select("sao,user_id").eq("de_id", deId);
-  const ds = data ?? [];
+  const [cl, kq] = await Promise.all([authClient().auth.getClaims(), hubClient("MAIN").from("danh_gia").select("sao,user_id").eq("de_id", deId)]);
+  const uid = cl.error ? null : (cl.data?.claims?.sub ?? null);
+  const ds = kq.data ?? [];
   const dem = ds.length;
-  const tb = dem ? Math.round((ds.reduce((s, r) => s + Number(r.sao), 0) / dem) * 10) / 10 : 0;
-  const uid = await uidHienTai();
+  const tong = ds.reduce((s, r) => s + Number(r.sao), 0);
+  const tb = dem ? Math.round((tong / dem) * 10) / 10 : 0;
   const cuaToi = uid ? Number(ds.find((r) => r.user_id === uid)?.sao ?? 0) : 0;
-  return {tb, dem, cuaToi};
+  return {tb, dem, cuaToi, tong};
 }
 export async function danhGia(deId: string, sao: number): Promise<KetQua> {
   if (sao < 1 || sao > 5) return {ok: false, error: "Số sao không hợp lệ."};
   const uid = await uidHienTai();
   if (!uid) return {ok: false, error: "Cần đăng nhập để đánh giá."};
-  const {data: hs} = await hubClient("MAIN").from("profiles").select("banned").eq("id", uid).maybeSingle();
-  if (hs?.banned) return {ok: false, error: "Tài khoản bị khóa."};
   const {error} = await hubClient("MAIN").from("danh_gia").upsert({de_id: deId, user_id: uid, sao}, {onConflict: "de_id,user_id"});
   return error ? {ok: false, error: error.message} : {ok: true};
 }
 export async function layBinhLuan(deId: string): Promise<BinhLuan[]> {
-  const uid = await uidHienTai();
-  let q = hubClient("MAIN").from("binh_luan").select("id,user_id,ten_nguoi,noi_dung,created_at,duyet").eq("de_id", deId).order("created_at", {ascending: false}).limit(60);
-  q = uid ? q.or(`duyet.eq.true,user_id.eq.${uid}`) : q.eq("duyet", true);
-  const {data} = await q;
-  return (data ?? []).map((r) => ({id: String(r.id), ten_nguoi: String(r.ten_nguoi), noi_dung: String(r.noi_dung), created_at: String(r.created_at), duyet: !!r.duyet, cuaToi: !!uid && r.user_id === uid}));
+  const [cl, kq] = await Promise.all([authClient().auth.getClaims(), hubClient("MAIN").from("binh_luan").select("id,user_id,ten_nguoi,noi_dung,created_at,duyet").eq("de_id", deId).order("created_at", {ascending: false}).limit(60)]);
+  const uid = cl.error ? null : (cl.data?.claims?.sub ?? null);
+  return (kq.data ?? []).filter((r) => r.duyet || (!!uid && r.user_id === uid)).map((r) => ({id: String(r.id), ten_nguoi: String(r.ten_nguoi), noi_dung: String(r.noi_dung), created_at: String(r.created_at), duyet: !!r.duyet, cuaToi: !!uid && r.user_id === uid}));
 }
 export async function binhLuan(deId: string, noiDung: string): Promise<KetQua> {
   const txt = noiDung.trim();
