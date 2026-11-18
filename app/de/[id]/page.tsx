@@ -78,7 +78,7 @@ export default async function TrangXemDe({params}: Props) {
   return (
     <div className="mx-auto w-full min-w-0 max-w-5xl px-4 pb-16 pt-6 sm:pt-10">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-soft">
-        <Link href="/" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">Trang chủ</Link>
+        <Link href="/kho-de" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">Kho đề</Link>
         <IconChevron className="h-3 w-3 text-ink-faint" />
         <span>{tenNhom(de.mon)}</span>
         <IconChevron className="h-3 w-3 text-ink-faint" />
