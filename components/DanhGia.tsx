@@ -77,7 +77,7 @@ export default function DanhGia({deId, tenDe}: {deId: string; tenDe: string}) {
           <IconSeal className="h-4 w-4 text-accent" />
           Đánh giá & nhận xét
         </h2>
-        <span className="text-[11px] uppercase tracking-[0.14em] text-ink-faint">{tenDe}</span>
+        <span className="max-w-[16rem] truncate text-[11px] uppercase tracking-[0.14em] text-ink-faint">{tenDe}</span>
       </motion.div>
       <motion.div variants={fadeInUp} className="mt-4 flex flex-wrap items-center gap-5">
         <div className="relative flex items-center gap-1" onMouseLeave={() => setSaoHover(0)}>
