@@ -82,7 +82,7 @@ body {
 }
 .the-de {
   content-visibility: auto;
-  contain-intrinsic-size: auto 400px;
+  contain-intrinsic-size: auto 420px;
 }
 .viewer-scroll {
   overscroll-behavior: contain;
@@ -116,17 +116,34 @@ body {
   outline: 2px solid rgb(var(--accent));
   outline-offset: 2px;
 }
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
+::view-transition-group(root) {
+  animation-duration: 0.65s;
+}
+::view-transition-image-pair(root) {
+  isolation: auto;
+}
+::view-transition-old(root) {
+  animation: var(--vt-old, none) 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   mix-blend-mode: normal;
+  z-index: var(--vt-z-old, 0);
 }
 ::view-transition-new(root) {
-  animation: lanToa 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: var(--vt-new, none) 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  mix-blend-mode: normal;
+  z-index: var(--vt-z-new, 1);
 }
 @keyframes lanToa {
   from {clip-path: circle(0px at var(--tam-x, 50%) var(--tam-y, 50%));}
   to {clip-path: circle(var(--ban-kinh, 120vmax) at var(--tam-x, 50%) var(--tam-y, 50%));}
+}
+@keyframes thuLai {
+  from {clip-path: circle(var(--ban-kinh, 120vmax) at var(--tam-x, 50%) var(--tam-y, 50%));}
+  to {clip-path: circle(0px at var(--tam-x, 50%) var(--tam-y, 50%));}
+}
+.vt-dang-chuyen *,
+.vt-dang-chuyen *::before,
+.vt-dang-chuyen *::after {
+  animation-play-state: paused !important;
 }
 @keyframes troiA {
   0% {transform: translate3d(0, 0, 0) scale(1);}
@@ -233,6 +250,7 @@ body {
   .nut-quet:hover::after, .nut-nhan:active::before {
     animation: none;
   }
+  ::view-transition-old(root),
   ::view-transition-new(root) {
     animation: none;
   }
