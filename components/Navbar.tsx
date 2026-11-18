@@ -7,6 +7,7 @@ import {IconClose, IconSeal} from "@/components/Icons";
 import {useAuth} from "@/lib/auth";
 import {buttonTap, spring} from "@/lib/animations";
 const KHOA_THEME = "dethi.theme";
+const STYLE_ID = "vt-kieu";
 function MatTroi() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
@@ -29,6 +30,18 @@ function GachMenu() {
     </svg>
   );
 }
+function datKieu(huong: "mo" | "dong", x: number, y: number, r: number) {
+  let el = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
+  if (!el) {
+    el = document.createElement("style");
+    el.id = STYLE_ID;
+    document.head.appendChild(el);
+  }
+  const nen = "::view-transition-group(root){animation:none!important}::view-transition-image-pair(root){isolation:auto!important}::view-transition-old(root){animation:none!important;mix-blend-mode:normal!important}::view-transition-new(root){animation:none!important;mix-blend-mode:normal!important}";
+  el.textContent = huong === "mo"
+    ? `${nen}@keyframes vtMo{from{clip-path:circle(0px at ${x}px ${y}px)}to{clip-path:circle(${r}px at ${x}px ${y}px)}}::view-transition-old(root){z-index:1!important}::view-transition-new(root){animation:vtMo 0.5s linear forwards!important;z-index:2!important}`
+    : `${nen}@keyframes vtDong{from{clip-path:circle(${r}px at ${x}px ${y}px)}to{clip-path:circle(0px at ${x}px ${y}px)}}::view-transition-new(root){z-index:1!important}::view-transition-old(root){animation:vtDong 0.5s linear forwards!important;z-index:2!important}`;
+}
 export default function Navbar() {
   const {user, hoSo, isAdmin} = useAuth();
   const duong = usePathname();
@@ -37,23 +50,17 @@ export default function Navbar() {
   const tienTrinh = useSpring(scrollYProgress, {stiffness: 170, damping: 30, mass: 0.4});
   const [toi, setToi] = useState(false);
   const [mo, setMo] = useState(false);
-  const [vong, setVong] = useState(0);
   useEffect(() => {
     setToi(document.documentElement.classList.contains("dark"));
   }, []);
   useEffect(() => {
     setMo(false);
   }, [duong]);
-  const datTam = () => {
-    const root = document.documentElement;
+  const tamNut = () => {
     const r = nutRef.current?.getBoundingClientRect();
-    if (!r) return;
-    const x = r.left + r.width / 2;
-    const y = r.top + r.height / 2;
-    const ban = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
-    root.style.setProperty("--tam-x", `${x}px`);
-    root.style.setProperty("--tam-y", `${y}px`);
-    root.style.setProperty("--ban-kinh", `${ban}px`);
+    const x = r ? r.left + r.width / 2 : window.innerWidth / 2;
+    const y = r ? r.top + r.height / 2 : 0;
+    return {x, y, ban: Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y))};
   };
   const doiTheme = () => {
     const root = document.documentElement;
@@ -65,37 +72,23 @@ export default function Navbar() {
       } catch {
         setToi(dark);
       }
+      setToi(dark);
     };
     const vt = document as Document & {startViewTransition?: (cb: () => void) => {finished: Promise<void>}};
     if (vt.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      datTam();
-      if (dark) {
-        root.style.setProperty("--vt-new", "lanToa");
-        root.style.setProperty("--vt-old", "none");
-        root.style.setProperty("--vt-z-old", "0");
-        root.style.setProperty("--vt-z-new", "1");
-      } else {
-        root.style.setProperty("--vt-old", "thuLai");
-        root.style.setProperty("--vt-new", "none");
-        root.style.setProperty("--vt-z-old", "1");
-        root.style.setProperty("--vt-z-new", "0");
-      }
+      const t0 = tamNut();
+      datKieu(dark ? "mo" : "dong", t0.x, t0.y, t0.ban);
       root.classList.add("vt-dang-chuyen");
-      const t = vt.startViewTransition(() => {
+      const tr = vt.startViewTransition(() => {
         ap();
-        if (dark) datTam();
+        if (dark) {
+          const t1 = tamNut();
+          datKieu("mo", t1.x, t1.y, t1.ban);
+        }
       });
-      const don = () => {
-        root.classList.remove("vt-dang-chuyen");
-        setToi(dark);
-        setVong((v) => v + 1);
-      };
-      void t.finished.then(don, don);
-    } else {
-      ap();
-      setToi(dark);
-      setVong((v) => v + 1);
-    }
+      const don = () => root.classList.remove("vt-dang-chuyen");
+      void tr.finished.then(don, don);
+    } else ap();
   };
   const ten = hoSo?.ho_ten?.trim() || user?.email || "";
   const tu = ten.split(/\s+/).filter(Boolean);
@@ -125,13 +118,8 @@ export default function Navbar() {
               </Link>
             ))}
           </nav>
-          <motion.button ref={nutRef} whileTap={buttonTap} type="button" onClick={doiTheme} aria-label={toi ? "Chuyển nền sáng" : "Chuyển nền tối"} title={toi ? "Nền sáng" : "Nền tối"} className="relative grid h-10 w-10 place-items-center overflow-hidden border border-ink/45 bg-paper-light text-ink transition-colors hover:border-accent hover:text-accent">
-            <AnimatePresence>
-              {vong > 0 && (
-                <motion.span key={vong} initial={{scale: 0.3, opacity: 0.7}} animate={{scale: 2.6, opacity: 0}} exit={{opacity: 0}} transition={{duration: 0.6, ease: "easeOut"}} className={`pointer-events-none absolute inset-0 rounded-full border-2 ${toi ? "border-warn" : "border-info"}`} />
-              )}
-            </AnimatePresence>
-            <motion.span key={toi ? "sang" : "toi"} initial={{rotate: -90, opacity: 0, scale: 0.6}} animate={{rotate: 0, opacity: 1, scale: 1}} transition={spring}>
+          <motion.button ref={nutRef} whileTap={buttonTap} type="button" onClick={doiTheme} aria-label={toi ? "Chuyển nền sáng" : "Chuyển nền tối"} title={toi ? "Nền sáng" : "Nền tối"} className="grid h-10 w-10 place-items-center border border-ink/45 bg-paper-light text-ink transition-colors hover:border-accent hover:text-accent">
+            <motion.span key={toi ? "sang" : "toi"} initial={{rotate: -120, opacity: 0, scale: 0.4}} animate={{rotate: 0, opacity: 1, scale: 1}} transition={{type: "spring", stiffness: 380, damping: 24, mass: 0.6}}>
               {toi ? <MatTroi /> : <MatTro />}
             </motion.span>
           </motion.button>
