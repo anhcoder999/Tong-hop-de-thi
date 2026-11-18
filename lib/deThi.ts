@@ -2,6 +2,7 @@ import {supabase} from "@/lib/supabase";
 import {capNhatDe, ghiDe, xoaDeServer, xoaFile, xinLinkUpload, type ThuMuc} from "@/app/actions";
 import {chuanMon, khongDau, type DeThi, type Loai, type Mon} from "@/lib/data";
 export const MAX_BYTES = 20 * 1024 * 1024;
+export type DeThiDayDu = DeThi & {saoTB?: number; saoDem?: number};
 export function duoiFile(name: string): Loai | null {
   return name.toLowerCase().endsWith(".pdf") ? "pdf" : null;
 }
@@ -25,13 +26,23 @@ function docRow(r: Record<string, unknown>): DeThi {
     dapAnTenGoc: (r.dap_an_ten_goc as string | null) ?? null
   };
 }
-function sapGhimTruoc(rows: DeThi[]): DeThi[] {
+function sapGhimTruoc(rows: DeThiDayDu[]): DeThiDayDu[] {
   return rows.sort((a, b) => (a.ghimAt && b.ghimAt ? a.ghimAt.localeCompare(b.ghimAt) : a.ghimAt ? -1 : b.ghimAt ? 1 : 0));
 }
-export async function layDanhSach(): Promise<DeThi[]> {
-  const {data, error} = await supabase.from("de_thi").select("*").order("created_at", {ascending: false});
-  if (error) throw new Error(error.message);
-  return sapGhimTruoc((data ?? []).map((r) => docRow(r as Record<string, unknown>)));
+export async function layDanhSach(): Promise<DeThiDayDu[]> {
+  const [kq, dg] = await Promise.all([supabase.from("de_thi").select("*").order("created_at", {ascending: false}), supabase.rpc("danh_gia_tong")]);
+  if (kq.error) throw new Error(kq.error.message);
+  const sao = new Map<string, {tb: number; dem: number}>();
+  for (const r of (dg.data ?? []) as {de_id: string; tb: number; dem: number}[]) sao.set(String(r.de_id), {tb: Number(r.tb), dem: Number(r.dem)});
+  return sapGhimTruoc((kq.data ?? []).map((r) => {
+    const de = docRow(r as Record<string, unknown>) as DeThiDayDu;
+    const s = sao.get(de.id);
+    if (s) {
+      de.saoTB = s.tb;
+      de.saoDem = s.dem;
+    }
+    return de;
+  }));
 }
 export async function layDeTheoId(id: string): Promise<DeThi | null> {
   const {data, error} = await supabase.from("de_thi").select("*").eq("id", id).maybeSingle();
