@@ -94,7 +94,8 @@ export default function Navbar() {
   const tu = ten.split(/\s+/).filter(Boolean);
   const vietTat = ten ? (tu.length > 1 ? `${tu[tu.length - 2][0] ?? ""}${tu[tu.length - 1][0] ?? ""}` : ten.slice(0, 2)).toUpperCase() : "?";
   const lienKet = [
-    {href: "/", nhan: "Trang chủ", active: duong === "/" || duong.startsWith("/de")},
+    {href: "/", nhan: "Trang chủ", active: duong === "/"},
+    {href: "/kho-de", nhan: "Kho đề", active: duong.startsWith("/kho-de") || duong.startsWith("/de/")},
     ...(isAdmin ? [{href: "/admin", nhan: "Quản trị", active: duong.startsWith("/admin")}] : []),
     {href: user ? "/tai-khoan" : "/login", nhan: user ? "Tài khoản" : "Đăng nhập", active: duong.startsWith("/tai-khoan") || duong.startsWith("/login")}
   ];
@@ -110,9 +111,9 @@ export default function Navbar() {
           </span>
         </Link>
         <div className="flex shrink-0 items-center gap-2">
-          <nav className="hidden items-center gap-5 sm:flex">
+          <nav className="hidden items-center gap-4 sm:flex">
             {lienKet.map((l) => (
-              <Link key={l.href} href={l.href} className={`group relative pb-0.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${l.active ? "text-accent" : "text-ink-soft hover:text-ink"}`}>
+              <Link key={l.href} href={l.href} className={`group relative pb-0.5 text-xs font-semibold uppercase tracking-[0.12em] transition-colors ${l.active ? "text-accent" : "text-ink-soft hover:text-ink"}`}>
                 {l.nhan}
                 <span className={`absolute inset-x-0 -bottom-0.5 h-[2px] origin-left rounded-full bg-accent transition-transform duration-300 ease-out ${l.active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"}`} />
               </Link>
