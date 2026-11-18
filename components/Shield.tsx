@@ -32,12 +32,8 @@ export default function Shield() {
     const lan = (e: WheelEvent) => {
       if (e.ctrlKey || e.metaKey) khoaZoom(e);
     };
-    const cham = (e: TouchEvent) => {
-      if (e.touches.length > 1) khoaZoom(e);
-    };
     window.addEventListener("keydown", phim);
     window.addEventListener("wheel", lan, {passive: false});
-    window.addEventListener("touchmove", cham, {passive: false});
     window.addEventListener("gesturestart", khoaZoom);
     window.addEventListener("gesturechange", khoaZoom);
     document.addEventListener("copy", chan);
@@ -66,11 +62,10 @@ export default function Shield() {
       const t0 = performance.now();
       (function () {}).constructor("debugger")();
       if (performance.now() - t0 > 60) setChan(true);
-    }, 3000);
+    }, 4000);
     return () => {
       window.removeEventListener("keydown", phim);
       window.removeEventListener("wheel", lan);
-      window.removeEventListener("touchmove", cham);
       window.removeEventListener("gesturestart", khoaZoom);
       window.removeEventListener("gesturechange", khoaZoom);
       document.removeEventListener("copy", chan);
@@ -90,12 +85,12 @@ export default function Shield() {
     <>
       <style>{CSS}</style>
       {chan && (
-        <div className="fixed inset-0 z-[999] grid place-items-center bg-ink/80 p-4 backdrop-blur-md">
+        <div className="fixed inset-0 z-[999] grid place-items-center bg-ink/85 p-4">
           <div className="sheet max-w-md border-2 border-danger bg-paper-light p-6 text-center shadow-lift">
             <IconAlert className="mx-auto h-8 w-8 text-danger" />
             <h2 className="mt-3 font-display text-2xl font-bold text-ink">Phát hiện can thiệp</h2>
             <p className="mt-2 text-sm text-ink-soft">Công cụ gỡ lỗi hoặc script/hook lạ đang hoạt động. Đóng chúng và tải lại trang để tiếp tục sử dụng kho đề.</p>
-            <button type="button" onClick={() => location.reload()} className="mt-4 w-full border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent">Tải lại trang</button>
+            <button type="button" onClick={() => location.reload()} className="nut-nhan mt-4 w-full border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent">Tải lại trang</button>
           </div>
         </div>
       )}
