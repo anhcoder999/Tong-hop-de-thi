@@ -68,14 +68,13 @@ export default async function TrangXemDe({params}: Props) {
     );
   }
   if (!de) notFound();
-  const rong = Promise.resolve({data: null as {signedUrl: string} | null});
-  const [, signedDe, signedDa] = await Promise.all([
+  const [, sDe, sDa] = await Promise.all([
     hubClient("MAIN").rpc("tang_xem", {uid: de.id}),
-    de.duongDan ? hubClient(hubCuaPath(de.duongDan)).storage.from(BUCKET).createSignedUrl(de.duongDan, 3600) : rong,
-    de.dapAnDuongDan ? hubClient(hubCuaPath(de.dapAnDuongDan)).storage.from(BUCKET).createSignedUrl(de.dapAnDuongDan, 3600) : rong
+    de.duongDan ? hubClient(hubCuaPath(de.duongDan)).storage.from(BUCKET).createSignedUrl(de.duongDan, 3600) : Promise.resolve(null),
+    de.dapAnDuongDan ? hubClient(hubCuaPath(de.dapAnDuongDan)).storage.from(BUCKET).createSignedUrl(de.dapAnDuongDan, 3600) : Promise.resolve(null)
   ]);
-  const url = signedDe.data?.signedUrl ?? de.urlPdf;
-  const urlDapAn = signedDa.data?.signedUrl ?? de.urlDapAn ?? null;
+  const url = sDe?.data?.signedUrl ?? de.urlPdf;
+  const urlDapAn = sDa?.data?.signedUrl ?? de.urlDapAn ?? null;
   return (
     <div className="mx-auto w-full min-w-0 max-w-5xl px-4 pb-16 pt-6 sm:pt-10">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-soft">
@@ -106,4 +105,18 @@ export default async function TrangXemDe({params}: Props) {
             {formatNgay(de.ngay)}
           </span>
           <span className="text-xs uppercase tracking-[0.12em] text-ink-faint">{formatDungLuong(de.kichThuoc)}</span>
-          <span className="f
+          <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-faint" title="Lượt xem">
+            <IconEye className="h-3.5 w-3.5" />
+            {(de.luotXem ?? 0) + 1}
+          </span>
+          <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-faint" title="Lượt tải">
+            <IconDownload className="h-3.5 w-3.5" />
+            {de.luotTai ?? 0}
+          </span>
+        </div>
+      </header>
+      <DocumentViewer url={url} ten={de.ten} id={de.id} urlDapAn={urlDapAn} />
+      <DanhGia deId={de.id} tenDe={de.ten} />
+    </div>
+  );
+}
