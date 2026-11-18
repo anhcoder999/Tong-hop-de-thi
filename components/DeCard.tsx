@@ -3,7 +3,7 @@ import Link from "next/link";
 import {motion, useMotionTemplate, useMotionValue, useSpring} from "framer-motion";
 import {IconArrowRight, IconCalendar, IconCheck, IconDownload, IconEye, MonIcon} from "@/components/Icons";
 import {formatDungLuong, formatNgay, MON_DAY_DU, tenNhom, type DeThi} from "@/lib/data";
-import {buttonTap, cardHover, fadeInUp, stampIn, tapCard} from "@/lib/animations";
+import {buttonTap, cardHover, stampIn, tapCard} from "@/lib/animations";
 import {useHoverCapable} from "@/lib/useHover";
 import {useDanhDau} from "@/lib/useDanhDau";
 function SaoNho({day}: {day: boolean}) {
@@ -39,13 +39,13 @@ export default function DeCard({de}: {de: DeThi & {saoTB?: number; saoDem?: numb
   };
   return (
     <motion.article
-      variants={{...fadeInUp, ...cardHover}}
+      variants={cardHover}
       whileHover={hover ? "hover" : undefined}
       whileTap={tapCard}
       onPointerMove={nghieng}
       onPointerLeave={thang}
       style={{rotateX: rx, rotateY: ry, transformPerspective: 900}}
-      className={`sheet group relative flex flex-col p-5 pl-8 shadow-paper transition-colors duration-300 hover:border-accent/60 ${de.ghimAt ? "border-accent/70 bg-accent-wash/30" : ""}`}
+      className={`sheet group relative flex h-full flex-col p-5 pl-8 shadow-paper transition-[box-shadow,border-color] duration-300 hover:border-accent/60 hover:shadow-lift ${de.ghimAt ? "border-accent/70 bg-accent-wash/30" : ""}`}
     >
       {hover && <motion.div aria-hidden style={{background: anhSang}} className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />}
       <div className="flex items-start justify-between gap-3">
@@ -83,10 +83,12 @@ export default function DeCard({de}: {de: DeThi & {saoTB?: number; saoDem?: numb
           <SaoNho day={!!sao} />
           {sao ? `${sao.toFixed(1)} (${de.saoDem})` : "Chưa chấm"}
         </motion.span>
-        <button type="button" onClick={() => dao(de.id)} aria-pressed={daDoc} className={`ml-auto flex items-center gap-1 border px-2 py-0.5 text-[10px] font-semibold transition-colors ${daDoc ? "border-ok bg-ok/15 text-ok" : "border-ink/30 text-ink-faint hover:border-ok hover:text-ok"}`}>
-          <IconCheck className="h-3 w-3" />
-          {daDoc ? "Đã đọc" : "Đánh dấu"}
-        </button>
+        <motion.button whileTap={buttonTap} type="button" onClick={() => dao(de.id)} aria-pressed={daDoc} className={`ml-auto flex items-center gap-1 border px-2 py-0.5 text-[10px] font-semibold transition-colors ${daDoc ? "border-ok bg-ok/15 text-ok" : "border-ink/30 text-ink-faint hover:border-ok hover:text-ok"}`}>
+          <motion.span key={daDoc ? "doc" : "chua"} variants={stampIn} initial="hidden" animate="visible" className="flex items-center gap-1">
+            <IconCheck className="h-3 w-3" />
+            {daDoc ? "Đã đọc" : "Đánh dấu"}
+          </motion.span>
+        </motion.button>
       </div>
       <Link href={`/de/${de.id}`} className="mt-4 block">
         <motion.span whileTap={buttonTap} className="nut-quet nut-nhan flex items-center justify-between gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors duration-300 active:border-accent active:bg-accent group-hover:border-accent group-hover:bg-accent">
