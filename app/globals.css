@@ -33,6 +33,7 @@
 }
 html {
   color-scheme: light;
+  scroll-behavior: smooth;
   scroll-padding-top: 5.5rem;
   scrollbar-color: rgb(var(--ink-faint)) rgb(var(--paper-deep));
   scrollbar-width: thin;
@@ -103,4 +104,66 @@ body {
 :focus-visible {
   outline: 2px solid rgb(var(--accent));
   outline-offset: 2px;
+}
+@keyframes troiA {
+  0% {transform: translate3d(0, 0, 0) scale(1);}
+  50% {transform: translate3d(6rem, 3rem, 0) scale(1.12);}
+  100% {transform: translate3d(-3rem, 5rem, 0) scale(0.94);}
+}
+@keyframes troiB {
+  0% {transform: translate3d(0, 0, 0) scale(1);}
+  50% {transform: translate3d(-5rem, -4rem, 0) scale(1.08);}
+  100% {transform: translate3d(4rem, 2rem, 0) scale(0.96);}
+}
+.lop-troi {
+  animation: troiA 26s ease-in-out infinite alternate;
+}
+.lop-troi-2 {
+  animation: troiB 32s ease-in-out infinite alternate;
+}
+@keyframes quetSang {
+  0% {transform: translateX(-130%) skewX(-18deg);}
+  100% {transform: translateX(240%) skewX(-18deg);}
+}
+.nut-quet {
+  position: relative;
+  overflow: hidden;
+}
+.nut-quet::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
+  transform: translateX(-130%) skewX(-18deg);
+  pointer-events: none;
+}
+.nut-quet:hover::after {
+  animation: quetSang 0.9s ease;
+}
+@keyframes xoayCham {
+  from {transform: rotate(0deg);}
+  to {transform: rotate(360deg);}
+}
+.xoay-cham {
+  animation: xoayCham 28s linear infinite;
+}
+@keyframes lacNhe {
+  0%, 100% {transform: rotate(-2deg);}
+  50% {transform: rotate(2deg);}
+}
+.lac-nhe {
+  animation: lacNhe 5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lop-troi, .lop-troi-2, .xoay-cham, .lac-nhe {
+    animation: none;
+  }
+  .nut-quet:hover::after {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
 }
