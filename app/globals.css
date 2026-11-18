@@ -35,6 +35,7 @@ html {
   color-scheme: light;
   scroll-behavior: smooth;
   scroll-padding-top: 5.5rem;
+  touch-action: pan-x pan-y;
   scrollbar-color: rgb(var(--ink-faint)) rgb(var(--paper-deep));
   scrollbar-width: thin;
 }
@@ -57,8 +58,13 @@ html::-webkit-scrollbar-thumb:hover {
 }
 body {
   @apply bg-paper font-sans text-ink antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-x pan-y;
   background-image: linear-gradient(rgb(var(--ink) / 0.04) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--ink) / 0.04) 1px, transparent 1px);
   background-size: 24px 24px;
+}
+[data-pdf-zoom] {
+  touch-action: pan-x pan-y;
 }
 .sheet {
   position: relative;
@@ -75,6 +81,7 @@ body {
   background: rgb(var(--accent) / 0.32);
 }
 .viewer-scroll {
+  overscroll-behavior: contain;
   scrollbar-color: rgb(var(--ink-faint)) rgb(var(--paper-deep));
   scrollbar-width: thin;
 }
@@ -107,19 +114,40 @@ body {
 }
 @keyframes troiA {
   0% {transform: translate3d(0, 0, 0) scale(1);}
-  50% {transform: translate3d(6rem, 3rem, 0) scale(1.12);}
-  100% {transform: translate3d(-3rem, 5rem, 0) scale(0.94);}
+  50% {transform: translate3d(5rem, 3rem, 0) scale(1.1);}
+  100% {transform: translate3d(-3rem, 4rem, 0) scale(0.95);}
 }
 @keyframes troiB {
   0% {transform: translate3d(0, 0, 0) scale(1);}
-  50% {transform: translate3d(-5rem, -4rem, 0) scale(1.08);}
-  100% {transform: translate3d(4rem, 2rem, 0) scale(0.96);}
+  50% {transform: translate3d(-4rem, -3rem, 0) scale(1.07);}
+  100% {transform: translate3d(3rem, 2rem, 0) scale(0.96);}
 }
 .lop-troi {
   animation: troiA 26s ease-in-out infinite alternate;
+  will-change: transform;
 }
 .lop-troi-2 {
   animation: troiB 32s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes chayDoc {
+  from {transform: translate3d(0, 0, 0);}
+  to {transform: translate3d(-50%, 0, 0);}
+}
+.chay-doc {
+  animation: chayDoc 40s linear infinite;
+  will-change: transform;
+}
+.chay-doc:hover {
+  animation-play-state: paused;
+}
+@keyframes shimmer {
+  from {transform: translate3d(-100%, 0, 0);}
+  to {transform: translate3d(100%, 0, 0);}
+}
+.shimmer {
+  animation: shimmer 1.4s ease-in-out infinite;
+  will-change: transform;
 }
 @keyframes quetSang {
   0% {transform: translateX(-130%) skewX(-18deg);}
@@ -142,12 +170,38 @@ body {
 .nut-quet:hover::after {
   animation: quetSang 0.9s ease;
 }
+@keyframes vetMuc {
+  from {transform: scale(0); opacity: 0.5;}
+  to {transform: scale(2.6); opacity: 0;}
+}
+.nut-nhan {
+  position: relative;
+  overflow: hidden;
+}
+.nut-nhan::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40%;
+  aspect-ratio: 1;
+  margin: -20% 0 0 -20%;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.4);
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+.nut-nhan:active::before {
+  animation: vetMuc 0.5s ease-out;
+}
 @keyframes xoayCham {
   from {transform: rotate(0deg);}
   to {transform: rotate(360deg);}
 }
 .xoay-cham {
   animation: xoayCham 28s linear infinite;
+  will-change: transform;
 }
 @keyframes lacNhe {
   0%, 100% {transform: rotate(-2deg);}
@@ -157,10 +211,10 @@ body {
   animation: lacNhe 5s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .lop-troi, .lop-troi-2, .xoay-cham, .lac-nhe {
+  .lop-troi, .lop-troi-2, .xoay-cham, .lac-nhe, .chay-doc, .shimmer {
     animation: none;
   }
-  .nut-quet:hover::after {
+  .nut-quet:hover::after, .nut-nhan:active::before {
     animation: none;
   }
   html {
