@@ -2,6 +2,7 @@ import type {Metadata, Viewport} from "next";
 import {Be_Vietnam_Pro, Lora} from "next/font/google";
 import Link from "next/link";
 import {IconSeal} from "@/components/Icons";
+import Ambient from "@/components/Ambient";
 import Shield from "@/components/Shield";
 import Navbar from "@/components/Navbar";
 import PageTransition from "@/components/PageTransition";
@@ -50,6 +51,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
     <html lang="vi" className={`${lora.variable} ${be.variable}`} suppressHydrationWarning>
       <body className="flex min-h-screen flex-col font-sans text-ink antialiased">
         <script dangerouslySetInnerHTML={{__html: "try{if(localStorage.getItem('dethi.theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}"}} />
+        <Ambient />
         <AuthProvider>
           <Shield />
           <Navbar />
