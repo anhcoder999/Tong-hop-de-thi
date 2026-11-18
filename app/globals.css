@@ -117,20 +117,22 @@ body {
   outline-offset: 2px;
 }
 ::view-transition-group(root) {
-  animation-duration: 0.65s;
+  animation: none;
 }
 ::view-transition-image-pair(root) {
   isolation: auto;
 }
 ::view-transition-old(root) {
-  animation: var(--vt-old, none) 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: var(--vt-old, none) 0.5s linear forwards;
   mix-blend-mode: normal;
   z-index: var(--vt-z-old, 0);
+  will-change: clip-path;
 }
 ::view-transition-new(root) {
-  animation: var(--vt-new, none) 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: var(--vt-new, none) 0.5s linear forwards;
   mix-blend-mode: normal;
   z-index: var(--vt-z-new, 1);
+  will-change: clip-path;
 }
 @keyframes lanToa {
   from {clip-path: circle(0px at var(--tam-x, 50%) var(--tam-y, 50%));}
@@ -144,6 +146,7 @@ body {
 .vt-dang-chuyen *::before,
 .vt-dang-chuyen *::after {
   animation-play-state: paused !important;
+  transition: none !important;
 }
 @keyframes troiA {
   0% {transform: translate3d(0, 0, 0) scale(1);}
