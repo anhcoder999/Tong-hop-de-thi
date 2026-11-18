@@ -12,11 +12,11 @@ import {useHoverCapable} from "@/lib/useHover";
 import {useAuth} from "@/lib/auth";
 import {layDanhSach} from "@/lib/deThi";
 type SapXep = "moi" | "cu" | "ten";
-function GachMuc({active, mong}: {active: boolean; mong?: boolean}) {
+function GachMuc({active}: {active: boolean}) {
   if (!active) return null;
   return (
-    <motion.span initial={{scaleX: 0, opacity: 0}} animate={{scaleX: 1, opacity: 1}} transition={{duration: 0.26, ease: EASE}} style={{transformOrigin: "left center"}} className={`absolute inset-x-0 text-accent ${mong ? "-bottom-0.5" : "-bottom-px"}`}>
-      <InkLine className={`w-full ${mong ? "h-1" : "h-1.5"}`} />
+    <motion.span initial={{scaleX: 0, opacity: 0}} animate={{scaleX: 1, opacity: 1}} transition={{duration: 0.26, ease: EASE}} style={{transformOrigin: "left center"}} className="absolute inset-x-0 -bottom-px text-accent">
+      <InkLine className="h-1.5 w-full" />
     </motion.span>
   );
 }
@@ -155,20 +155,13 @@ export default function TrangChu() {
               </motion.button>
             </div>
             {NHOM_MON.map((n) => {
-              const nhomDangChon = loc === n.id;
               const trongNhom = !laNhom(loc) && loc !== "Tất cả" && n.mon.includes(loc);
               return (
                 <div key={n.id} className="flex flex-col justify-end gap-1.5 border-l border-dashed border-ink/25 px-4">
-                  <motion.button
-                    whileTap={buttonTap}
-                    onClick={() => doiLoc(n.id)}
-                    title={`Xem cả nhóm ${n.ten}`}
-                    className={`nut-nhan relative whitespace-nowrap pb-0.5 text-left text-[10px] uppercase tracking-[0.18em] transition-colors ${nhomDangChon ? "text-accent" : trongNhom ? "text-ink" : "text-ink-faint hover:text-ink-soft"}`}
-                  >
+                  <span className={`whitespace-nowrap pb-0.5 text-left text-[10px] uppercase tracking-[0.18em] ${trongNhom ? "text-ink" : "text-ink-faint"}`}>
                     {n.ten}
                     <sup className="ml-1 text-[9px]">{demNhom(n.mon)}</sup>
-                    <GachMuc active={nhomDangChon} mong />
-                  </motion.button>
+                  </span>
                   <div className="flex gap-4">
                     {n.mon.map((m) => {
                       const active = loc === m;
