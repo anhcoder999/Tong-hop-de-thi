@@ -259,14 +259,16 @@ export default function TrangChu() {
           />
         </div>
       ) : (
-        <motion.div layout variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{once: true, margin: "-40px"}} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <AnimatePresence mode="popLayout">
-            {ketQua.map((d) => (
-              <motion.div key={d.id} layout variants={vaoThe} exit={{opacity: 0, scale: 0.92, transition: {duration: 0.16, ease: EASE}}} className="the-de min-w-0">
-                <DeCard de={d} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
+        <motion.div initial={{opacity: 0, y: 18}} whileInView={{opacity: 1, y: 0}} viewport={{once: true, margin: "-40px"}} transition={{duration: 0.45, ease: EASE}} className="mt-4">
+          <motion.div layout variants={staggerContainer} initial="hidden" animate="visible" className="relative grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <AnimatePresence mode="popLayout">
+              {ketQua.map((d) => (
+                <motion.div key={d.id} layout variants={vaoThe} exit={{opacity: 0, scale: 0.92, transition: {duration: 0.16, ease: EASE}}} className="the-de min-w-0">
+                  <DeCard de={d} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
         </motion.div>
       )}
     </div>
