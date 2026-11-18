@@ -80,6 +80,10 @@ body {
   width: 1px;
   background: rgb(var(--accent) / 0.32);
 }
+.the-de {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+}
 .viewer-scroll {
   overscroll-behavior: contain;
   scrollbar-color: rgb(var(--ink-faint)) rgb(var(--paper-deep));
@@ -111,6 +115,18 @@ body {
 :focus-visible {
   outline: 2px solid rgb(var(--accent));
   outline-offset: 2px;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  animation: lanToa 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes lanToa {
+  from {clip-path: circle(0px at var(--tam-x, 50%) var(--tam-y, 50%));}
+  to {clip-path: circle(var(--ban-kinh, 120vmax) at var(--tam-x, 50%) var(--tam-y, 50%));}
 }
 @keyframes troiA {
   0% {transform: translate3d(0, 0, 0) scale(1);}
@@ -215,6 +231,9 @@ body {
     animation: none;
   }
   .nut-quet:hover::after, .nut-nhan:active::before {
+    animation: none;
+  }
+  ::view-transition-new(root) {
     animation: none;
   }
   html {
