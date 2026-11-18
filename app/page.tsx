@@ -1,6 +1,6 @@
 "use client";
 import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
-import {AnimatePresence, motion, useScroll, useTransform} from "framer-motion";
+import {motion, useScroll, useTransform} from "framer-motion";
 import {IconClose, IconRefresh, IconSearch, IconSeal, IconSort, InkLine} from "@/components/Icons";
 import InkDraw from "@/components/InkDraw";
 import DeCard from "@/components/DeCard";
@@ -12,11 +12,14 @@ import {useHoverCapable} from "@/lib/useHover";
 import {useAuth} from "@/lib/auth";
 import {layDanhSach} from "@/lib/deThi";
 type SapXep = "moi" | "cu" | "ten";
-const vaoThe = {
-  hidden: {opacity: 0, y: 20, scale: 0.97},
-  visible: {opacity: 1, y: 0, scale: 1, transition: {type: "spring", stiffness: 420, damping: 32, mass: 0.5}}
-};
-const nhomThe = {hidden: {}, visible: {transition: {staggerChildren: 0.045, delayChildren: 0.02}}};
+function GachMuc({active, mong}: {active: boolean; mong?: boolean}) {
+  if (!active) return null;
+  return (
+    <motion.span initial={{scaleX: 0, opacity: 0}} animate={{scaleX: 1, opacity: 1}} transition={{duration: 0.26, ease: EASE}} style={{transformOrigin: "left center"}} className={`absolute inset-x-0 text-accent ${mong ? "-bottom-0.5" : "-bottom-px"}`}>
+      <InkLine className={`w-full ${mong ? "h-1" : "h-1.5"}`} />
+    </motion.span>
+  );
+}
 export default function TrangChu() {
   const {isAdmin} = useAuth();
   const hover = useHoverCapable();
@@ -148,11 +151,7 @@ export default function TrangChu() {
               >
                 Tất cả
                 <sup className="ml-1 text-[10px] text-ink-faint">{ds.length}</sup>
-                {loc === "Tất cả" && (
-                  <motion.span layoutId="tab-ink" transition={spring} className="absolute inset-x-0 -bottom-px text-accent">
-                    <InkLine className="h-1.5 w-full" />
-                  </motion.span>
-                )}
+                <GachMuc active={loc === "Tất cả"} />
               </motion.button>
             </div>
             {NHOM_MON.map((n) => {
@@ -168,11 +167,7 @@ export default function TrangChu() {
                   >
                     {n.ten}
                     <sup className="ml-1 text-[9px]">{demNhom(n.mon)}</sup>
-                    {nhomDangChon && (
-                      <motion.span layoutId="nhom-ink" transition={spring} className="absolute inset-x-0 -bottom-0.5 text-accent">
-                        <InkLine className="h-1 w-full" />
-                      </motion.span>
-                    )}
+                    <GachMuc active={nhomDangChon} mong />
                   </motion.button>
                   <div className="flex gap-4">
                     {n.mon.map((m) => {
@@ -190,11 +185,7 @@ export default function TrangChu() {
                         >
                           {m}
                           <sup className="ml-1 text-[10px] text-ink-faint">{soDe}</sup>
-                          {active && (
-                            <motion.span layoutId="tab-ink" transition={spring} className="absolute inset-x-0 -bottom-px text-accent">
-                              <InkLine className="h-1.5 w-full" />
-                            </motion.span>
-                          )}
+                          <GachMuc active={active} />
                         </motion.button>
                       );
                     })}
@@ -260,15 +251,13 @@ export default function TrangChu() {
           />
         </div>
       ) : (
-        <motion.div layout variants={nhomThe} initial="hidden" animate="visible" className="relative mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <AnimatePresence mode="popLayout">
-            {ketQua.map((d) => (
-              <motion.div key={d.id} layout variants={vaoThe} exit={{opacity: 0, scale: 0.94, y: -8, transition: {duration: 0.14, ease: EASE}}} className="min-w-0">
-                <DeCard de={d} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {ketQua.map((d, i) => (
+            <motion.div key={d.id} initial={{opacity: 0, y: 14, scale: 0.98}} animate={{opacity: 1, y: 0, scale: 1}} transition={{duration: 0.26, ease: EASE, delay: Math.min(i * 0.03, 0.18)}} className="min-w-0">
+              <DeCard de={d} />
+            </motion.div>
+          ))}
+        </div>
       )}
     </div>
   );
