@@ -1,12 +1,12 @@
 "use client";
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {motion} from "framer-motion";
+import {motion, useScroll, useTransform} from "framer-motion";
 import {IconClose, IconRefresh, IconSearch, IconSeal, IconSort, InkLine} from "@/components/Icons";
 import InkDraw from "@/components/InkDraw";
 import DeCard from "@/components/DeCard";
 import EmptyState from "@/components/EmptyState";
 import {DeCardSkeleton} from "@/components/Skeleton";
-import {khongDau, laNhom, MON_DAY_DU, monTrongLoc, NHOM_MON, type DeThi, type Loc} from "@/lib/data";
+import {DS_MON, khongDau, laNhom, MON_DAY_DU, monTrongLoc, NHOM_MON, type DeThi, type Loc} from "@/lib/data";
 import {buttonTap, EASE, fadeInUp, spring, staggerContainer} from "@/lib/animations";
 import {useHoverCapable} from "@/lib/useHover";
 import {useAuth} from "@/lib/auth";
@@ -15,6 +15,9 @@ type SapXep = "moi" | "cu" | "ten";
 export default function TrangChu() {
   const {isAdmin} = useAuth();
   const hover = useHoverCapable();
+  const {scrollY} = useScroll();
+  const yDau = useTransform(scrollY, [0, 320], [0, -46]);
+  const moDau = useTransform(scrollY, [0, 280], [1, 0.35]);
   const [ds, setDs] = useState<DeThi[]>([]);
   const [dangTai, setDangTai] = useState(true);
   const [loi, setLoi] = useState("");
@@ -56,7 +59,10 @@ export default function TrangChu() {
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl px-4 pb-16 pt-8 sm:pt-12">
       <motion.div variants={staggerContainer} initial="hidden" animate="visible">
-        <motion.header variants={fadeInUp} className="w-full border-b-2 border-ink pb-6">
+        <motion.header variants={fadeInUp} style={{y: yDau, opacity: moDau}} className="relative w-full border-b-2 border-ink pb-6">
+          <span aria-hidden className="xoay-cham absolute -right-1 -top-3 hidden h-20 w-20 place-items-center rounded-full border border-dashed border-accent/50 text-accent sm:grid">
+            <IconSeal className="h-6 w-6" />
+          </span>
           <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-ink-soft">
             <span>Kì thi tốt nghiệp THPT</span>
             <span>Năm 2026</span>
@@ -71,14 +77,24 @@ export default function TrangChu() {
             </span>
           </h1>
           <p className="mt-4 max-w-xl text-sm text-ink-soft sm:text-base">
-            Kho đề 12 môn xếp theo từng nhóm. Xem PDF và DOCX trực tiếp, tải về ôn luyện ngay trên điện thoại.
+            Kho đề 12 môn xếp theo từng nhóm, kèm đáp án riêng. Xem PDF trực tiếp, ghim trang, ghi chú và tải về ôn luyện ngay trên điện thoại.
           </p>
-          <motion.span variants={fadeInUp} className="mt-4 inline-flex -rotate-1 items-center gap-1.5 border border-accent/70 bg-accent-wash px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-deep">
+          <motion.span variants={fadeInUp} className="lac-nhe mt-4 inline-flex -rotate-1 items-center gap-1.5 border border-accent/70 bg-accent-wash px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-deep">
             <IconSeal className="h-3.5 w-3.5" />
             Lưu hành miễn phí
           </motion.span>
         </motion.header>
-        <motion.div variants={fadeInUp} className="group relative mt-8 max-w-xl">
+        <motion.div variants={fadeInUp} className="no-scrollbar mt-6 overflow-hidden border-y border-dashed border-ink/25 py-2">
+          <div className="chay-doc flex w-max gap-8 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.22em] text-ink-faint">
+            {[...DS_MON, ...DS_MON].map((m, i) => (
+              <span key={`${m}-${i}`} className="flex items-center gap-2">
+                <span className="h-1 w-1 rotate-45 bg-accent/70" />
+                {MON_DAY_DU[m]}
+              </span>
+            ))}
+          </div>
+        </motion.div>
+        <motion.div variants={fadeInUp} className="group relative mt-6 max-w-xl">
           <IconSearch className="pointer-events-none absolute left-1 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint transition-colors group-focus-within:text-accent" />
           <input
             type="text"
@@ -88,7 +104,7 @@ export default function TrangChu() {
             aria-label="Tìm đề theo tên"
             className="w-full border-b-2 border-ink/40 bg-transparent py-3 pl-7 pr-8 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent"
           />
-          <span className="absolute inset-x-0 bottom-0 h-[2px] origin-left scale-x-0 bg-accent transition-transform duration-300 group-focus-within:scale-x-100" />
+          <span className="absolute inset-x-0 bottom-0 h-[2px] origin-left scale-x-0 bg-accent transition-transform duration-300 ease-out group-focus-within:scale-x-100" />
           {tuKhoa && (
             <motion.button whileTap={buttonTap} onClick={() => setTuKhoa("")} aria-label="Xóa từ khóa" className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-ink-faint transition-colors hover:text-accent">
               <IconClose className="h-4 w-4" />
@@ -165,7 +181,7 @@ export default function TrangChu() {
           </div>
         </motion.div>
       </motion.div>
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+      <motion.div initial={{opacity: 0, y: 14}} whileInView={{opacity: 1, y: 0}} viewport={{once: true, margin: "-40px"}} transition={{duration: 0.4, ease: EASE}} className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs uppercase tracking-[0.18em] text-ink-soft">
           Mục lục {nhanLoc} ·{" "}
           <motion.b key={dangTai ? "load" : ketQua.length} initial={{y: 8, opacity: 0}} animate={{y: 0, opacity: 1}} transition={{duration: 0.3, ease: EASE}} className="inline-block text-ink">
@@ -184,12 +200,12 @@ export default function TrangChu() {
             <IconRefresh className={`h-4 w-4 ${dangTai ? "animate-spin" : ""}`} />
           </motion.button>
         </div>
-      </div>
+      </motion.div>
       {loi ? (
         <div className="mt-4 flex flex-col items-start gap-3 border border-accent/50 bg-accent-wash p-5 text-sm text-accent-deep">
           <p className="font-semibold">Không tải được kho đề</p>
           <p className="text-xs">{loi}</p>
-          <motion.button whileTap={buttonTap} type="button" onClick={() => void tai()} className="border border-accent bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light">
+          <motion.button whileTap={buttonTap} type="button" onClick={() => void tai()} className="nut-nhan border border-accent bg-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light">
             Thử lại
           </motion.button>
         </div>
@@ -220,7 +236,7 @@ export default function TrangChu() {
           />
         </div>
       ) : (
-        <motion.div key={`${loc}-${sapXep}`} variants={staggerContainer} initial="hidden" animate="visible" className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div key={`${loc}-${sapXep}`} variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{once: true, margin: "-60px"}} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {ketQua.map((d) => (
             <DeCard key={d.id} de={d} />
           ))}
