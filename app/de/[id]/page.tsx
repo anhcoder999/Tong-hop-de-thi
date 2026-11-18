@@ -3,6 +3,7 @@ import Link from "next/link";
 import {notFound} from "next/navigation";
 import {IconCalendar, IconCheck, IconChevron, IconDownload, IconEye} from "@/components/Icons";
 import DocumentViewer from "@/components/DocumentViewer";
+import DanhGia from "@/components/DanhGia";
 import {chuanMon, formatDungLuong, formatNgay, MON_DAY_DU, tenNhom, type DeThi} from "@/lib/data";
 import {authClient, BUCKET, hubClient, hubCuaPath} from "@/lib/server";
 export const dynamic = "force-dynamic";
@@ -105,17 +106,4 @@ export default async function TrangXemDe({params}: Props) {
             {formatNgay(de.ngay)}
           </span>
           <span className="text-xs uppercase tracking-[0.12em] text-ink-faint">{formatDungLuong(de.kichThuoc)}</span>
-          <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-faint" title="Lượt xem">
-            <IconEye className="h-3.5 w-3.5" />
-            {(de.luotXem ?? 0) + 1}
-          </span>
-          <span className="flex items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-faint" title="Lượt tải">
-            <IconDownload className="h-3.5 w-3.5" />
-            {de.luotTai ?? 0}
-          </span>
-        </div>
-      </header>
-      <DocumentViewer url={url} ten={de.ten} id={de.id} urlDapAn={urlDapAn} />
-    </div>
-  );
-}
+          <span className="f
