@@ -35,6 +35,7 @@ function IconTapTrung({mo}: {mo: boolean}) {
     </svg>
   );
 }
+const kep = (v: number) => Math.min(4, Math.max(0.5, Number(v.toFixed(2))));
 export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; ten: string; id: string; urlDapAn?: string | null}) {
   const router = useRouter();
   const {danhDau} = useDanhDau();
@@ -46,13 +47,17 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
   const wrapRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const taskRef = useRef<{cancel: () => void; promise: Promise<unknown>} | null>(null);
-  const touchRef = useRef<{x: number; y: number; kc: number; zoom: number} | null>(null);
+  const touchRef = useRef<{x: number; y: number; kc: number; t: number} | null>(null);
+  const liveRef = useRef({base: 1, pending: 1, timer: null as ReturnType<typeof setTimeout> | null});
+  const lastTapRef = useRef(0);
+  const prevTrangRef = useRef(1);
   const [nguon, setNguon] = useState<"de" | "dapan">("de");
   const [pdf, setPdf] = useState<any>(null);
   const [fit, setFit] = useState(0);
   const [trang, setTrang] = useState(1);
   const [tong, setTong] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const [huong, setHuong] = useState(1);
   const [dangTai, setDangTai] = useState(true);
   const [dangVe, setDangVe] = useState(true);
   const [loi, setLoi] = useState("");
@@ -68,6 +73,18 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
   const ghiChu = soTay.note[String(trang)] ?? "";
   const trangGhiChu = useMemo(() => Object.keys(soTay.note).map(Number).filter((p) => (soTay.note[String(p)] ?? "").trim()).sort((a, b) => a - b), [soTay.note]);
   const soMuc = soTay.bm.length + trangGhiChu.length;
+  const veLive = (heSo: number) => {
+    const box = boxRef.current;
+    if (!box) return;
+    box.style.transform = heSo === 1 ? "" : `scale(${heSo})`;
+    box.style.willChange = heSo === 1 ? "" : "transform";
+  };
+  const chotZoom = (v: number) => {
+    if (liveRef.current.timer) clearTimeout(liveRef.current.timer);
+    liveRef.current.timer = null;
+    veLive(1);
+    setZoom(kep(v));
+  };
   useEffect(() => {
     danhDau(id);
   }, [id, danhDau]);
@@ -123,6 +140,8 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
   }, [pdf]);
   useEffect(() => {
     soTay.setLast(trang);
+    setHuong(trang >= prevTrangRef.current ? 1 : -1);
+    prevTrangRef.current = trang;
   }, [trang, soTay.setLast]);
   useEffect(() => {
     if (!pdf) return;
@@ -146,6 +165,10 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
     const overlay = overlayRef.current;
     const box = boxRef.current;
     let cancelled = false;
+    liveRef.current.base = zoom;
+    liveRef.current.pending = zoom;
+    box.style.transform = "";
+    box.style.willChange = "";
     (async () => {
       setDangVe(true);
       const page = await pdf.getPage(trang);
@@ -222,6 +245,11 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
       document.body.style.overflow = cu;
     };
   }, [tapTrung]);
+  useEffect(() => {
+    return () => {
+      if (liveRef.current.timer) clearTimeout(liveRef.current.timer);
+    };
+  }, []);
   const tim = async () => {
     if (!pdf || !tuKhoa.trim()) {
       setKetQua([]);
@@ -246,34 +274,54 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
     if (e.touches.length === 2) {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
-      touchRef.current = {x: 0, y: 0, kc: Math.hypot(dx, dy), zoom};
+      liveRef.current.base = zoom;
+      liveRef.current.pending = zoom;
+      touchRef.current = {x: 0, y: 0, kc: Math.hypot(dx, dy), t: Date.now()};
     } else if (e.touches.length === 1) {
-      touchRef.current = {x: e.touches[0].clientX, y: e.touches[0].clientY, kc: 0, zoom};
+      touchRef.current = {x: e.touches[0].clientX, y: e.touches[0].clientY, kc: 0, t: Date.now()};
     }
   };
   const onTouchMove = (e: React.TouchEvent) => {
     const t = touchRef.current;
-    if (!t) return;
-    if (e.touches.length === 2 && t.kc > 0) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      setZoom(Math.min(4, Math.max(0.5, Number((t.zoom * (Math.hypot(dx, dy) / t.kc)).toFixed(2)))));
-    }
+    if (!t || t.kc <= 0 || e.touches.length !== 2) return;
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const pending = kep(t.kc ? liveRef.current.base * (Math.hypot(dx, dy) / t.kc) : zoom);
+    liveRef.current.pending = pending;
+    veLive(pending / liveRef.current.base);
   };
   const onTouchEnd = (e: React.TouchEvent) => {
     const t = touchRef.current;
     touchRef.current = null;
-    if (!t || t.kc > 0 || zoom > 1.05 || e.changedTouches.length !== 1) return;
+    if (!t) return;
+    if (t.kc > 0) {
+      if (e.touches.length === 0) chotZoom(liveRef.current.pending);
+      return;
+    }
+    if (e.changedTouches.length !== 1) return;
     const dx = e.changedTouches[0].clientX - t.x;
     const dy = e.changedTouches[0].clientY - t.y;
-    if (Math.abs(dx) > 60 && Math.abs(dy) < 40) {
+    const now = Date.now();
+    if (Math.abs(dx) < 12 && Math.abs(dy) < 12 && now - t.t < 260) {
+      if (now - lastTapRef.current < 320) {
+        lastTapRef.current = 0;
+        chotZoom(zoom > 1.05 ? 1 : 2);
+      } else lastTapRef.current = now;
+      return;
+    }
+    if (zoom <= 1.05 && Math.abs(dx) > 60 && Math.abs(dy) < 40) {
       if (dx < 0) setTrang((p) => Math.min(tong, p + 1));
       else setTrang((p) => Math.max(1, p - 1));
     }
   };
   const onWheel = (e: React.WheelEvent) => {
     if (!e.ctrlKey && !e.metaKey) return;
-    setZoom((z) => Math.min(4, Math.max(0.5, Number((z - Math.sign(e.deltaY) * 0.15).toFixed(2)))));
+    const l = liveRef.current;
+    if (!l.timer) l.base = zoom;
+    l.pending = kep(l.pending - Math.sign(e.deltaY) * 0.15);
+    veLive(l.pending / l.base);
+    if (l.timer) clearTimeout(l.timer);
+    l.timer = setTimeout(() => chotZoom(liveRef.current.pending), 140);
   };
   const viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(src)}`;
   return (
@@ -281,7 +329,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
       {tapTrung && (
         <div className="mb-3 flex items-center justify-between gap-3 border-b-2 border-ink pb-2">
           <p className="min-w-0 truncate font-display text-base font-bold text-ink">{ten}</p>
-          <motion.button whileTap={buttonTap} type="button" onClick={() => setTapTrung(false)} className="flex shrink-0 items-center gap-2 border border-ink bg-ink px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent">
+          <motion.button whileTap={buttonTap} type="button" onClick={() => setTapTrung(false)} className="nut-nhan flex shrink-0 items-center gap-2 border border-ink bg-ink px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent">
             <IconTapTrung mo />
             Thoát (Esc)
           </motion.button>
@@ -296,7 +344,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
         )}
         <motion.a whileTap={buttonTap} href={src} download onClick={() => {
           if (!xemDapAn) void goiTai(id);
-        }} target="_blank" rel="noopener noreferrer" className="nut-quet flex items-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent">
+        }} target="_blank" rel="noopener noreferrer" className="nut-quet nut-nhan flex items-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent">
           <IconDownload className="h-4 w-4" />
           {xemDapAn ? "Tải đáp án" : "Tải PDF"}
         </motion.a>
@@ -323,7 +371,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
         )}
       </div>
       <div className="mt-3 h-1 w-full overflow-hidden bg-ink/10">
-        <motion.div animate={{width: `${tong ? (trang / tong) * 100 : 0}%`}} transition={spring} className="h-full bg-gradient-to-r from-accent via-warn to-info" />
+        <motion.div animate={{width: `${tong ? (trang / tong) * 100 : 0}%`}} transition={spring} className="h-full transform-gpu bg-gradient-to-r from-accent via-warn to-info" />
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border border-ink/25 bg-paper-light px-3 py-2">
         <div className="flex items-center gap-2">
@@ -336,9 +384,9 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
           </motion.button>
         </div>
         <div className="flex items-center gap-2">
-          <motion.button whileTap={buttonTap} type="button" disabled={zoom <= 0.5} onClick={() => setZoom((z) => Math.max(0.5, Number((z - 0.25).toFixed(2))))} aria-label="Thu nhỏ" className="border border-ink/40 bg-paper px-3 py-1.5 text-sm font-bold text-ink-soft transition-colors disabled:opacity-40 hover:border-accent hover:text-accent">−</motion.button>
+          <motion.button whileTap={buttonTap} type="button" disabled={zoom <= 0.5} onClick={() => chotZoom(zoom - 0.25)} aria-label="Thu nhỏ" className="border border-ink/40 bg-paper px-3 py-1.5 text-sm font-bold text-ink-soft transition-colors disabled:opacity-40 hover:border-accent hover:text-accent">−</motion.button>
           <span className="w-12 text-center text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft">{Math.round(zoom * 100)}%</span>
-          <motion.button whileTap={buttonTap} type="button" disabled={zoom >= 4} onClick={() => setZoom((z) => Math.min(4, Number((z + 0.25).toFixed(2))))} aria-label="Phóng to" className="border border-ink/40 bg-paper px-3 py-1.5 text-sm font-bold text-ink-soft transition-colors disabled:opacity-40 hover:border-accent hover:text-accent">+</motion.button>
+          <motion.button whileTap={buttonTap} type="button" disabled={zoom >= 4} onClick={() => chotZoom(zoom + 0.25)} aria-label="Phóng to" className="border border-ink/40 bg-paper px-3 py-1.5 text-sm font-bold text-ink-soft transition-colors disabled:opacity-40 hover:border-accent hover:text-accent">+</motion.button>
         </div>
       </div>
       <div className="mt-3 border border-ink/25 bg-paper-light p-3">
@@ -349,7 +397,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
               if (e.key === "Enter") void tim();
             }} placeholder={xemDapAn ? "Tìm trong đáp án (Enter để tìm)..." : "Tìm chữ trong đề (Enter để tìm)..."} aria-label="Tìm trong PDF" className="w-full border border-ink/30 bg-paper py-2 pl-9 pr-3 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent" />
           </div>
-          <motion.button whileTap={buttonTap} type="button" onClick={() => void tim()} disabled={dangTim} className="flex shrink-0 items-center gap-1.5 border border-ink bg-ink px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent disabled:opacity-50">
+          <motion.button whileTap={buttonTap} type="button" onClick={() => void tim()} disabled={dangTim} className="nut-nhan flex shrink-0 items-center gap-1.5 border border-ink bg-ink px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent disabled:opacity-50">
             {dangTim ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : <IconSearch className="h-3.5 w-3.5" />}
             Tìm
           </motion.button>
@@ -392,7 +440,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
                     ))}
                   </ul>
                 )}
-                <motion.button whileTap={buttonTap} type="button" onClick={() => soTay.toggleBm(trang)} className={`mt-2 flex items-center gap-1.5 border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] transition-colors ${soGhim ? "border-warn bg-warn/15 text-warn hover:bg-warn hover:text-paper-light" : "border-ink bg-ink text-paper-light hover:border-warn hover:bg-warn"}`}>
+                <motion.button whileTap={buttonTap} type="button" onClick={() => soTay.toggleBm(trang)} className={`nut-nhan mt-2 flex items-center gap-1.5 border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] transition-colors ${soGhim ? "border-warn bg-warn/15 text-warn hover:bg-warn hover:text-paper-light" : "border-ink bg-ink text-paper-light hover:border-warn hover:bg-warn"}`}>
                   <IconGhim day={soGhim} />
                   {soGhim ? `Bỏ ghim trang ${trang}` : `Ghim trang ${trang}`}
                 </motion.button>
@@ -432,7 +480,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
         ) : loi ? (
           <div className="border border-accent/50 bg-accent-wash p-5 text-sm text-accent-deep">{loi}</div>
         ) : (
-          <motion.div key={`${src}-${trang}`} initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} transition={spring} ref={boxRef} className="relative mx-auto">
+          <motion.div key={`${src}-${trang}`} initial={{opacity: 0, x: huong * 26}} animate={{opacity: 1, x: 0}} transition={spring} ref={boxRef} style={{transformOrigin: "top center"}} className="relative mx-auto">
             <canvas ref={canvasRef} className="block bg-white shadow-paper" />
             <canvas ref={overlayRef} className="pointer-events-none absolute inset-0" />
             {soGhim && <motion.span initial={{scale: 0.6, opacity: 0}} animate={{scale: 1, opacity: 1}} transition={spring} className="absolute right-2 top-2 flex items-center gap-1 border border-warn bg-warn px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-paper-light shadow-stamp"><IconGhim day />Đã ghim</motion.span>}
@@ -452,7 +500,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
           )}
         </AnimatePresence>
       </div>
-      {!tapTrung && <p className="mt-3 text-xs text-ink-faint">Vuốt ngang chuyển trang · chụm hai ngón hoặc Ctrl+cuộn để zoom vùng đề · phím F bật tập trung, Esc thoát · mũi tên trái/phải chuyển trang. Sổ tay lưu ghim trang và ghi chú vào máy cậu.</p>}
+      {!tapTrung && <p className="mt-3 text-xs text-ink-faint">Vuốt ngang chuyển trang · chụm hai ngón zoom mượt (nhả tay mới nét lại) · chạm đúp phóng to/thu nhỏ · Ctrl+cuộn zoom · F tập trung, Esc thoát · mũi tên trái/phải chuyển trang.</p>}
     </div>
   );
 }
