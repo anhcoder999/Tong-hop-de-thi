@@ -1,5 +1,5 @@
 "use client";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {AnimatePresence, motion, useScroll, useSpring} from "framer-motion";
@@ -32,6 +32,7 @@ function GachMenu() {
 export default function Navbar() {
   const {user, hoSo, isAdmin} = useAuth();
   const duong = usePathname();
+  const nutRef = useRef<HTMLButtonElement>(null);
   const {scrollYProgress} = useScroll();
   const tienTrinh = useSpring(scrollYProgress, {stiffness: 170, damping: 30, mass: 0.4});
   const [toi, setToi] = useState(false);
@@ -43,7 +44,18 @@ export default function Navbar() {
   useEffect(() => {
     setMo(false);
   }, [duong]);
-  const doiTheme = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const datTam = () => {
+    const root = document.documentElement;
+    const r = nutRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const x = r.left + r.width / 2;
+    const y = r.top + r.height / 2;
+    const ban = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    root.style.setProperty("--tam-x", `${x}px`);
+    root.style.setProperty("--tam-y", `${y}px`);
+    root.style.setProperty("--ban-kinh", `${ban}px`);
+  };
+  const doiTheme = () => {
     const root = document.documentElement;
     const dark = !root.classList.contains("dark");
     const ap = () => {
@@ -53,34 +65,37 @@ export default function Navbar() {
       } catch {
         setToi(dark);
       }
-      setToi(dark);
-      setVong((v) => v + 1);
     };
-    const r = e.currentTarget.getBoundingClientRect();
-    const x = r.left + r.width / 2;
-    const y = r.top + r.height / 2;
-    const ban = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
-    root.style.setProperty("--tam-x", `${x}px`);
-    root.style.setProperty("--tam-y", `${y}px`);
-    root.style.setProperty("--ban-kinh", `${ban}px`);
-    if (dark) {
-      root.style.setProperty("--vt-new", "lanToa");
-      root.style.setProperty("--vt-old", "none");
-      root.style.setProperty("--vt-z-old", "0");
-      root.style.setProperty("--vt-z-new", "1");
-    } else {
-      root.style.setProperty("--vt-old", "thuLai");
-      root.style.setProperty("--vt-new", "none");
-      root.style.setProperty("--vt-z-old", "1");
-      root.style.setProperty("--vt-z-new", "0");
-    }
     const vt = document as Document & {startViewTransition?: (cb: () => void) => {finished: Promise<void>}};
     if (vt.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      datTam();
+      if (dark) {
+        root.style.setProperty("--vt-new", "lanToa");
+        root.style.setProperty("--vt-old", "none");
+        root.style.setProperty("--vt-z-old", "0");
+        root.style.setProperty("--vt-z-new", "1");
+      } else {
+        root.style.setProperty("--vt-old", "thuLai");
+        root.style.setProperty("--vt-new", "none");
+        root.style.setProperty("--vt-z-old", "1");
+        root.style.setProperty("--vt-z-new", "0");
+      }
       root.classList.add("vt-dang-chuyen");
-      const t = vt.startViewTransition(ap);
-      const don = () => root.classList.remove("vt-dang-chuyen");
+      const t = vt.startViewTransition(() => {
+        ap();
+        if (dark) datTam();
+      });
+      const don = () => {
+        root.classList.remove("vt-dang-chuyen");
+        setToi(dark);
+        setVong((v) => v + 1);
+      };
       void t.finished.then(don, don);
-    } else ap();
+    } else {
+      ap();
+      setToi(dark);
+      setVong((v) => v + 1);
+    }
   };
   const ten = hoSo?.ho_ten?.trim() || user?.email || "";
   const tu = ten.split(/\s+/).filter(Boolean);
@@ -110,7 +125,7 @@ export default function Navbar() {
               </Link>
             ))}
           </nav>
-          <motion.button whileTap={buttonTap} type="button" onClick={doiTheme} aria-label={toi ? "Chuyển nền sáng" : "Chuyển nền tối"} title={toi ? "Nền sáng" : "Nền tối"} className="relative grid h-10 w-10 place-items-center overflow-hidden border border-ink/45 bg-paper-light text-ink transition-colors hover:border-accent hover:text-accent">
+          <motion.button ref={nutRef} whileTap={buttonTap} type="button" onClick={doiTheme} aria-label={toi ? "Chuyển nền sáng" : "Chuyển nền tối"} title={toi ? "Nền sáng" : "Nền tối"} className="relative grid h-10 w-10 place-items-center overflow-hidden border border-ink/45 bg-paper-light text-ink transition-colors hover:border-accent hover:text-accent">
             <AnimatePresence>
               {vong > 0 && (
                 <motion.span key={vong} initial={{scale: 0.3, opacity: 0.7}} animate={{scale: 2.6, opacity: 0}} exit={{opacity: 0}} transition={{duration: 0.6, ease: "easeOut"}} className={`pointer-events-none absolute inset-0 rounded-full border-2 ${toi ? "border-warn" : "border-info"}`} />
