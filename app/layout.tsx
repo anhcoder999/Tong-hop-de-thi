@@ -26,17 +26,17 @@ const be = Be_Vietnam_Pro({
 export const metadata: Metadata = {
   metadataBase: new URL("https://deontap-one.vercel.app"),
   title: {
-    default: "Đề.Thi — Tổng hợp đề thi THPT",
+    default: "Đề.Thi — Kho đề thi THPT kèm đáp án",
     template: "%s | Đề.Thi"
   },
-  description: "Kho đề thi THPT kèm đáp án, xem PDF trực tiếp và tải miễn phí, tối ưu cho điện thoại.",
+  description: "Kho đề thi THPT mười hai môn, đề và đáp án tách riêng, đọc PDF ngay trên điện thoại, ghim trang và ghi chú khi ôn luyện.",
   keywords: ["đề thi", "đáp án", "đề thi thử", "THPT", "Toán", "Văn", "Anh", "Sử", "Địa", "KTPL", "ôn thi"],
   openGraph: {
     type: "website",
     locale: "vi_VN",
     siteName: "Đề.Thi",
-    title: "Đề.Thi — Tổng hợp đề thi THPT",
-    description: "Kho đề thi chọn lọc kèm đáp án, xem và tải PDF miễn phí ngay trên điện thoại."
+    title: "Đề.Thi — Kho đề thi THPT kèm đáp án",
+    description: "Đề và đáp án tách riêng, đọc PDF ngay trên điện thoại, ghim trang và ghi chú khi ôn luyện."
   },
   robots: {index: true, follow: true}
 };
@@ -69,8 +69,9 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
                     Đề<span className="text-accent">.</span>Thi
                   </span>
                 </div>
-                <nav className="flex items-center gap-5 text-sm text-ink-soft">
+                <nav className="flex flex-wrap items-center justify-center gap-5 text-sm text-ink-soft">
                   <Link href="/" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">Trang chủ</Link>
+                  <Link href="/kho-de" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">Kho đề</Link>
                   <Link href="/tai-khoan" className="underline-offset-4 transition-colors hover:text-accent hover:underline hover:decoration-wavy">Tài khoản</Link>
                 </nav>
                 <p className="text-xs uppercase tracking-[0.16em] text-ink-faint">© 2026 Đề.Thi</p>
