@@ -2,7 +2,7 @@
 import {useEffect, useState} from "react";
 import Link from "next/link";
 import {usePathname} from "next/navigation";
-import {AnimatePresence, motion} from "framer-motion";
+import {AnimatePresence, motion, useScroll, useSpring} from "framer-motion";
 import {IconClose, IconSeal} from "@/components/Icons";
 import {useAuth} from "@/lib/auth";
 import {buttonTap, spring} from "@/lib/animations";
@@ -32,6 +32,8 @@ function GachMenu() {
 export default function Navbar() {
   const {user, hoSo, isAdmin} = useAuth();
   const duong = usePathname();
+  const {scrollYProgress} = useScroll();
+  const tienTrinh = useSpring(scrollYProgress, {stiffness: 130, damping: 26, mass: 0.4});
   const [toi, setToi] = useState(false);
   const [mo, setMo] = useState(false);
   useEffect(() => {
@@ -74,7 +76,7 @@ export default function Navbar() {
             {lienKet.map((l) => (
               <Link key={l.href} href={l.href} className={`relative pb-0.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${l.active ? "text-accent" : "text-ink-soft hover:text-ink"}`}>
                 {l.nhan}
-                {l.active && <span className="absolute inset-x-0 -bottom-0.5 h-[2px] rounded-full bg-accent" />}
+                {l.active && <motion.span layoutId="nav-gach" transition={spring} className="absolute inset-x-0 -bottom-0.5 h-[2px] rounded-full bg-accent" />}
               </Link>
             ))}
           </nav>
@@ -89,6 +91,7 @@ export default function Navbar() {
           </motion.button>
         </div>
       </div>
+      <motion.div style={{scaleX: tienTrinh}} className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-accent via-warn to-info" />
       <AnimatePresence>
         {mo && (
           <motion.nav initial={{height: 0, opacity: 0}} animate={{height: "auto", opacity: 1}} exit={{height: 0, opacity: 0}} transition={spring} className="overflow-hidden border-t border-ink/20 bg-paper-light sm:hidden">
