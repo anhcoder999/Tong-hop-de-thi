@@ -13,9 +13,10 @@ import {useAuth} from "@/lib/auth";
 import {layDanhSach} from "@/lib/deThi";
 type SapXep = "moi" | "cu" | "ten";
 const vaoThe = {
-  hidden: {opacity: 0, y: 26, scale: 0.96},
-  visible: {opacity: 1, y: 0, scale: 1, transition: {type: "spring", stiffness: 280, damping: 24, mass: 0.7}}
+  hidden: {opacity: 0, y: 20, scale: 0.97},
+  visible: {opacity: 1, y: 0, scale: 1, transition: {type: "spring", stiffness: 420, damping: 32, mass: 0.5}}
 };
+const nhomThe = {hidden: {}, visible: {transition: {staggerChildren: 0.045, delayChildren: 0.02}}};
 export default function TrangChu() {
   const {isAdmin} = useAuth();
   const hover = useHoverCapable();
@@ -204,10 +205,10 @@ export default function TrangChu() {
           </div>
         </motion.div>
       </motion.div>
-      <motion.div initial={{opacity: 0, y: 14}} whileInView={{opacity: 1, y: 0}} viewport={{once: true, margin: "-40px"}} transition={{duration: 0.4, ease: EASE}} className="mt-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs uppercase tracking-[0.18em] text-ink-soft">
           Mục lục {nhanLoc} ·{" "}
-          <motion.b key={dangTai ? "load" : ketQua.length} initial={{y: 8, opacity: 0}} animate={{y: 0, opacity: 1}} transition={{duration: 0.3, ease: EASE}} className="inline-block text-ink">
+          <motion.b key={dangTai ? "load" : ketQua.length} initial={{y: 8, opacity: 0}} animate={{y: 0, opacity: 1}} transition={{duration: 0.25, ease: EASE}} className="inline-block text-ink">
             {dangTai ? "..." : ketQua.length}
           </motion.b>{" "}
           đề
@@ -223,7 +224,7 @@ export default function TrangChu() {
             <IconRefresh className={`h-4 w-4 ${dangTai ? "animate-spin" : ""}`} />
           </motion.button>
         </div>
-      </motion.div>
+      </div>
       {loi ? (
         <div className="mt-4 flex flex-col items-start gap-3 border border-accent/50 bg-accent-wash p-5 text-sm text-accent-deep">
           <p className="font-semibold">Không tải được kho đề</p>
@@ -259,16 +260,14 @@ export default function TrangChu() {
           />
         </div>
       ) : (
-        <motion.div initial={{opacity: 0, y: 18}} whileInView={{opacity: 1, y: 0}} viewport={{once: true, margin: "-40px"}} transition={{duration: 0.45, ease: EASE}} className="mt-4">
-          <motion.div layout variants={staggerContainer} initial="hidden" animate="visible" className="relative grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <AnimatePresence mode="popLayout">
-              {ketQua.map((d) => (
-                <motion.div key={d.id} layout variants={vaoThe} exit={{opacity: 0, scale: 0.92, transition: {duration: 0.16, ease: EASE}}} className="the-de min-w-0">
-                  <DeCard de={d} />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </motion.div>
+        <motion.div layout variants={nhomThe} initial="hidden" animate="visible" className="relative mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence mode="popLayout">
+            {ketQua.map((d) => (
+              <motion.div key={d.id} layout variants={vaoThe} exit={{opacity: 0, scale: 0.94, y: -8, transition: {duration: 0.14, ease: EASE}}} className="min-w-0">
+                <DeCard de={d} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </motion.div>
       )}
     </div>
