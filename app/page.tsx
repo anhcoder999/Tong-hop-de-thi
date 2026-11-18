@@ -1,6 +1,6 @@
 "use client";
-import {useCallback, useEffect, useMemo, useState} from "react";
-import {motion, useScroll, useTransform} from "framer-motion";
+import {useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
+import {AnimatePresence, motion, useScroll, useTransform} from "framer-motion";
 import {IconClose, IconRefresh, IconSearch, IconSeal, IconSort, InkLine} from "@/components/Icons";
 import InkDraw from "@/components/InkDraw";
 import DeCard from "@/components/DeCard";
@@ -12,12 +12,17 @@ import {useHoverCapable} from "@/lib/useHover";
 import {useAuth} from "@/lib/auth";
 import {layDanhSach} from "@/lib/deThi";
 type SapXep = "moi" | "cu" | "ten";
+const vaoThe = {
+  hidden: {opacity: 0, y: 26, scale: 0.96},
+  visible: {opacity: 1, y: 0, scale: 1, transition: {type: "spring", stiffness: 280, damping: 24, mass: 0.7}}
+};
 export default function TrangChu() {
   const {isAdmin} = useAuth();
   const hover = useHoverCapable();
   const {scrollY} = useScroll();
   const yDau = useTransform(scrollY, [0, 320], [0, -46]);
   const moDau = useTransform(scrollY, [0, 280], [1, 0.35]);
+  const viTriRef = useRef(0);
   const [ds, setDs] = useState<DeThi[]>([]);
   const [dangTai, setDangTai] = useState(true);
   const [loi, setLoi] = useState("");
@@ -38,6 +43,20 @@ export default function TrangChu() {
   useEffect(() => {
     void tai();
   }, [tai]);
+  const doiLoc = (v: Loc) => {
+    viTriRef.current = window.scrollY;
+    setLoc(v);
+  };
+  const doiSapXep = (v: SapXep) => {
+    viTriRef.current = window.scrollY;
+    setSapXep(v);
+  };
+  useLayoutEffect(() => {
+    if (viTriRef.current > 0) {
+      window.scrollTo({top: viTriRef.current, behavior: "instant"});
+      viTriRef.current = 0;
+    }
+  }, [loc, sapXep]);
   const demTheoMon = useMemo(() => {
     const m = new Map<string, number>();
     ds.forEach((d) => m.set(d.mon, (m.get(d.mon) ?? 0) + 1));
@@ -85,12 +104,16 @@ export default function TrangChu() {
           </motion.span>
         </motion.header>
         <motion.div variants={fadeInUp} className="no-scrollbar mt-6 overflow-hidden border-y border-dashed border-ink/25 py-2">
-          <div className="chay-doc flex w-max gap-8 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.22em] text-ink-faint">
-            {[...DS_MON, ...DS_MON].map((m, i) => (
-              <span key={`${m}-${i}`} className="flex items-center gap-2">
-                <span className="h-1 w-1 rotate-45 bg-accent/70" />
-                {MON_DAY_DU[m]}
-              </span>
+          <div className="chay-doc flex w-max">
+            {[0, 1].map((k) => (
+              <div key={k} className="flex shrink-0 items-center gap-8 pr-8">
+                {DS_MON.map((m) => (
+                  <span key={m} className="flex items-center gap-2 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.22em] text-ink-faint">
+                    <span className="h-1 w-1 rotate-45 bg-accent/70" />
+                    {MON_DAY_DU[m]}
+                  </span>
+                ))}
+              </div>
             ))}
           </div>
         </motion.div>
@@ -119,8 +142,8 @@ export default function TrangChu() {
                 whileTap={buttonTap}
                 whileHover={hover ? {y: -1} : undefined}
                 transition={spring}
-                onClick={() => setLoc("Tất cả")}
-                className={`relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${loc === "Tất cả" ? "text-accent" : "text-ink-soft hover:text-ink"}`}
+                onClick={() => doiLoc("Tất cả")}
+                className={`nut-nhan relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${loc === "Tất cả" ? "text-accent" : "text-ink-soft hover:text-ink"}`}
               >
                 Tất cả
                 <sup className="ml-1 text-[10px] text-ink-faint">{ds.length}</sup>
@@ -138,9 +161,9 @@ export default function TrangChu() {
                 <div key={n.id} className="flex flex-col justify-end gap-1.5 border-l border-dashed border-ink/25 px-4">
                   <motion.button
                     whileTap={buttonTap}
-                    onClick={() => setLoc(n.id)}
+                    onClick={() => doiLoc(n.id)}
                     title={`Xem cả nhóm ${n.ten}`}
-                    className={`relative whitespace-nowrap pb-0.5 text-left text-[10px] uppercase tracking-[0.18em] transition-colors ${nhomDangChon ? "text-accent" : trongNhom ? "text-ink" : "text-ink-faint hover:text-ink-soft"}`}
+                    className={`nut-nhan relative whitespace-nowrap pb-0.5 text-left text-[10px] uppercase tracking-[0.18em] transition-colors ${nhomDangChon ? "text-accent" : trongNhom ? "text-ink" : "text-ink-faint hover:text-ink-soft"}`}
                   >
                     {n.ten}
                     <sup className="ml-1 text-[9px]">{demNhom(n.mon)}</sup>
@@ -160,9 +183,9 @@ export default function TrangChu() {
                           whileTap={buttonTap}
                           whileHover={hover ? {y: -1} : undefined}
                           transition={spring}
-                          onClick={() => setLoc(m)}
+                          onClick={() => doiLoc(m)}
                           title={MON_DAY_DU[m]}
-                          className={`relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${active ? "text-accent" : soDe === 0 ? "text-ink-faint/70 hover:text-ink-soft" : "text-ink-soft hover:text-ink"}`}
+                          className={`nut-nhan relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${active ? "text-accent" : soDe === 0 ? "text-ink-faint/70 hover:text-ink-soft" : "text-ink-soft hover:text-ink"}`}
                         >
                           {m}
                           <sup className="ml-1 text-[10px] text-ink-faint">{soDe}</sup>
@@ -191,7 +214,7 @@ export default function TrangChu() {
         </p>
         <div className="flex items-center gap-2">
           <IconSort className="h-4 w-4 text-ink-faint" />
-          <select value={sapXep} onChange={(e) => setSapXep(e.target.value as SapXep)} aria-label="Sắp xếp" className="border border-ink/30 bg-paper-light px-2.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft outline-none transition-colors focus:border-accent">
+          <select value={sapXep} onChange={(e) => doiSapXep(e.target.value as SapXep)} aria-label="Sắp xếp" className="border border-ink/30 bg-paper-light px-2.5 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft outline-none transition-colors focus:border-accent">
             <option value="moi">Mới nhất</option>
             <option value="cu">Cũ nhất</option>
             <option value="ten">Theo tên</option>
@@ -231,15 +254,19 @@ export default function TrangChu() {
             moTa={`Chưa có đề nào khớp ${nhanLoc}. Thử nhóm khác hoặc xóa từ khóa.`}
             onReset={() => {
               setTuKhoa("");
-              setLoc("Tất cả");
+              doiLoc("Tất cả");
             }}
           />
         </div>
       ) : (
-        <motion.div key={`${loc}-${sapXep}`} variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{once: true, margin: "-60px"}} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {ketQua.map((d) => (
-            <DeCard key={d.id} de={d} />
-          ))}
+        <motion.div layout variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{once: true, margin: "-40px"}} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence mode="popLayout">
+            {ketQua.map((d) => (
+              <motion.div key={d.id} layout variants={vaoThe} exit={{opacity: 0, scale: 0.92, transition: {duration: 0.16, ease: EASE}}} className="the-de min-w-0">
+                <DeCard de={d} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </motion.div>
       )}
     </div>
