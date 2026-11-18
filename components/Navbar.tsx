@@ -44,9 +44,10 @@ export default function Navbar() {
     setMo(false);
   }, [duong]);
   const doiTheme = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const dark = !document.documentElement.classList.contains("dark");
+    const root = document.documentElement;
+    const dark = !root.classList.contains("dark");
     const ap = () => {
-      document.documentElement.classList.toggle("dark", dark);
+      root.classList.toggle("dark", dark);
       try {
         localStorage.setItem(KHOA_THEME, dark ? "dark" : "light");
       } catch {
@@ -59,13 +60,27 @@ export default function Navbar() {
     const x = r.left + r.width / 2;
     const y = r.top + r.height / 2;
     const ban = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
-    const root = document.documentElement;
     root.style.setProperty("--tam-x", `${x}px`);
     root.style.setProperty("--tam-y", `${y}px`);
     root.style.setProperty("--ban-kinh", `${ban}px`);
+    if (dark) {
+      root.style.setProperty("--vt-new", "lanToa");
+      root.style.setProperty("--vt-old", "none");
+      root.style.setProperty("--vt-z-old", "0");
+      root.style.setProperty("--vt-z-new", "1");
+    } else {
+      root.style.setProperty("--vt-old", "thuLai");
+      root.style.setProperty("--vt-new", "none");
+      root.style.setProperty("--vt-z-old", "1");
+      root.style.setProperty("--vt-z-new", "0");
+    }
     const vt = document as Document & {startViewTransition?: (cb: () => void) => {finished: Promise<void>}};
-    if (vt.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) vt.startViewTransition(ap);
-    else ap();
+    if (vt.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      root.classList.add("vt-dang-chuyen");
+      const t = vt.startViewTransition(ap);
+      const don = () => root.classList.remove("vt-dang-chuyen");
+      void t.finished.then(don, don);
+    } else ap();
   };
   const ten = hoSo?.ho_ten?.trim() || user?.email || "";
   const tu = ten.split(/\s+/).filter(Boolean);
