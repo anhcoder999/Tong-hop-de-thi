@@ -53,7 +53,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
       <body className="flex min-h-screen flex-col font-sans text-ink antialiased">
         <script dangerouslySetInnerHTML={{__html: "try{if(localStorage.getItem('dethi.theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}"}} />
         <Ambient />
-        <MotionConfig reducedMotion="user">
+        <MotionConfig reducedMotion="user" transition={{type: "spring", stiffness: 300, damping: 30, mass: 0.6}}>
           <AuthProvider>
             <Shield />
             <Navbar />
