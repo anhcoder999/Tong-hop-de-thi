@@ -33,7 +33,7 @@ export default function Navbar() {
   const {user, hoSo, isAdmin} = useAuth();
   const duong = usePathname();
   const {scrollYProgress} = useScroll();
-  const tienTrinh = useSpring(scrollYProgress, {stiffness: 130, damping: 26, mass: 0.4});
+  const tienTrinh = useSpring(scrollYProgress, {stiffness: 170, damping: 30, mass: 0.4});
   const [toi, setToi] = useState(false);
   const [mo, setMo] = useState(false);
   useEffect(() => {
@@ -61,12 +61,12 @@ export default function Navbar() {
     {href: user ? "/tai-khoan" : "/login", nhan: user ? "Tài khoản" : "Đăng nhập", active: duong.startsWith("/tai-khoan") || duong.startsWith("/login")}
   ];
   return (
-    <header className="sticky top-0 z-50 border-b-2 border-ink bg-paper/92 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b-2 border-ink bg-paper/95">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3">
         <Link href="/" className="flex min-w-0 items-center gap-2.5">
-          <span className="grid h-10 w-10 shrink-0 place-items-center border border-ink/45 bg-paper-light text-accent">
+          <motion.span whileHover={{rotate: -8, scale: 1.06}} transition={spring} className="grid h-10 w-10 shrink-0 place-items-center border border-ink/45 bg-paper-light text-accent">
             <IconSeal className="h-5 w-5" />
-          </span>
+          </motion.span>
           <span className="truncate font-display text-xl font-bold tracking-tight text-ink">
             Đề<span className="text-accent">.</span>Thi
           </span>
@@ -74,14 +74,16 @@ export default function Navbar() {
         <div className="flex shrink-0 items-center gap-2">
           <nav className="hidden items-center gap-5 sm:flex">
             {lienKet.map((l) => (
-              <Link key={l.href} href={l.href} className={`relative pb-0.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${l.active ? "text-accent" : "text-ink-soft hover:text-ink"}`}>
+              <Link key={l.href} href={l.href} className={`group relative pb-0.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${l.active ? "text-accent" : "text-ink-soft hover:text-ink"}`}>
                 {l.nhan}
-                {l.active && <motion.span layoutId="nav-gach" transition={spring} className="absolute inset-x-0 -bottom-0.5 h-[2px] rounded-full bg-accent" />}
+                <span className={`absolute inset-x-0 -bottom-0.5 h-[2px] origin-left rounded-full bg-accent transition-transform duration-300 ease-out ${l.active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"}`} />
               </Link>
             ))}
           </nav>
           <motion.button whileTap={buttonTap} type="button" onClick={doiTheme} aria-label={toi ? "Chuyển nền sáng" : "Chuyển nền tối"} title={toi ? "Nền sáng" : "Nền tối"} className="grid h-10 w-10 place-items-center border border-ink/45 bg-paper-light text-ink transition-colors hover:border-accent hover:text-accent">
-            {toi ? <MatTroi /> : <MatTro />}
+            <motion.span key={toi ? "sang" : "toi"} initial={{rotate: -90, opacity: 0, scale: 0.6}} animate={{rotate: 0, opacity: 1, scale: 1}} transition={spring}>
+              {toi ? <MatTroi /> : <MatTro />}
+            </motion.span>
           </motion.button>
           <Link href={user ? "/tai-khoan" : "/login"} title={ten || "Tài khoản"} className="hidden h-10 min-w-10 place-items-center border border-ink bg-ink px-2.5 font-display text-sm font-bold text-paper-light transition-colors hover:border-accent hover:bg-accent sm:grid">
             {vietTat}
@@ -91,16 +93,18 @@ export default function Navbar() {
           </motion.button>
         </div>
       </div>
-      <motion.div style={{scaleX: tienTrinh}} className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-gradient-to-r from-accent via-warn to-info" />
+      <motion.div style={{scaleX: tienTrinh}} className="absolute inset-x-0 bottom-0 h-[2px] origin-left transform-gpu bg-gradient-to-r from-accent via-warn to-info" />
       <AnimatePresence>
         {mo && (
           <motion.nav initial={{height: 0, opacity: 0}} animate={{height: "auto", opacity: 1}} exit={{height: 0, opacity: 0}} transition={spring} className="overflow-hidden border-t border-ink/20 bg-paper-light sm:hidden">
             <div className="mx-auto flex w-full max-w-6xl flex-col px-4 py-2">
-              {lienKet.map((l) => (
-                <Link key={l.href} href={l.href} className={`flex items-center justify-between border-b border-dashed border-ink/15 py-3 text-sm font-semibold uppercase tracking-[0.12em] transition-colors last:border-b-0 ${l.active ? "text-accent" : "text-ink-soft"}`}>
-                  {l.nhan}
-                  {l.active && <span className="h-1.5 w-1.5 rotate-45 bg-accent" />}
-                </Link>
+              {lienKet.map((l, i) => (
+                <motion.div key={l.href} initial={{opacity: 0, x: -14}} animate={{opacity: 1, x: 0}} transition={{...spring, delay: i * 0.05}}>
+                  <Link href={l.href} className={`flex items-center justify-between border-b border-dashed border-ink/15 py-3 text-sm font-semibold uppercase tracking-[0.12em] transition-colors last:border-b-0 ${l.active ? "text-accent" : "text-ink-soft"}`}>
+                    {l.nhan}
+                    {l.active && <span className="h-1.5 w-1.5 rotate-45 bg-accent" />}
+                  </Link>
+                </motion.div>
               ))}
               {user && (
                 <p className="py-3 text-[11px] uppercase tracking-[0.14em] text-ink-faint">
