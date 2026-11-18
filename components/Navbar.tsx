@@ -99,7 +99,7 @@ export default function Navbar() {
     {href: user ? "/tai-khoan" : "/login", nhan: user ? "Tài khoản" : "Đăng nhập", active: duong.startsWith("/tai-khoan") || duong.startsWith("/login")}
   ];
   return (
-    <header className="sticky top-0 z-50 border-b-2 border-ink bg-paper/95">
+    <header className="sticky top-0 z-50 border-b-2 border-ink bg-paper">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3">
         <Link href="/" className="flex min-w-0 items-center gap-2.5">
           <motion.span whileHover={{rotate: -8, scale: 1.06}} transition={spring} className="grid h-10 w-10 shrink-0 place-items-center border border-ink/45 bg-paper-light text-accent">
