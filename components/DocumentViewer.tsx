@@ -15,14 +15,14 @@ const FONTS = `${CDN}/standard_fonts/`;
 type KetQuaTim = {trang: number; snippet: string};
 function IconGhim({day}: {day: boolean}) {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill={day ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+    <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill={day ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
       <path d="M7 3.5h10v17l-5-3.6-5 3.6Z" />
     </svg>
   );
 }
 function IconSoTay() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M5 4.5h11a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3Z" />
       <path d="M9 9h6M9 12.5h6M9 16h4" />
     </svg>
@@ -30,7 +30,7 @@ function IconSoTay() {
 }
 function IconTapTrung({mo}: {mo: boolean}) {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       {mo ? <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /> : <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />}
     </svg>
   );
@@ -339,39 +339,39 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
           </motion.button>
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-2">
         {!tapTrung && (
-          <motion.button whileTap={buttonTap} type="button" onClick={quayLai} className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
+          <motion.button whileTap={buttonTap} type="button" onClick={quayLai} className="flex items-center gap-2 border border-ink bg-paper-light px-3.5 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
             <IconArrowLeft className="h-4 w-4" />
-            Quay lại
+            <span className="hidden sm:inline">Quay lại</span>
           </motion.button>
         )}
         <motion.a whileTap={buttonTap} href={src} download onClick={() => {
           if (!xemDapAn) void goiTai(id);
-        }} target="_blank" rel="noopener noreferrer" className="nut-quet nut-nhan flex items-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent">
+        }} target="_blank" rel="noopener noreferrer" className="nut-quet nut-nhan flex items-center gap-2 border border-ink bg-ink px-3.5 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent">
           <IconDownload className="h-4 w-4" />
           {xemDapAn ? "Tải đáp án" : "Tải PDF"}
         </motion.a>
-        {!tapTrung && (
-          <motion.a whileTap={buttonTap} href={viewerUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
-            <IconExternal className="h-4 w-4" />
-            Mở tab mới
-          </motion.a>
-        )}
-        <motion.button whileTap={buttonTap} type="button" disabled={!urlDapAn} title={urlDapAn ? "Xem đáp án của đề này" : "Đề này chưa có đáp án"} onClick={() => setNguon((n) => (n === "de" ? "dapan" : "de"))} className={`flex items-center gap-2 border px-4 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${xemDapAn ? "border-ink bg-ink text-paper-light hover:border-accent hover:bg-accent" : "border-ok bg-ok/12 text-ok hover:bg-ok hover:text-paper-light"}`}>
+        <motion.button whileTap={buttonTap} type="button" disabled={!urlDapAn} title={urlDapAn ? "Xem đáp án của đề này" : "Đề này chưa có đáp án"} onClick={() => setNguon((n) => (n === "de" ? "dapan" : "de"))} className={`flex items-center gap-2 border px-3.5 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${xemDapAn ? "border-ink bg-ink text-paper-light hover:border-accent hover:bg-accent" : "border-ok bg-ok/12 text-ok hover:bg-ok hover:text-paper-light"}`}>
           {xemDapAn ? <IconFile className="h-4 w-4" /> : <IconCheck className="h-4 w-4" />}
           {xemDapAn ? "Xem đề thi" : "Đáp án"}
         </motion.button>
-        <motion.button whileTap={buttonTap} type="button" onClick={() => setMoSoTay((v) => !v)} aria-expanded={moSoTay} className={`relative flex items-center gap-2 border px-4 py-2.5 text-sm font-semibold transition-colors ${moSoTay ? "border-warn bg-warn/15 text-warn" : "border-ink bg-paper-light text-ink hover:border-warn hover:text-warn"}`}>
+        <motion.button whileTap={buttonTap} type="button" onClick={() => setMoSoTay((v) => !v)} aria-expanded={moSoTay} title="Sổ tay: trang ghim và ghi chú" className={`relative flex items-center gap-2 border px-3.5 py-2.5 text-sm font-semibold transition-colors ${moSoTay ? "border-warn bg-warn/15 text-warn" : "border-ink bg-paper-light text-ink hover:border-warn hover:text-warn"}`}>
           <IconSoTay />
-          Sổ tay
+          <span className="hidden sm:inline">Sổ tay</span>
           {soMuc > 0 && <span className="grid h-5 min-w-5 place-items-center border border-warn bg-warn px-1 text-[10px] font-bold text-paper-light">{soMuc}</span>}
         </motion.button>
         {!tapTrung && (
-          <motion.button whileTap={buttonTap} type="button" onClick={() => setTapTrung(true)} title="Ẩn mọi thứ quanh, chỉ còn đề (phím F)" className="flex items-center gap-2 border border-info bg-info/12 px-4 py-2.5 text-sm font-semibold text-info transition-colors hover:bg-info hover:text-paper-light">
+          <motion.button whileTap={buttonTap} type="button" onClick={() => setTapTrung(true)} title="Ẩn mọi thứ quanh, chỉ còn đề (phím F)" className="flex items-center gap-2 border border-info bg-info/12 px-3.5 py-2.5 text-sm font-semibold text-info transition-colors hover:bg-info hover:text-paper-light">
             <IconTapTrung mo={false} />
-            Tập trung
+            <span className="hidden sm:inline">Tập trung</span>
           </motion.button>
+        )}
+        {!tapTrung && (
+          <motion.a whileTap={buttonTap} href={viewerUrl} target="_blank" rel="noopener noreferrer" title="Mở bằng trình đọc PDF ở tab mới" className="flex items-center gap-2 border border-ink bg-paper-light px-3.5 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
+            <IconExternal className="h-4 w-4" />
+            <span className="hidden sm:inline">Mở tab mới</span>
+          </motion.a>
         )}
       </div>
       <div className="mt-3 h-1 w-full overflow-hidden bg-ink/10">
