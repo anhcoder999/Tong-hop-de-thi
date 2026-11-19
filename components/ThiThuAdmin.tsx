@@ -1,16 +1,90 @@
 "use client";
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {AnimatePresence, motion} from "framer-motion";
 import {IconAlert, IconCheck, IconClose, IconEdit, IconEye, IconLoader, IconPlus, IconRefresh, IconSeal, IconTrash} from "@/components/Icons";
 import Latex from "@/components/Latex";
 import {capNhatDeOnline, congKhaiDeOnline, layCauHoiAdmin, layDeOnlineAdmin, luuCauHoi, taoDeOnline, xoaCauHoi, xoaDeOnline} from "@/app/thi-thu/actions";
 import {DS_MON, MON_DAY_DU} from "@/lib/data";
 import {KY_HIEU_DS, KY_HIEU_MCQ, nhanLoai, type CauHoiDayDu, type DeThiOnline, type LoaiCau, type LuaChon} from "@/lib/thiThu";
-import {buttonTap, fadeInUp, spring} from "@/lib/animations";
+import {buttonTap, fadeInUp} from "@/lib/animations";
 type FormDe = {mon: string; ten: string; mo_ta: string; thoi_gian_phut: number};
 type FormCau = {id?: string; thu_tu: number; loai: LoaiCau; noi_dung: string; diem: number; lua_chon: LuaChon[]; dap_an_mcq: string; dap_an_ds: Record<string, boolean>; dap_an_ngan: string; giai_thich: string};
+type NutCongThuc = {nhan: string; than: string; block?: boolean};
+const KHUNG: NutCongThuc[] = [
+  {nhan: "Công thức", than: "@@|"},
+  {nhan: "Dòng riêng", than: "@@|", block: true},
+  {nhan: "a/b", than: "\\frac{@@}{|}"},
+  {nhan: "Mũ", than: "@@^{|}"},
+  {nhan: "Chỉ số", than: "@@_{|}"},
+  {nhan: "Căn", than: "\\sqrt{@@|}"},
+  {nhan: "Tích phân", than: "\\int_{|}^{}"},
+  {nhan: "Tổng", than: "\\sum_{|}^{}"},
+  {nhan: "Vector", than: "\\overrightarrow{@@|}"},
+  {nhan: "Giới hạn", than: "\\lim_{|}"}
+];
+const KY_HIEU: NutCongThuc[] = [
+  {nhan: "≤", than: "\\le "},
+  {nhan: "≥", than: "\\ge "},
+  {nhan: "≠", than: "\\ne "},
+  {nhan: "±", than: "\\pm "},
+  {nhan: "×", than: "\\times "},
+  {nhan: "·", than: "\\cdot "},
+  {nhan: "∞", than: "\\infty "},
+  {nhan: "Độ", than: "^\\circ "},
+  {nhan: "π", than: "\\pi "},
+  {nhan: "α", than: "\\alpha "},
+  {nhan: "β", than: "\\beta "},
+  {nhan: "Δ", than: "\\Delta "},
+  {nhan: "→", than: "\\to "},
+  {nhan: "⇔", than: "\\Leftrightarrow "},
+  {nhan: "∈", than: "\\in "},
+  {nhan: "⊥", than: "\\perp "}
+];
+const GON: NutCongThuc[] = [KHUNG[0], KHUNG[2], KHUNG[3], KHUNG[5], KY_HIEU[0], KY_HIEU[8]];
 const deRong: FormDe = {mon: "Toán", ten: "", mo_ta: "", thoi_gian_phut: 50};
 const cauRong = (thuTu: number): FormCau => ({thu_tu: thuTu, loai: "trac_nghiem", noi_dung: "", diem: 1, lua_chon: KY_HIEU_MCQ.map((k) => ({ky_hieu: k, noi_dung: ""})), dap_an_mcq: "", dap_an_ds: {}, dap_an_ngan: "", giai_thich: ""});
+function chenCongThuc(el: HTMLTextAreaElement | null, giaTri: string, dat: (v: string) => void, than: string, block?: boolean) {
+  const a = el?.selectionStart ?? giaTri.length;
+  const b = el?.selectionEnd ?? giaTri.length;
+  const chon = giaTri.slice(a, b);
+  let noi = than.replace("@@", chon);
+  const dau = noi.indexOf("|");
+  if (dau >= 0) noi = noi.slice(0, dau) + noi.slice(dau + 1);
+  let dem = 0;
+  for (let i = 0; i < a; i++) if (giaTri[i] === "$" && giaTri[i - 1] !== "\\") dem++;
+  const trong = !block && dem % 2 === 1;
+  const boc = block ? `\n$$${noi}$$\n` : trong ? noi : `$${noi}$ `;
+  dat(giaTri.slice(0, a) + boc + giaTri.slice(b));
+  const offset = (block ? 3 : trong ? 0 : 1) + (dau >= 0 ? dau : noi.length);
+  requestAnimationFrame(() => {
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(a + offset, a + offset);
+  });
+}
+function OSoan({nhan, giaTri, dat, rows = 3, placeholder, gon, hienXem, goiY}: {nhan?: string; giaTri: string; dat: (v: string) => void; rows?: number; placeholder?: string; gon?: boolean; hienXem?: boolean; goiY?: string}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const ds = gon ? GON : [...KHUNG, ...KY_HIEU];
+  return (
+    <div>
+      {nhan && <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-soft">{nhan}</label>}
+      <div className="mb-1.5 flex flex-wrap gap-1">
+        {ds.map((n) => (
+          <button key={n.nhan} type="button" onClick={() => chenCongThuc(ref.current, giaTri, dat, n.than, n.block)} className="border border-ink/25 bg-paper px-2 py-1 text-[11px] font-semibold text-ink-soft transition-colors hover:border-accent hover:text-accent">
+            {n.nhan}
+          </button>
+        ))}
+      </div>
+      <textarea ref={ref} value={giaTri} onChange={(e) => dat(e.target.value)} rows={rows} placeholder={placeholder} className="w-full border border-ink/30 bg-paper-light px-3 py-2 text-sm leading-relaxed text-ink outline-none placeholder:text-ink-faint focus:border-accent" />
+      {goiY && <p className="mt-1 text-[11px] leading-relaxed text-ink-faint">{goiY}</p>}
+      {hienXem && giaTri.trim() !== "" && (
+        <div className="mt-2 border border-dashed border-ink/25 bg-paper p-3 text-sm leading-relaxed text-ink">
+          <Latex nguon={giaTri} />
+        </div>
+      )}
+    </div>
+  );
+}
 export default function ThiThuAdmin() {
   const [ds, setDs] = useState<DeThiOnline[]>([]);
   const [dangTai, setDangTai] = useState(true);
@@ -23,6 +97,7 @@ export default function ThiThuAdmin() {
   const [dangTaiCau, setDangTaiCau] = useState(false);
   const [cauForm, setCauForm] = useState<FormCau>(cauRong(1));
   const [dangLuuCau, setDangLuuCau] = useState(false);
+  const [xemTruoc, setXemTruoc] = useState(true);
   const tai = useCallback(async () => {
     setDangTai(true);
     const kq = await layDeOnlineAdmin();
@@ -89,9 +164,11 @@ export default function ThiThuAdmin() {
     const kq = await luuCauHoi({...cauForm, de_id: deChon});
     if (kq.ok) {
       setBao({kieu: "ok", text: cauForm.id ? "Đã cập nhật câu hỏi." : "Đã thêm câu hỏi."});
-      await taiCau(deChon);
       const kq2 = await layCauHoiAdmin(deChon);
-      setCauForm(cauRong(kq2.ok ? kq2.ds.length + 1 : cau.length + 1));
+      if (kq2.ok) {
+        setCau(kq2.ds);
+        setCauForm(cauRong(kq2.ds.length + 1));
+      }
       await tai();
     } else setBao({kieu: "loi", text: kq.error ?? "Lỗi lưu câu."});
     setDangLuuCau(false);
@@ -105,6 +182,7 @@ export default function ThiThuAdmin() {
     await tai();
   };
   const deDangChon = ds.find((d) => d.id === deChon) ?? null;
+  const kyHieuDangDung = cauForm.loai === "dung_sai" ? KY_HIEU_DS : KY_HIEU_MCQ;
   return (
     <motion.section variants={fadeInUp} initial="hidden" animate="visible" className="mx-auto mt-10 w-full min-w-0 max-w-6xl px-4 pb-4">
       <div className="sheet border border-ink/25 bg-paper-light p-5 shadow-paper">
@@ -118,7 +196,9 @@ export default function ThiThuAdmin() {
             Tải lại
           </motion.button>
         </div>
-        <p className="mt-3 text-xs leading-relaxed text-ink-faint">Soạn câu hỏi bằng LaTeX: công thức trong dòng viết <span className="font-mono text-ink-soft">$x^2+1$</span>, công thức riêng dòng viết <span className="font-mono text-ink-soft">$$\int_0^1 x\,dx$$</span>. Xem trước hiện ngay bên dưới ô nhập.</p>
+        <p className="mt-3 text-xs leading-relaxed text-ink-faint">
+          Cứ gõ chữ thường như soạn văn bản, câu thuần chữ không cần code gì cả. Khi cần công thức thì bôi đen đoạn vừa gõ rồi bấm nút chèn, hệ thống tự bọc <span className="font-mono text-ink-soft">$…$</span> cho. Chữ và công thức xen kẽ thoải mái, ô xem trước hiện đúng như học sinh sẽ thấy.
+        </p>
         <AnimatePresence>
           {bao && (
             <motion.p initial={{opacity: 0, y: 6}} animate={{opacity: 1, y: 0}} exit={{opacity: 0}} className={`mt-3 border p-2.5 text-xs ${bao.kieu === "loi" ? "border-danger/60 bg-danger/10 text-danger" : "border-ok/60 bg-ok/10 text-ok"}`}>{bao.text}</motion.p>
@@ -137,11 +217,11 @@ export default function ThiThuAdmin() {
           </div>
           <div className="sm:col-span-2">
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-soft">Tên đề</label>
-            <input type="text" value={deForm.ten} maxLength={160} onChange={(e) => setDeForm((f) => ({...f, ten: e.target.value}))} placeholder="VD: Đề thi thử tốt nghiệp 2026 - Lần 1" className="w-full border border-ink/30 bg-paper-light px-3 py-2 text-sm text-ink outline-none focus:border-accent" />
+            <input type="text" value={deForm.ten} maxLength={160} onChange={(e) => setDeForm((f) => ({...f, ten: e.target.value}))} placeholder="VD: Đề thi thử tốt nghiệp 2026 - Lần 1" className="w-full border border-ink/30 bg-paper-light px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent" />
           </div>
           <div className="sm:col-span-2">
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-soft">Mô tả ngắn</label>
-            <input type="text" value={deForm.mo_ta} maxLength={240} onChange={(e) => setDeForm((f) => ({...f, mo_ta: e.target.value}))} placeholder="VD: 12 câu trắc nghiệm, 4 câu đúng sai, 6 câu trả lời ngắn" className="w-full border border-ink/30 bg-paper-light px-3 py-2 text-sm text-ink outline-none focus:border-accent" />
+            <input type="text" value={deForm.mo_ta} maxLength={240} onChange={(e) => setDeForm((f) => ({...f, mo_ta: e.target.value}))} placeholder="VD: 12 câu trắc nghiệm, 4 câu đúng sai, 6 câu trả lời ngắn" className="w-full border border-ink/30 bg-paper-light px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent" />
           </div>
           <div className="flex gap-2 sm:col-span-2">
             <motion.button whileTap={buttonTap} type="submit" disabled={dangLuuDe} className="nut-nhan flex items-center gap-2 border border-ink bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent disabled:opacity-60">
@@ -187,7 +267,7 @@ export default function ThiThuAdmin() {
                     <span className="grid h-7 w-7 shrink-0 place-items-center border border-ink/30 font-mono text-xs font-bold text-ink">{c.thu_tu}</span>
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] uppercase tracking-[0.12em] text-ink-faint">{nhanLoai(c.loai)} · {c.diem}đ</p>
-                      <p className="mt-0.5 line-clamp-2 text-sm text-ink-soft">{c.noi_dung}</p>
+                      <div className="mt-0.5 line-clamp-2 text-sm leading-relaxed text-ink-soft"><Latex nguon={c.noi_dung} /></div>
                     </div>
                     <motion.button whileTap={buttonTap} type="button" onClick={() => suaCau(c)} aria-label="Sửa câu" className="shrink-0 border border-transparent p-1.5 text-ink transition-colors hover:border-accent hover:text-accent"><IconEdit className="h-4 w-4" /></motion.button>
                     <motion.button whileTap={buttonTap} type="button" onClick={() => void xoaCau(c)} aria-label="Xóa câu" className="shrink-0 border border-transparent p-1.5 text-accent transition-colors hover:border-accent hover:bg-accent-wash"><IconTrash className="h-4 w-4" /></motion.button>
@@ -215,17 +295,13 @@ export default function ThiThuAdmin() {
                   </select>
                 </div>
               </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-soft">Nội dung câu hỏi (LaTeX)</label>
-                <textarea value={cauForm.noi_dung} onChange={(e) => setCauForm((c) => ({...c, noi_dung: e.target.value}))} rows={3} className="w-full border border-ink/30 bg-paper-light px-3 py-2 font-mono text-sm text-ink outline-none focus:border-accent" />
-                {cauForm.noi_dung && <div className="mt-2 border border-dashed border-ink/25 bg-paper-light p-3 text-sm text-ink"><Latex nguon={cauForm.noi_dung} /></div>}
-              </div>
+              <OSoan nhan="Nội dung câu hỏi" giaTri={cauForm.noi_dung} dat={(v) => setCauForm((c) => ({...c, noi_dung: v}))} rows={4} hienXem placeholder="VD: Cho hàm số y = x^3 - 3x. Khẳng định nào sau đây đúng?" goiY="Gõ chữ bình thường. Bôi đen đoạn cần thành công thức rồi bấm nút, hoặc tự gõ $…$ quanh công thức." />
               {cauForm.loai !== "tra_loi_ngan" && (
                 <div className="space-y-2">
-                  {(cauForm.loai === "trac_nghiem" ? KY_HIEU_MCQ : KY_HIEU_DS).map((k) => (
+                  {kyHieuDangDung.map((k) => (
                     <div key={k} className="border border-ink/20 bg-paper-light p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-display text-base font-bold text-ink">{cauForm.loai === "trac_nghiem" ? k : `${k})`}</span>
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-display text-base font-bold text-ink">{cauForm.loai === "trac_nghiem" ? `Phương án ${k}` : `Phát biểu ${k})`}</span>
                         {cauForm.loai === "trac_nghiem" ? (
                           <motion.button whileTap={buttonTap} type="button" onClick={() => setCauForm((c) => ({...c, dap_an_mcq: k}))} className={`border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] transition-colors ${cauForm.dap_an_mcq === k ? "border-ok bg-ok text-paper-light" : "border-ink/30 text-ink-soft hover:border-ok hover:text-ok"}`}>{cauForm.dap_an_mcq === k ? "Đáp án đúng" : "Chọn đúng"}</motion.button>
                         ) : (
@@ -236,7 +312,7 @@ export default function ThiThuAdmin() {
                           </div>
                         )}
                       </div>
-                      <textarea value={cauForm.lua_chon.find((x) => x.ky_hieu === k)?.noi_dung ?? ""} onChange={(e) => doiLuaChon(k, e.target.value)} rows={2} className="mt-2 w-full border border-ink/30 bg-paper px-3 py-2 font-mono text-sm text-ink outline-none focus:border-accent" />
+                      <OSoan giaTri={cauForm.lua_chon.find((x) => x.ky_hieu === k)?.noi_dung ?? ""} dat={(v) => doiLuaChon(k, v)} rows={2} gon placeholder="Chữ thường, thêm công thức khi cần" />
                     </div>
                   ))}
                 </div>
@@ -244,14 +320,55 @@ export default function ThiThuAdmin() {
               {cauForm.loai === "tra_loi_ngan" && (
                 <div>
                   <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-soft">Đáp án đúng</label>
-                  <input type="text" value={cauForm.dap_an_ngan} onChange={(e) => setCauForm((c) => ({...c, dap_an_ngan: e.target.value}))} placeholder="VD: 12,5  ·  nhiều đáp án chấp nhận: 12,5|12.5" className="w-full border border-ink/30 bg-paper-light px-3 py-2 text-sm text-ink outline-none focus:border-accent" />
-                  <p className="mt-1 text-[11px] text-ink-faint">Ngăn cách nhiều đáp án tương đương bằng dấu |. Hệ thống tự hiểu cả dấu phẩy và dấu chấm.</p>
+                  <input type="text" value={cauForm.dap_an_ngan} onChange={(e) => setCauForm((c) => ({...c, dap_an_ngan: e.target.value}))} placeholder="VD: 12,5  ·  nhiều đáp án chấp nhận: 12,5|12.5" className="w-full border border-ink/30 bg-paper-light px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent" />
+                  <p className="mt-1 text-[11px] text-ink-faint">Ô này chỉ nhập đáp án dạng chữ/số, không cần công thức. Ngăn cách nhiều đáp án tương đương bằng dấu |.</p>
                 </div>
               )}
-              <div>
-                <label className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-soft">Giải thích (hiện sau khi nộp)</label>
-                <textarea value={cauForm.giai_thich} onChange={(e) => setCauForm((c) => ({...c, giai_thich: e.target.value}))} rows={3} className="w-full border border-ink/30 bg-paper-light px-3 py-2 font-mono text-sm text-ink outline-none focus:border-accent" />
-                {cauForm.giai_thich && <div className="mt-2 border border-dashed border-ink/25 bg-paper-light p-3 text-sm text-ink"><Latex nguon={cauForm.giai_thich} /></div>}
+              <OSoan nhan="Giải thích (hiện sau khi nộp)" giaTri={cauForm.giai_thich} dat={(v) => setCauForm((c) => ({...c, giai_thich: v}))} rows={3} hienXem placeholder="Giải bằng chữ thường, chèn công thức ở chỗ cần tính toán." />
+              <div className="border border-ink/25 bg-paper-light p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-ink-faint">Xem trước cả câu như học sinh thấy</p>
+                  <motion.button whileTap={buttonTap} type="button" onClick={() => setXemTruoc((v) => !v)} className="flex items-center gap-1.5 border border-ink/30 bg-paper px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-soft transition-colors hover:border-accent hover:text-accent">
+                    <IconEye className="h-3.5 w-3.5" />
+                    {xemTruoc ? "Ẩn" : "Hiện"}
+                  </motion.button>
+                </div>
+                {xemTruoc && (
+                  <div className="mt-3">
+                    <p className="flex flex-wrap items-center gap-2 font-display text-base font-bold text-ink">
+                      Câu {cauForm.thu_tu}
+                      <span className="border border-ink/30 px-1.5 py-0.5 text-[10px] font-sans font-semibold uppercase tracking-[0.1em] text-ink-soft">{nhanLoai(cauForm.loai)}</span>
+                      <span className="text-[11px] font-sans font-normal uppercase tracking-[0.1em] text-ink-faint">{cauForm.diem}đ</span>
+                    </p>
+                    <div className="mt-2 text-sm leading-relaxed text-ink"><Latex nguon={cauForm.noi_dung || "(chưa có nội dung)"} /></div>
+                    {cauForm.loai !== "tra_loi_ngan" ? (
+                      <ul className="mt-3 space-y-1.5">
+                        {kyHieuDangDung.map((k) => {
+                          const nd = cauForm.lua_chon.find((x) => x.ky_hieu === k)?.noi_dung ?? "";
+                          const laDapAn = cauForm.loai === "trac_nghiem" ? cauForm.dap_an_mcq === k : cauForm.dap_an_ds[k] === true;
+                          return (
+                            <li key={k} className={`flex items-start gap-2 border px-2.5 py-1.5 text-sm ${cauForm.loai === "trac_nghiem" && laDapAn ? "border-ok bg-ok/10" : "border-ink/20 bg-paper"}`}>
+                              <span className="font-bold text-ink">{cauForm.loai === "trac_nghiem" ? `${k}.` : `${k})`}</span>
+                              <span className="min-w-0 flex-1 text-ink-soft"><Latex nguon={nd || "(trống)"} /></span>
+                              {cauForm.loai === "dung_sai" && typeof cauForm.dap_an_ds[k] === "boolean" && (
+                                <span className={`shrink-0 border px-1.5 text-[10px] font-bold uppercase ${cauForm.dap_an_ds[k] ? "border-ok text-ok" : "border-danger text-danger"}`}>{cauForm.dap_an_ds[k] ? "Đúng" : "Sai"}</span>
+                              )}
+                              {cauForm.loai === "trac_nghiem" && laDapAn && <IconCheck className="h-4 w-4 shrink-0 text-ok" />}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <p className="mt-3 border border-ok bg-ok/10 px-2.5 py-1.5 text-sm text-ok">Đáp án: {cauForm.dap_an_ngan ? cauForm.dap_an_ngan.split("|").join(" hoặc ") : "(chưa nhập)"}</p>
+                    )}
+                    {cauForm.giai_thich && (
+                      <div className="mt-3 border-l-2 border-accent bg-paper p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">Giải thích</p>
+                        <div className="mt-1 text-sm leading-relaxed text-ink-soft"><Latex nguon={cauForm.giai_thich} /></div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 <motion.button whileTap={buttonTap} type="submit" disabled={dangLuuCau} className="nut-nhan flex items-center gap-2 border border-ink bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent disabled:opacity-60">
