@@ -1,59 +1,16 @@
-# 📚 Website Tổng Hợp Đề Thi
+# 📚 Đề.Thi — Kho đề thi THPT kèm đáp án
 
-Website tổng hợp và xem đề thi online, tối ưu cho điện thoại. Xây bằng **Next.js 14 (App Router) + TypeScript + Tailwind CSS + Framer Motion**.
+Website gom đề thi tốt nghiệp THPT: đọc PDF ngay trong trang, đáp án tách riêng từng đề, thi thử online chấm tự động. Tối ưu cho điện thoại.
 
-## ✨ Tính năng
+**Stack:** Next.js 14 (App Router) · TypeScript · Tailwind CSS · Framer Motion · Supabase (Postgres + Auth + Storage) · pdf.js · pdf-lib · KaTeX · Cloudflare Turnstile.
 
-- Trang chủ: tìm kiếm không dấu, lọc theo môn (Toán, Văn, Anh, Sử, Địa, KTPL), card xuất hiện lần lượt.
-- Trang xem đề: xem PDF trực tiếp, tải về, breadcrumb, SEO riêng từng đề.
-- Trang admin (demo): thêm / sửa / xóa đề, kéo thả PDF, dữ liệu lưu tạm trong RAM trình duyệt.
-- Giao diện glassmorphism, gradient xanh `#3B82F6 → #1E40AF`, font Inter hỗ trợ tiếng Việt.
+## Tính năng
 
-## 🖥️ Chạy trên máy tính (nếu có)
+- **Trang chủ** (`/`): giới thiệu kho, số liệu đếm trực tiếp, mục lục 12 môn, đề vừa lên, thư gửi học sinh.
+- **Kho đề** (`/kho-de`): tìm không dấu, lọc theo môn (dải môn dính dưới navbar), sắp xếp, đề ghim lên đầu, đếm lượt xem/tải, đánh dấu đã đọc (lưu trong máy).
+- **Xem đề** (`/de/[id]`): PDF dựng theo độ phân giải màn hình, vuốt/chụm để chuyển trang và zoom, chạm đúp phóng to, tìm chữ trong đề (tô đỏ), ghim trang + ghi chú (localStorage), chế độ tập trung, đáp án mở riêng, tải PDF, chấm sao và nhận xét (quản trị duyệt).
+- **Thi thử** (`/thi-thu`): đề soạn bằng chữ thường trộn LaTeX, ba dạng câu (trắc nghiệm A/B/C/D, đúng/sai 4 phát biểu, trả lời ngắn), đồng hồ đếm ngược, tự nộp khi hết giờ, rời phòng thi quá 3 lần bị 0 điểm, chấm tự động và xem lại lời giải, lịch sử thi.
+- **Quản trị** (`/admin`): dashboard thống kê, tải đề PDF + đáp án (tự nén trước khi upload), ghim đề, thông báo popup, soạn đề thi online, duyệt nhận xét, khóa/mở khóa người dùng.
+- Nền sáng/tối với hiệu ứng lan tròn từ nút bấm, chống sao chép/dán và mở công cụ gỡ lỗi, Turnstile ở đăng nhập và tải đề.
 
-Yêu cầu Node.js >= 18.17.
-
-    npm install
-    npm run dev
-
-Mở http://localhost:3000 để xem. Lệnh khác: `npm run build` (build), `npm start` (chạy bản build), `npm run lint` (kiểm tra lỗi).
-
-## 📱 Deploy từ điện thoại (3 bước)
-
-1. **Tạo file**: tạo đủ cây thư mục như bên dưới. Lưu ý thư mục `app/de/[id]` phải gõ đúng tên `[id]` gồm cả ngoặc vuông. File `next-env.d.ts` KHÔNG cần tạo, Next.js tự sinh khi build.
-2. **Upload GitHub**: vào github.com → New repository → đặt tên `tong-hop-de-thi` → Create. Trong repo bấm **Add file → Create new file**, gõ đường dẫn ví dụ `app/de/[id]/page.tsx` (gõ dấu `/` sẽ tự tạo thư mục), paste nội dung file vào, bấm **Commit changes**. Lặp lại cho từng file.
-3. **Deploy Vercel**: vào vercel.com → đăng nhập bằng GitHub → **Add New → Project** → chọn repo `tong-hop-de-thi` → Vercel tự nhận Next.js → bấm **Deploy**. Chờ 1-2 phút là có link chạy thật.
-
-## 🗂️ Cấu trúc thư mục
-
-    .eslintrc.json
-    .gitignore
-    README.md
-    package.json
-    tsconfig.json
-    next.config.js
-    tailwind.config.ts
-    postcss.config.js
-    app/
-      globals.css
-      layout.tsx
-      page.tsx
-      admin/page.tsx
-      de/[id]/page.tsx
-    components/
-      Navbar.tsx
-      PageTransition.tsx
-      DeCard.tsx
-      PdfViewer.tsx
-      EmptyState.tsx
-      Skeleton.tsx
-    lib/
-      data.ts
-      animations.ts
-
-## ⚠️ Lưu ý
-
-- 10 đề trong `lib/data.ts` đang trỏ tới **PDF mẫu công khai** để demo. Thay `urlPdf` bằng link đề thật (host cùng domain trong thư mục `public/` hoặc link không chặn iframe).
-- Trang admin chỉ là demo React state, tải lại trang là mất dữ liệu mới. Muốn lưu thật cần nối database (Vercel Postgres, Supabase...).
-- Đổi `metadataBase` trong `app/layout.tsx` thành domain Vercel thật của bạn để SEO chuẩn.
-- Một số trình duyệt Android không hiển thị PDF trong iframe, trang xem đề đã có nút Tải PDF / Mở tab mới để xử lý.
+## Cấu trúc
