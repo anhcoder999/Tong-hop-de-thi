@@ -4,17 +4,10 @@ import Link from "next/link";
 import {motion, useScroll, useTransform} from "framer-motion";
 import {IconArrowRight, IconCalendar, IconCheck, IconEye, IconFile, IconSearch, IconSeal, MonIcon} from "@/components/Icons";
 import InkDraw from "@/components/InkDraw";
-import {DS_MON, formatNgay, MON_DAY_DU, NHOM_MON, type DeThi, type NhomMon} from "@/lib/data";
+import {DS_MON, formatNgay, MON_DAY_DU, type DeThi} from "@/lib/data";
 import {buttonTap, EASE, fadeInUp, spring, staggerContainer} from "@/lib/animations";
 import {useAuth} from "@/lib/auth";
 import {layDanhSach} from "@/lib/deThi";
-const MAU_NHOM: Record<NhomMon, string> = {
-  "bat-buoc": "border-l-accent",
-  "tu-nhien": "border-l-info",
-  "xa-hoi": "border-l-ok",
-  "ung-dung": "border-l-warn",
-  khac: "border-l-ink-faint"
-};
 function IconGhimTrang({className}: {className?: string}) {
   return (
     <svg aria-hidden viewBox="0 0 24 24" className={className ?? "h-5 w-5"} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
@@ -79,7 +72,6 @@ export default function TrangGioiThieu() {
     return {demMon, dapAn, xem, moiNhat};
   }, [ds]);
   const vuaLen = useMemo(() => [...ds].sort((a, b) => b.ngay.localeCompare(a.ngay)).slice(0, 3), [ds]);
-  const mauCua = (mon: string) => MAU_NHOM[(NHOM_MON.find((n) => (n.mon as string[]).includes(mon))?.id ?? "khac") as NhomMon];
   const so = (n: number) => (dangTai ? "—" : String(n));
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl overflow-x-clip px-4 pb-20 pt-8 sm:pt-12">
@@ -225,9 +217,9 @@ export default function TrangGioiThieu() {
           ) : (
             vuaLen.map((d, i) => (
               <motion.li key={d.id} initial={{opacity: 0, y: 14}} whileInView={{opacity: 1, y: 0}} viewport={{once: true, margin: "-40px"}} transition={{duration: 0.34, ease: EASE, delay: i * 0.06}} className={i % 2 === 1 ? "lg:ml-8" : ""}>
-                <Link href={`/de/${d.id}`} className={`group relative flex items-center gap-4 overflow-hidden border border-ink/20 border-l-4 bg-paper-light p-4 pl-5 shadow-paper transition-all duration-300 hover:translate-x-1 hover:border-accent/50 ${mauCua(d.mon)}`}>
+                <Link href={`/de/${d.id}`} className="sheet group relative flex items-center gap-4 overflow-hidden p-4 pl-8 shadow-paper transition-all duration-300 hover:translate-x-1 hover:border-accent/60 hover:shadow-lift">
                   <span aria-hidden className="pointer-events-none absolute right-3 top-0 hidden font-display text-6xl font-bold leading-none text-ink/10 sm:block">{i + 1}</span>
-                  <span className="grid h-10 w-10 shrink-0 place-items-center border border-ink/25 bg-paper text-ink transition-colors group-hover:border-accent group-hover:text-accent">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center border border-ink/30 bg-paper text-ink transition-all duration-300 group-hover:-rotate-3 group-hover:border-accent group-hover:text-accent">
                     <MonIcon mon={d.mon} className="h-5 w-5" />
                   </span>
                   <span className="relative min-w-0 flex-1">
