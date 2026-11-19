@@ -149,7 +149,9 @@ export default function Navbar() {
           </motion.button>
         </div>
       </div>
-      <motion.div style={{scaleX: tienTrinh}} className="absolute inset-x-0 bottom-0 h-[2px] origin-left transform-gpu bg-gradient-to-r from-accent via-warn to-info" />
+      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-ink/10">
+        <motion.div style={{scaleX: tienTrinh}} className="h-full origin-left transform-gpu bg-accent" />
+      </div>
       <AnimatePresence>
         {mo && (
           <motion.nav initial={{height: 0, opacity: 0}} animate={{height: "auto", opacity: 1}} exit={{height: 0, opacity: 0}} transition={spring} className="overflow-hidden border-t border-ink/20 bg-paper-light md:hidden">
