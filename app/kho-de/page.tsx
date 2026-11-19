@@ -120,56 +120,62 @@ export default function TrangKhoDe() {
             </motion.button>
           )}
         </motion.div>
-        <motion.div variants={fadeInUp} className="-mx-4 mt-7 overflow-x-auto px-4 no-scrollbar">
-          <div className="flex w-max min-w-full items-stretch border-b border-ink/20">
-            <div className="flex flex-col justify-end gap-1.5 pr-4">
-              <span className="text-[10px] uppercase tracking-[0.18em] text-ink-faint">Toàn kho</span>
-              <motion.button
-                whileTap={buttonTap}
-                whileHover={hover ? {y: -1} : undefined}
-                transition={spring}
-                onClick={() => doiLoc("Tất cả")}
-                className={`nut-nhan relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${loc === "Tất cả" ? "text-accent" : "text-ink-soft hover:text-ink"}`}
-              >
-                Tất cả
-                <sup className="ml-1 text-[10px] text-ink-faint">{ds.length}</sup>
-                <GachMuc active={loc === "Tất cả"} />
-              </motion.button>
-            </div>
-            {NHOM_MON.map((n) => {
-              const trongNhom = !laNhom(loc) && loc !== "Tất cả" && n.mon.includes(loc);
-              return (
-                <div key={n.id} className="flex flex-col justify-end gap-1.5 border-l border-dashed border-ink/25 px-4">
-                  <span className={`whitespace-nowrap pb-0.5 text-left text-[10px] uppercase tracking-[0.18em] ${trongNhom ? "text-ink" : "text-ink-faint"}`}>
-                    {n.ten}
-                    <sup className="ml-1 text-[9px]">{demNhom(n.mon)}</sup>
-                  </span>
-                  <div className="flex gap-4">
-                    {n.mon.map((m) => {
-                      const active = loc === m;
-                      const soDe = demTheoMon.get(m) ?? 0;
-                      return (
-                        <motion.button
-                          key={m}
-                          whileTap={buttonTap}
-                          whileHover={hover ? {y: -1} : undefined}
-                          transition={spring}
-                          onClick={() => doiLoc(m)}
-                          title={MON_DAY_DU[m]}
-                          className={`nut-nhan relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${active ? "text-accent" : soDe === 0 ? "text-ink-faint/70 hover:text-ink-soft" : "text-ink-soft hover:text-ink"}`}
-                        >
-                          {m}
-                          <sup className="ml-1 text-[10px] text-ink-faint">{soDe}</sup>
-                          <GachMuc active={active} />
-                        </motion.button>
-                      );
-                    })}
+      </motion.div>
+      <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} transition={{duration: 0.35, ease: EASE, delay: 0.12}} className="sticky top-[66px] z-40 -mx-4 mt-7 border-b border-ink/20 bg-paper px-4">
+        <div className="relative">
+          <div className="overflow-x-auto no-scrollbar">
+            <div className="flex w-max min-w-full items-stretch">
+              <div className="flex flex-col justify-end gap-1.5 pr-4">
+                <span className="text-[10px] uppercase tracking-[0.18em] text-ink-faint">Toàn kho</span>
+                <motion.button
+                  whileTap={buttonTap}
+                  whileHover={hover ? {y: -1} : undefined}
+                  transition={spring}
+                  onClick={() => doiLoc("Tất cả")}
+                  className={`nut-nhan relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${loc === "Tất cả" ? "text-accent" : "text-ink-soft hover:text-ink"}`}
+                >
+                  Tất cả
+                  <sup className="ml-1 text-[10px] text-ink-faint">{ds.length}</sup>
+                  <GachMuc active={loc === "Tất cả"} />
+                </motion.button>
+              </div>
+              {NHOM_MON.map((n) => {
+                const trongNhom = !laNhom(loc) && loc !== "Tất cả" && n.mon.includes(loc);
+                return (
+                  <div key={n.id} className="flex flex-col justify-end gap-1.5 border-l border-dashed border-ink/25 px-4">
+                    <span className={`whitespace-nowrap pb-0.5 text-left text-[10px] uppercase tracking-[0.18em] ${trongNhom ? "text-ink" : "text-ink-faint"}`}>
+                      {n.ten}
+                      <sup className="ml-1 text-[9px]">{demNhom(n.mon)}</sup>
+                    </span>
+                    <div className="flex gap-4">
+                      {n.mon.map((m) => {
+                        const active = loc === m;
+                        const soDe = demTheoMon.get(m) ?? 0;
+                        return (
+                          <motion.button
+                            key={m}
+                            whileTap={buttonTap}
+                            whileHover={hover ? {y: -1} : undefined}
+                            transition={spring}
+                            onClick={() => doiLoc(m)}
+                            title={MON_DAY_DU[m]}
+                            className={`nut-nhan relative whitespace-nowrap pb-2 text-sm font-semibold uppercase tracking-[0.12em] transition-colors ${active ? "text-accent" : soDe === 0 ? "text-ink-faint/70 hover:text-ink-soft" : "text-ink-soft hover:text-ink"}`}
+                          >
+                            {m}
+                            <sup className="ml-1 text-[10px] text-ink-faint">{soDe}</sup>
+                            <GachMuc active={active} />
+                          </motion.button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </motion.div>
+          <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-paper to-transparent" />
+          <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-paper to-transparent" />
+        </div>
       </motion.div>
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-ink-soft">
