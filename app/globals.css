@@ -2,87 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 :root {
-  --paper: 255 255 255;
-  --paper-light: 252 251 249;
-  --paper-deep: 240 238 234;
-  --ink: 31 26 20;
-  --ink-soft: 90 82 70;
-  --ink-faint: 150 141 126;
-  --accent: 179 38 30;
-  --accent-deep: 140 26 20;
-  --accent-wash: 248 232 229;
-  --ok: 34 120 70;
-  --warn: 176 116 20;
-  --danger: 179 38 30;
-  --info: 40 90 180;
+  --paper: 247 248 250;
+  --paper-light: 255 255 255;
+  --paper-deep: 238 241 246;
+  --ink: 17 20 24;
+  --ink-soft: 71 80 92;
+  --ink-faint: 106 116 130;
+  --accent: 13 110 106;
+  --accent-deep: 9 82 79;
+  --accent-wash: 224 242 240;
+  --ok: 22 128 74;
+  --warn: 176 98 8;
+  --danger: 200 40 40;
+  --info: 37 99 235;
+  --grape: 168 60 190;
 }
 .dark {
-  --paper: 22 21 19;
-  --paper-light: 32 30 27;
-  --paper-deep: 44 40 36;
-  --ink: 238 233 224;
-  --ink-soft: 184 176 164;
-  --ink-faint: 124 116 104;
-  --accent: 228 94 82;
-  --accent-deep: 244 124 112;
-  --accent-wash: 62 33 29;
-  --ok: 96 190 130;
-  --warn: 226 176 80;
-  --danger: 228 94 82;
-  --info: 120 160 230;
+  --paper: 12 14 17;
+  --paper-light: 20 23 27;
+  --paper-deep: 30 34 40;
+  --ink: 233 237 242;
+  --ink-soft: 168 178 190;
+  --ink-faint: 126 136 150;
+  --accent: 45 212 191;
+  --accent-deep: 94 234 212;
+  --accent-wash: 16 52 50;
+  --ok: 74 222 128;
+  --warn: 251 191 36;
+  --danger: 248 113 113;
+  --info: 96 165 250;
+  --grape: 217 130 240;
 }
 html {
   color-scheme: light;
   scroll-behavior: smooth;
-  scroll-padding-top: 5.5rem;
+  scroll-padding-top: 6rem;
   touch-action: pan-x pan-y;
-  scrollbar-color: rgb(var(--ink-faint)) rgb(var(--paper-deep));
+  scrollbar-color: rgb(var(--ink-faint) / 0.55) transparent;
   scrollbar-width: thin;
 }
 html.dark {
   color-scheme: dark;
 }
 html::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
 }
 html::-webkit-scrollbar-track {
-  background: rgb(var(--paper-deep));
+  background: transparent;
 }
 html::-webkit-scrollbar-thumb {
-  background: rgb(var(--ink-faint));
-  border: 2px solid rgb(var(--paper-deep));
+  background: rgb(var(--ink-faint) / 0.45);
+  border: 3px solid rgb(var(--paper));
+  border-radius: 9999px;
 }
 html::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--accent));
+  background: rgb(var(--accent) / 0.75);
 }
 body {
   @apply bg-paper font-sans text-ink antialiased;
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-x pan-y;
-  background-image: linear-gradient(rgb(var(--ink) / 0.04) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--ink) / 0.04) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-[data-pdf-zoom] {
-  touch-action: pan-x pan-y;
+  font-feature-settings: "cv02", "cv03", "cv04";
 }
 .sheet {
   position: relative;
   background: rgb(var(--paper-light));
-  border: 1px solid rgb(var(--ink) / 0.18);
+  border: 1px solid rgb(var(--ink) / 0.08);
+  border-radius: 20px;
+}
+.sheet.pl-8,
+.sheet.pl-9 {
+  padding-left: 1.25rem;
 }
 .sheet::before {
-  content: "";
-  position: absolute;
-  left: 0.9rem;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: rgb(var(--accent) / 0.32);
+  content: none;
 }
 .viewer-scroll {
   overscroll-behavior: contain;
-  scrollbar-color: rgb(var(--ink-faint)) rgb(var(--paper-deep));
+  scrollbar-color: rgb(var(--ink-faint) / 0.5) transparent;
   scrollbar-width: thin;
 }
 .viewer-scroll::-webkit-scrollbar {
@@ -90,14 +88,15 @@ body {
   height: 10px;
 }
 .viewer-scroll::-webkit-scrollbar-track {
-  background: rgb(var(--paper-deep));
+  background: transparent;
 }
 .viewer-scroll::-webkit-scrollbar-thumb {
-  background: rgb(var(--ink-faint));
-  border: 2px solid rgb(var(--paper-deep));
+  background: rgb(var(--ink-faint) / 0.4);
+  border: 3px solid rgb(var(--paper-light));
+  border-radius: 9999px;
 }
 .viewer-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--accent));
+  background: rgb(var(--accent) / 0.7);
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
@@ -106,11 +105,18 @@ body {
   scrollbar-width: none;
 }
 ::selection {
-  background: rgb(var(--accent) / 0.25);
+  background: rgb(var(--accent) / 0.22);
 }
 :focus-visible {
   outline: 2px solid rgb(var(--accent));
   outline-offset: 2px;
+  border-radius: 6px;
+}
+input,
+textarea,
+select,
+button {
+  font: inherit;
 }
 .vt-dang-chuyen *,
 .vt-dang-chuyen *::before,
@@ -120,20 +126,20 @@ body {
 }
 @keyframes troiA {
   0% {transform: translate3d(0, 0, 0) scale(1);}
-  50% {transform: translate3d(5rem, 3rem, 0) scale(1.1);}
-  100% {transform: translate3d(-3rem, 4rem, 0) scale(0.95);}
+  50% {transform: translate3d(4rem, 2.5rem, 0) scale(1.08);}
+  100% {transform: translate3d(-2rem, 3.5rem, 0) scale(0.96);}
 }
 @keyframes troiB {
   0% {transform: translate3d(0, 0, 0) scale(1);}
-  50% {transform: translate3d(-4rem, -3rem, 0) scale(1.07);}
-  100% {transform: translate3d(3rem, 2rem, 0) scale(0.96);}
+  50% {transform: translate3d(-3.5rem, -2rem, 0) scale(1.06);}
+  100% {transform: translate3d(2.5rem, 1.5rem, 0) scale(0.97);}
 }
 .lop-troi {
-  animation: troiA 26s ease-in-out infinite alternate;
+  animation: troiA 30s ease-in-out infinite alternate;
   will-change: transform;
 }
 .lop-troi-2 {
-  animation: troiB 32s ease-in-out infinite alternate;
+  animation: troiB 38s ease-in-out infinite alternate;
   will-change: transform;
 }
 @keyframes shimmer {
@@ -141,12 +147,12 @@ body {
   to {transform: translate3d(100%, 0, 0);}
 }
 .shimmer {
-  animation: shimmer 1.4s ease-in-out infinite;
+  animation: shimmer 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   will-change: transform;
 }
 @keyframes quetSang {
-  0% {transform: translateX(-130%) skewX(-18deg);}
-  100% {transform: translateX(240%) skewX(-18deg);}
+  0% {transform: translateX(-130%) skewX(-16deg);}
+  100% {transform: translateX(240%) skewX(-16deg);}
 }
 .nut-quet {
   position: relative;
@@ -157,16 +163,16 @@ body {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 40%;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
-  transform: translateX(-130%) skewX(-18deg);
+  width: 36%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent);
+  transform: translateX(-130%) skewX(-16deg);
   pointer-events: none;
 }
 .nut-quet:hover::after {
-  animation: quetSang 0.9s ease;
+  animation: quetSang 0.85s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes vetMuc {
-  from {transform: scale(0); opacity: 0.5;}
+  from {transform: scale(0); opacity: 0.35;}
   to {transform: scale(2.6); opacity: 0;}
 }
 .nut-nhan {
@@ -182,7 +188,7 @@ body {
   aspect-ratio: 1;
   margin: -20% 0 0 -20%;
   border-radius: 9999px;
-  background: rgb(255 255 255 / 0.4);
+  background: rgb(255 255 255 / 0.3);
   transform: scale(0);
   opacity: 0;
   pointer-events: none;
