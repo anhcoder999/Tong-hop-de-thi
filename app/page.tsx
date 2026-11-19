@@ -112,7 +112,7 @@ export default function TrangGioiThieu() {
               </motion.span>
             </Link>
             <motion.a whileTap={buttonTap} href="#thu-ngo" className="flex items-center gap-2 border-b-2 border-ink/30 px-1 py-2 text-sm font-semibold text-ink-soft transition-colors hover:border-accent hover:text-accent">
-              Đọc thư của người gom đề
+              Đọc thư gửi cậu
             </motion.a>
           </div>
         </motion.div>
@@ -252,19 +252,18 @@ export default function TrangGioiThieu() {
           <span className="absolute -top-3 left-10 h-6 w-28 -rotate-2 border border-ink/10 bg-accent-wash/90" />
           <p className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-ink-faint">
             <IconSeal className="h-3.5 w-3.5 text-accent" />
-            Thư của người gom đề
+            Thư gửi cậu
           </p>
-          <div className="mt-5 space-y-4 font-display text-[15px] leading-7 text-ink-soft sm:text-base sm:leading-8">
+          <p className="mt-5 font-display text-lg italic text-ink">Chào cậu,</p>
+          <div className="mt-4 space-y-4 font-display text-[15px] leading-7 text-ink-soft sm:text-base sm:leading-8">
             <p className="first-letter:float-left first-letter:mr-2 first-letter:mt-1 first-letter:font-display first-letter:text-5xl first-letter:font-bold first-letter:leading-[0.8] first-letter:text-accent">
-              Kho này bắt đầu từ một thư mục tên “de thi final FINAL” trong máy mình. Bên trong là đề nhặt từ khắp nơi, file đáp án đặt tên kiểu “dap an (1).pdf”. Làm xong một đề là mất mười phút đi tìm đáp án của chính nó.
+              Không biết lúc cậu mở trang web này ra thì ngoài trời đang là buổi sáng, hay đã khuya lắm rồi mà cậu vẫn còn ngồi bên bàn học nhỉ? Dạo này việc ôn tập của cậu thế nào rồi, có bị ngợp vì bài vở hay áp lực quá trước kỳ thi sắp tới không? Nếu thấy hơi mệt, cậu cứ hít một hơi thật sâu, uống một ngụm nước rồi hẳn bắt đầu nhé.
             </p>
-            <p>Bực quá nên mình gom lại: đề một file, đáp án một file, môn nào ra môn đó. Rồi thêm chỗ ghi chú, vì mình hay sai một lỗi hai ba lần mà không nhớ lần trước sai ở đâu.</p>
-            <p>Cậu cứ làm trọn một đề rồi hãy mở đáp án. Sai câu nào thì ghim trang đó, ghi một dòng vì sao sai. Cuối tuần đọc lại mấy dòng đó.</p>
-            <p>Đề ở đây không phải đề chuẩn của Bộ, cũng chẳng có ai chấm điểm hộ cậu. Thỉnh thoảng vẫn lọt đề sai đáp án — cậu thấy thì viết vào ô nhận xét ngay dưới đề, mình duyệt tay nên có khi chậm vài tiếng mới hiện.</p>
-            <p>Lúc mình viết thư này mấy môn tự nhiên vẫn còn trống, đang đi xin thêm. Có tuần mình lười, chẳng tải đề nào, cậu đừng giận.</p>
-            <p>Thôi, cậu làm đề đi. Mình đi tìm thêm đề.</p>
+            <p>Góc nhỏ này mình làm ra với mong muốn rất đơn giản: gom góp lại những bộ đề thi về chung một chỗ cho gọn gàng, để mỗi lần cần luyện tập là cậu có sẵn ngay, đỡ mất công lặn lội tìm kiếm khắp nơi. Kho đề vẫn đang được mình cập nhật dần theo thời gian nên chắc chắn sẽ còn những chỗ chưa đầy đủ, mong cậu thông cảm nếu đôi lúc chưa tìm thấy đúng môn mình cần.</p>
+            <p>Chặng đường ôn thi lúc nào cũng dễ nản, nên cậu nhớ giữ gìn sức khỏe, đừng ép bản thân thức khuya quá nhé. Làm thử một đề có sai vài câu cũng chẳng sao cả, miễn là mình nhận ra chỗ còn hổng để kịp vá lại trước khi bước vào phòng thi thật.</p>
+            <p>Chúc cậu luôn giữ được cái đầu tỉnh táo, làm bài thật chắc tay và đạt được kết quả xứng đáng với những gì cậu đã bỏ ra. Cứ bình tĩnh mà bước, rồi mọi chuyện sẽ ổn cả thôi!</p>
           </div>
-          <p className="mt-4 font-display text-sm italic text-ink-faint">P.S. Đừng thức tới ba giờ sáng vì một đề. Mai làm tiếp, đề không chạy mất.</p>
+          <p className="mt-4 font-display text-sm italic text-ink-faint">P.S. Hôm nào thấy đầu óc quay cuồng quá thì cứ gấp sách lại đi ngủ một giấc cho khỏe, mai mình lại làm tiếp nhé.</p>
           <div className="mt-7 flex flex-wrap items-end justify-between gap-4 border-t border-dashed border-ink/25 pt-5">
             <div>
               <p className="font-display text-xl font-bold italic text-ink">Anh Lusilfer</p>
@@ -278,7 +277,7 @@ export default function TrangGioiThieu() {
         </div>
       </motion.section>
       <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} viewport={{once: true}} transition={{duration: 0.4, ease: EASE}} className="mt-14 flex flex-wrap items-center justify-between gap-4 border-t-2 border-ink pt-5">
-        <p className="max-w-xl font-display text-base italic text-ink-soft">Hết thư. Cậu mở mục lục, chọn môn đang yếu nhất rồi làm trọn một đề.</p>
+        <p className="max-w-xl font-display text-base italic text-ink-soft">Thư tới đây thôi. Cậu uống ngụm nước rồi mở mục lục, chọn môn đang yếu nhất mà luyện nhé.</p>
         <div className="flex flex-wrap items-center gap-4">
           <Link href="/kho-de" className="group flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-accent underline-offset-4 hover:underline hover:decoration-wavy">
             Vào kho đề
