@@ -2,43 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 :root {
-  --paper: 247 248 250;
-  --paper-light: 255 255 255;
-  --paper-deep: 238 241 246;
-  --ink: 17 20 24;
-  --ink-soft: 71 80 92;
-  --ink-faint: 106 116 130;
-  --accent: 13 110 106;
-  --accent-deep: 9 82 79;
-  --accent-wash: 224 242 240;
-  --ok: 22 128 74;
-  --warn: 176 98 8;
-  --danger: 200 40 40;
-  --info: 37 99 235;
-  --grape: 168 60 190;
+  --paper: 242 238 230;
+  --paper-light: 251 248 242;
+  --paper-deep: 231 225 213;
+  --ink: 13 20 36;
+  --ink-soft: 62 74 99;
+  --ink-faint: 107 118 144;
+  --accent: 210 47 28;
+  --accent-deep: 168 36 21;
+  --accent-wash: 251 227 222;
+  --mark: 255 224 102;
+  --mark-ink: 13 20 36;
+  --ok: 15 122 85;
+  --warn: 154 98 6;
+  --danger: 179 18 31;
+  --info: 29 95 214;
+  --grape: 139 47 201;
+  --cyan: 14 116 144;
 }
 .dark {
-  --paper: 12 14 17;
-  --paper-light: 20 23 27;
-  --paper-deep: 30 34 40;
-  --ink: 233 237 242;
-  --ink-soft: 168 178 190;
-  --ink-faint: 126 136 150;
-  --accent: 45 212 191;
-  --accent-deep: 94 234 212;
-  --accent-wash: 16 52 50;
-  --ok: 74 222 128;
-  --warn: 251 191 36;
-  --danger: 248 113 113;
-  --info: 96 165 250;
-  --grape: 217 130 240;
+  --paper: 8 11 18;
+  --paper-light: 17 23 37;
+  --paper-deep: 26 34 52;
+  --ink: 237 239 245;
+  --ink-soft: 167 176 196;
+  --ink-faint: 124 135 158;
+  --accent: 255 107 74;
+  --accent-deep: 255 138 110;
+  --accent-wash: 58 26 18;
+  --mark: 255 216 77;
+  --mark-ink: 13 20 36;
+  --ok: 61 220 151;
+  --warn: 255 162 58;
+  --danger: 255 107 107;
+  --info: 90 169 255;
+  --grape: 199 125 255;
+  --cyan: 76 201 240;
 }
 html {
   color-scheme: light;
   scroll-behavior: smooth;
-  scroll-padding-top: 6rem;
+  scroll-padding-top: 6.5rem;
   touch-action: pan-x pan-y;
-  scrollbar-color: rgb(var(--ink-faint) / 0.55) transparent;
+  scrollbar-color: rgb(var(--ink) / 0.35) rgb(var(--paper-deep));
   scrollbar-width: thin;
 }
 html.dark {
@@ -49,27 +55,28 @@ html::-webkit-scrollbar {
   height: 12px;
 }
 html::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgb(var(--paper-deep));
 }
 html::-webkit-scrollbar-thumb {
-  background: rgb(var(--ink-faint) / 0.45);
-  border: 3px solid rgb(var(--paper));
+  background: rgb(var(--ink) / 0.32);
+  border: 3px solid rgb(var(--paper-deep));
   border-radius: 9999px;
 }
 html::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--accent) / 0.75);
+  background: rgb(var(--accent));
 }
 body {
   @apply bg-paper font-sans text-ink antialiased;
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-x pan-y;
-  font-feature-settings: "cv02", "cv03", "cv04";
+  background-image: linear-gradient(rgb(var(--ink) / 0.045) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--ink) / 0.045) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 .sheet {
   position: relative;
   background: rgb(var(--paper-light));
-  border: 1px solid rgb(var(--ink) / 0.08);
-  border-radius: 20px;
+  border: 1px solid rgb(var(--ink) / 0.14);
+  border-radius: 14px;
 }
 .sheet.pl-8,
 .sheet.pl-9 {
@@ -80,7 +87,7 @@ body {
 }
 .viewer-scroll {
   overscroll-behavior: contain;
-  scrollbar-color: rgb(var(--ink-faint) / 0.5) transparent;
+  scrollbar-color: rgb(var(--ink) / 0.3) transparent;
   scrollbar-width: thin;
 }
 .viewer-scroll::-webkit-scrollbar {
@@ -88,15 +95,16 @@ body {
   height: 10px;
 }
 .viewer-scroll::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgb(var(--paper-deep));
+  border-radius: 9999px;
 }
 .viewer-scroll::-webkit-scrollbar-thumb {
-  background: rgb(var(--ink-faint) / 0.4);
-  border: 3px solid rgb(var(--paper-light));
+  background: rgb(var(--ink) / 0.3);
+  border: 3px solid rgb(var(--paper-deep));
   border-radius: 9999px;
 }
 .viewer-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--accent) / 0.7);
+  background: rgb(var(--accent));
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
@@ -105,12 +113,13 @@ body {
   scrollbar-width: none;
 }
 ::selection {
-  background: rgb(var(--accent) / 0.22);
+  background: rgb(var(--mark));
+  color: rgb(var(--mark-ink));
 }
 :focus-visible {
   outline: 2px solid rgb(var(--accent));
-  outline-offset: 2px;
-  border-radius: 6px;
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 input,
 textarea,
@@ -126,20 +135,20 @@ button {
 }
 @keyframes troiA {
   0% {transform: translate3d(0, 0, 0) scale(1);}
-  50% {transform: translate3d(4rem, 2.5rem, 0) scale(1.08);}
-  100% {transform: translate3d(-2rem, 3.5rem, 0) scale(0.96);}
+  50% {transform: translate3d(3.5rem, 2rem, 0) scale(1.09);}
+  100% {transform: translate3d(-2rem, 3rem, 0) scale(0.95);}
 }
 @keyframes troiB {
   0% {transform: translate3d(0, 0, 0) scale(1);}
-  50% {transform: translate3d(-3.5rem, -2rem, 0) scale(1.06);}
-  100% {transform: translate3d(2.5rem, 1.5rem, 0) scale(0.97);}
+  50% {transform: translate3d(-3rem, -2rem, 0) scale(1.07);}
+  100% {transform: translate3d(2rem, 1.5rem, 0) scale(0.96);}
 }
 .lop-troi {
-  animation: troiA 30s ease-in-out infinite alternate;
+  animation: troiA 32s ease-in-out infinite alternate;
   will-change: transform;
 }
 .lop-troi-2 {
-  animation: troiB 38s ease-in-out infinite alternate;
+  animation: troiB 40s ease-in-out infinite alternate;
   will-change: transform;
 }
 @keyframes shimmer {
@@ -147,7 +156,7 @@ button {
   to {transform: translate3d(100%, 0, 0);}
 }
 .shimmer {
-  animation: shimmer 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: shimmer 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   will-change: transform;
 }
 @keyframes quetSang {
@@ -163,16 +172,16 @@ button {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 36%;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent);
+  width: 34%;
+  background: linear-gradient(90deg, transparent, rgb(var(--mark) / 0.35), transparent);
   transform: translateX(-130%) skewX(-16deg);
   pointer-events: none;
 }
 .nut-quet:hover::after {
-  animation: quetSang 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: quetSang 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes vetMuc {
-  from {transform: scale(0); opacity: 0.35;}
+  from {transform: scale(0); opacity: 0.4;}
   to {transform: scale(2.6); opacity: 0;}
 }
 .nut-nhan {
@@ -188,13 +197,13 @@ button {
   aspect-ratio: 1;
   margin: -20% 0 0 -20%;
   border-radius: 9999px;
-  background: rgb(255 255 255 / 0.3);
+  background: rgb(var(--mark) / 0.45);
   transform: scale(0);
   opacity: 0;
   pointer-events: none;
 }
 .nut-nhan:active::before {
-  animation: vetMuc 0.5s ease-out;
+  animation: vetMuc 0.45s ease-out;
 }
 @media (prefers-reduced-motion: reduce) {
   .lop-troi, .lop-troi-2, .shimmer {
