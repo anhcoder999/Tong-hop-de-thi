@@ -15,22 +15,22 @@ const MAU_NHOM: Record<NhomMon, string> = {
   "ung-dung": "border-l-warn",
   khac: "border-l-ink-faint"
 };
-function IconGhimTrang() {
+function IconGhimTrang({className}: {className?: string}) {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
+    <svg aria-hidden viewBox="0 0 24 24" className={className ?? "h-5 w-5"} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
       <path d="M7 3.5h10v17l-5-3.6-5 3.6Z" />
     </svg>
   );
 }
 const VIEC = [
-  {icon: IconFile, tieuDe: "Đọc ngay trong trang", moTa: "PDF dựng theo độ phân giải màn hình nên chữ nét. Vuốt để sang trang, chụm hai ngón để phóng to, khỏi cài app ngoài."},
-  {icon: IconCheck, tieuDe: "Đáp án mở riêng", moTa: "Làm xong hãy bấm sang đáp án. Lúc đang làm nó nằm im một chỗ, không hé lời giải ra trước."},
-  {icon: IconGhimTrang, tieuDe: "Ghim trang, ghi chú", moTa: "Sai câu nào thì ghim trang đó, viết một dòng vì sao sai.Everything lưu trong máy cậu, mở lại đúng trang đang đọc."},
-  {icon: IconSearch, tieuDe: "Tìm chữ trong đề", moTa: "Nhớ mang máng một cụm từ? Gõ vào, trang nào chứa nó sẽ được tô đỏ rồi nhảy tới đúng chỗ."}
+  {icon: IconFile, tieuDe: "Đọc ngay trong trang", moTa: "PDF dựng theo độ phân giải màn hình nên chữ nét. Vuốt sang trang, chụm hai ngón để phóng to, không phải cài thêm app."},
+  {icon: IconCheck, tieuDe: "Đáp án mở riêng", moTa: "Đang làm thì đáp án nằm im một chỗ. Làm xong mới bấm sang, khỏi lỡ mắt thấy lời giải."},
+  {icon: IconGhimTrang, tieuDe: "Ghim trang, ghi chú", moTa: "Sai câu nào thì ghim trang đó, ghi một dòng vì sao sai. Ghi chú nằm trong máy cậu, mở lại đúng trang đang đọc."},
+  {icon: IconSearch, tieuDe: "Tìm chữ trong đề", moTa: "Nhớ mang máng một cụm từ thì gõ vào, trang chứa nó được tô đỏ rồi nhảy tới đúng chỗ."}
 ];
 function DauKho() {
   return (
-    <motion.svg initial={{opacity: 0, scale: 1.5, rotate: 24}} animate={{opacity: 0.9, scale: 1, rotate: 10}} transition={{type: "spring", stiffness: 260, damping: 18, delay: 0.35}} viewBox="0 0 120 120" className="pointer-events-none absolute -bottom-7 -left-7 h-24 w-24 text-accent">
+    <motion.svg aria-hidden initial={{opacity: 0, scale: 1.5, rotate: 24}} animate={{opacity: 0.9, scale: 1, rotate: 10}} transition={{type: "spring", stiffness: 260, damping: 18, delay: 0.35}} viewBox="0 0 120 120" className="pointer-events-none absolute -bottom-6 -left-2 h-24 w-24 text-accent sm:-bottom-7 sm:-left-7">
       <defs>
         <path id="dethi-vong-kho" d="M60,60 m-43,0 a43,43 0 1,1 86,0 a43,43 0 1,1 -86,0" />
       </defs>
@@ -82,7 +82,7 @@ export default function TrangGioiThieu() {
   const mauCua = (mon: string) => MAU_NHOM[(NHOM_MON.find((n) => (n.mon as string[]).includes(mon))?.id ?? "khac") as NhomMon];
   const so = (n: number) => (dangTai ? "—" : String(n));
   return (
-    <div className="mx-auto w-full min-w-0 max-w-6xl px-4 pb-20 pt-8 sm:pt-12">
+    <div className="mx-auto w-full min-w-0 max-w-6xl overflow-x-clip px-4 pb-20 pt-8 sm:pt-12">
       <motion.section variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12">
         <motion.div variants={fadeInUp} className="min-w-0 lg:col-span-7">
           <div className="flex items-baseline justify-between gap-3 border-b border-ink/25 pb-2 text-[10px] uppercase tracking-[0.22em] text-ink-faint">
@@ -153,13 +153,13 @@ export default function TrangGioiThieu() {
         <div className="lg:col-span-3">
           <h2 className="font-display text-2xl font-bold leading-snug text-ink">Bốn việc hay dùng</h2>
           <span className="mt-2 block h-px w-16 bg-accent" />
-          <p className="mt-3 text-xs leading-relaxed text-ink-faint">Còn tải PDF với chấm sao, nhận xét thì nằm ngay trong trang đề.</p>
+          <p className="mt-3 text-xs leading-relaxed text-ink-faint">Tải PDF với chấm sao, nhận xét thì nằm ngay trong trang đề.</p>
         </div>
         <ol className="min-w-0 lg:col-span-9">
           {VIEC.map((v, i) => (
             <motion.li key={v.tieuDe} initial={{opacity: 0, x: -16}} whileInView={{opacity: 1, x: 0}} viewport={{once: true, margin: "-50px"}} transition={{duration: 0.36, ease: EASE, delay: i * 0.05}} className={`group flex gap-4 border-b border-dashed border-ink/20 py-5 first:pt-0 ${i % 2 === 1 ? "lg:ml-12" : ""}`}>
               <span className="grid h-11 w-11 shrink-0 place-items-center border border-ink/30 bg-paper-light text-ink transition-colors group-hover:border-accent group-hover:text-accent">
-                <v.icon />
+                <v.icon className="h-5 w-5" />
               </span>
               <div className="min-w-0">
                 <p className="flex items-baseline gap-2.5 font-display text-lg font-bold text-ink">
@@ -226,7 +226,7 @@ export default function TrangGioiThieu() {
             vuaLen.map((d, i) => (
               <motion.li key={d.id} initial={{opacity: 0, y: 14}} whileInView={{opacity: 1, y: 0}} viewport={{once: true, margin: "-40px"}} transition={{duration: 0.34, ease: EASE, delay: i * 0.06}} className={i % 2 === 1 ? "lg:ml-8" : ""}>
                 <Link href={`/de/${d.id}`} className={`group relative flex items-center gap-4 overflow-hidden border border-ink/20 border-l-4 bg-paper-light p-4 pl-5 shadow-paper transition-all duration-300 hover:translate-x-1 hover:border-accent/50 ${mauCua(d.mon)}`}>
-                  <span aria-hidden className="pointer-events-none absolute right-3 top-0 font-display text-6xl font-bold leading-none text-ink/10">{i + 1}</span>
+                  <span aria-hidden className="pointer-events-none absolute right-3 top-0 hidden font-display text-6xl font-bold leading-none text-ink/10 sm:block">{i + 1}</span>
                   <span className="grid h-10 w-10 shrink-0 place-items-center border border-ink/25 bg-paper text-ink transition-colors group-hover:border-accent group-hover:text-accent">
                     <MonIcon mon={d.mon} className="h-5 w-5" />
                   </span>
@@ -254,13 +254,17 @@ export default function TrangGioiThieu() {
             <IconSeal className="h-3.5 w-3.5 text-accent" />
             Thư của người gom đề
           </p>
-          <div className="mt-5 space-y-4 font-display text-[15px] italic leading-7 text-ink-soft sm:text-base sm:leading-8">
-            <p>Gửi cậu,</p>
-            <p>Hồi đầu mình ôn bằng một thư mục tên “de thi final FINAL”. Tải đề về, làm xong, rồi không nhớ đáp án nằm ở file nào. Kho này ra đời từ cái bực đó: đề một file, đáp án một file, môn nào ra môn đó.</p>
-            <p>Cách dùng mình thấy đỡ mất thời gian: làm trọn một đề rồi mới mở đáp án. Sai câu nào thì ghim trang đó, ghi một dòng vì sao sai. Cuối tuần đọc lại mấy dòng ấy, hơn là làm thêm đề mới rồi quên tiếp.</p>
-            <p>Đề ở đây không phải đề chuẩn của Bộ, cũng chẳng có ai chấm điểm hộ cậu. Nó chỉ là chỗ luyện tay cho quen. Sai ở nhà thì rẻ hơn sai trong phòng thi.</p>
-            <p>Thi cử rồi cũng đến lúc phải thi. Ngủ cho đủ, ăn đúng bữa, vào phòng làm như lúc luyện ở nhà. Thế là được.</p>
+          <div className="mt-5 space-y-4 font-display text-[15px] leading-7 text-ink-soft sm:text-base sm:leading-8">
+            <p className="first-letter:float-left first-letter:mr-2 first-letter:mt-1 first-letter:font-display first-letter:text-5xl first-letter:font-bold first-letter:leading-[0.8] first-letter:text-accent">
+              Kho này bắt đầu từ một thư mục tên “de thi final FINAL” trong máy mình. Bên trong là đề nhặt từ khắp nơi, file đáp án đặt tên kiểu “dap an (1).pdf”. Làm xong một đề là mất mười phút đi tìm đáp án của chính nó.
+            </p>
+            <p>Bực quá nên mình gom lại: đề một file, đáp án một file, môn nào ra môn đó. Rồi thêm chỗ ghi chú, vì mình hay sai một lỗi hai ba lần mà không nhớ lần trước sai ở đâu.</p>
+            <p>Cậu cứ làm trọn một đề rồi hãy mở đáp án. Sai câu nào thì ghim trang đó, ghi một dòng vì sao sai. Cuối tuần đọc lại mấy dòng đó.</p>
+            <p>Đề ở đây không phải đề chuẩn của Bộ, cũng chẳng có ai chấm điểm hộ cậu. Thỉnh thoảng vẫn lọt đề sai đáp án — cậu thấy thì viết vào ô nhận xét ngay dưới đề, mình duyệt tay nên có khi chậm vài tiếng mới hiện.</p>
+            <p>Lúc mình viết thư này mấy môn tự nhiên vẫn còn trống, đang đi xin thêm. Có tuần mình lười, chẳng tải đề nào, cậu đừng giận.</p>
+            <p>Thôi, cậu làm đề đi. Mình đi tìm thêm đề.</p>
           </div>
+          <p className="mt-4 font-display text-sm italic text-ink-faint">P.S. Đừng thức tới ba giờ sáng vì một đề. Mai làm tiếp, đề không chạy mất.</p>
           <div className="mt-7 flex flex-wrap items-end justify-between gap-4 border-t border-dashed border-ink/25 pt-5">
             <div>
               <p className="font-display text-xl font-bold italic text-ink">Anh Lusilfer</p>
