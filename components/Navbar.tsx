@@ -3,7 +3,7 @@ import {useEffect, useRef, useState} from "react";
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {AnimatePresence, motion, useScroll, useSpring} from "framer-motion";
-import {IconClose, IconSeal} from "@/components/Icons";
+import {IconClose, IconFile, IconSeal} from "@/components/Icons";
 import {useAuth} from "@/lib/auth";
 import {buttonTap, spring} from "@/lib/animations";
 const KHOA_THEME = "dethi.theme";
@@ -93,9 +93,10 @@ export default function Navbar() {
   const ten = hoSo?.ho_ten?.trim() || user?.email || "";
   const tu = ten.split(/\s+/).filter(Boolean);
   const vietTat = ten ? (tu.length > 1 ? `${tu[tu.length - 2][0] ?? ""}${tu[tu.length - 1][0] ?? ""}` : ten.slice(0, 2)).toUpperCase() : "?";
+  const khoDangMo = duong.startsWith("/kho-de") || duong.startsWith("/de/");
   const lienKet = [
     {href: "/", nhan: "Trang chủ", active: duong === "/"},
-    {href: "/kho-de", nhan: "Kho đề", active: duong.startsWith("/kho-de") || duong.startsWith("/de/")},
+    {href: "/kho-de", nhan: "Kho đề", active: khoDangMo},
     ...(isAdmin ? [{href: "/admin", nhan: "Quản trị", active: duong.startsWith("/admin")}] : []),
     {href: user ? "/tai-khoan" : "/login", nhan: user ? "Tài khoản" : "Đăng nhập", active: duong.startsWith("/tai-khoan") || duong.startsWith("/login")}
   ];
@@ -119,6 +120,9 @@ export default function Navbar() {
               </Link>
             ))}
           </nav>
+          <Link href="/kho-de" aria-label="Kho đề" title="Kho đề" className={`grid h-10 w-10 place-items-center border transition-colors sm:hidden ${khoDangMo ? "border-accent bg-accent-wash text-accent" : "border-ink/45 bg-paper-light text-ink hover:border-accent hover:text-accent"}`}>
+            <IconFile className="h-4 w-4" />
+          </Link>
           <motion.button ref={nutRef} whileTap={buttonTap} type="button" onClick={doiTheme} aria-label={toi ? "Chuyển nền sáng" : "Chuyển nền tối"} title={toi ? "Nền sáng" : "Nền tối"} className="grid h-10 w-10 place-items-center border border-ink/45 bg-paper-light text-ink transition-colors hover:border-accent hover:text-accent">
             <motion.span key={toi ? "sang" : "toi"} initial={{rotate: -120, opacity: 0, scale: 0.4}} animate={{rotate: 0, opacity: 1, scale: 1}} transition={{type: "spring", stiffness: 380, damping: 24, mass: 0.6}}>
               {toi ? <MatTroi /> : <MatTro />}
