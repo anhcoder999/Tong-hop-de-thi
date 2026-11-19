@@ -30,6 +30,14 @@ function GachMenu() {
     </svg>
   );
 }
+function IconButThi() {
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 20h16M6.5 16.5l9-9a2.1 2.1 0 0 1 3 3l-9 9H6.5Z" />
+      <path d="M13.5 6.5l3 3" />
+    </svg>
+  );
+}
 function datKieu(huong: "mo" | "dong", x: number, y: number, r: number) {
   let el = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
   if (!el) {
@@ -94,9 +102,11 @@ export default function Navbar() {
   const tu = ten.split(/\s+/).filter(Boolean);
   const vietTat = ten ? (tu.length > 1 ? `${tu[tu.length - 2][0] ?? ""}${tu[tu.length - 1][0] ?? ""}` : ten.slice(0, 2)).toUpperCase() : "?";
   const khoDangMo = duong.startsWith("/kho-de") || duong.startsWith("/de/");
+  const thiDangMo = duong.startsWith("/thi-thu");
   const lienKet = [
     {href: "/", nhan: "Trang chủ", active: duong === "/"},
     {href: "/kho-de", nhan: "Kho đề", active: khoDangMo},
+    {href: "/thi-thu", nhan: "Thi thử", active: thiDangMo},
     ...(isAdmin ? [{href: "/admin", nhan: "Quản trị", active: duong.startsWith("/admin")}] : []),
     {href: user ? "/tai-khoan" : "/login", nhan: user ? "Tài khoản" : "Đăng nhập", active: duong.startsWith("/tai-khoan") || duong.startsWith("/login")}
   ];
@@ -112,7 +122,7 @@ export default function Navbar() {
           </span>
         </Link>
         <div className="flex shrink-0 items-center gap-2">
-          <nav className="hidden items-center gap-4 sm:flex">
+          <nav className="hidden items-center gap-4 md:flex">
             {lienKet.map((l) => (
               <Link key={l.href} href={l.href} className={`group relative pb-0.5 text-xs font-semibold uppercase tracking-[0.12em] transition-colors ${l.active ? "text-accent" : "text-ink-soft hover:text-ink"}`}>
                 {l.nhan}
@@ -120,18 +130,21 @@ export default function Navbar() {
               </Link>
             ))}
           </nav>
-          <Link href="/kho-de" aria-label="Kho đề" title="Kho đề" className={`grid h-10 w-10 place-items-center border transition-colors sm:hidden ${khoDangMo ? "border-accent bg-accent-wash text-accent" : "border-ink/45 bg-paper-light text-ink hover:border-accent hover:text-accent"}`}>
+          <Link href="/kho-de" aria-label="Kho đề" title="Kho đề" className={`grid h-10 w-10 place-items-center border transition-colors md:hidden ${khoDangMo ? "border-accent bg-accent-wash text-accent" : "border-ink/45 bg-paper-light text-ink hover:border-accent hover:text-accent"}`}>
             <IconFile className="h-4 w-4" />
+          </Link>
+          <Link href="/thi-thu" aria-label="Thi thử" title="Thi thử" className={`grid h-10 w-10 place-items-center border transition-colors md:hidden ${thiDangMo ? "border-accent bg-accent-wash text-accent" : "border-ink/45 bg-paper-light text-ink hover:border-accent hover:text-accent"}`}>
+            <IconButThi />
           </Link>
           <motion.button ref={nutRef} whileTap={buttonTap} type="button" onClick={doiTheme} aria-label={toi ? "Chuyển nền sáng" : "Chuyển nền tối"} title={toi ? "Nền sáng" : "Nền tối"} className="grid h-10 w-10 place-items-center border border-ink/45 bg-paper-light text-ink transition-colors hover:border-accent hover:text-accent">
             <motion.span key={toi ? "sang" : "toi"} initial={{rotate: -120, opacity: 0, scale: 0.4}} animate={{rotate: 0, opacity: 1, scale: 1}} transition={{type: "spring", stiffness: 380, damping: 24, mass: 0.6}}>
               {toi ? <MatTroi /> : <MatTro />}
             </motion.span>
           </motion.button>
-          <Link href={user ? "/tai-khoan" : "/login"} title={ten || "Tài khoản"} className="hidden h-10 min-w-10 place-items-center border border-ink bg-ink px-2.5 font-display text-sm font-bold text-paper-light transition-colors hover:border-accent hover:bg-accent sm:grid">
+          <Link href={user ? "/tai-khoan" : "/login"} title={ten || "Tài khoản"} className="hidden h-10 min-w-10 place-items-center border border-ink bg-ink px-2.5 font-display text-sm font-bold text-paper-light transition-colors hover:border-accent hover:bg-accent md:grid">
             {vietTat}
           </Link>
-          <motion.button whileTap={buttonTap} type="button" onClick={() => setMo((v) => !v)} aria-label="Mở menu" aria-expanded={mo} className="grid h-10 w-10 place-items-center border border-ink/45 bg-paper-light text-ink transition-colors hover:border-accent hover:text-accent sm:hidden">
+          <motion.button whileTap={buttonTap} type="button" onClick={() => setMo((v) => !v)} aria-label="Mở menu" aria-expanded={mo} className="grid h-10 w-10 place-items-center border border-ink/45 bg-paper-light text-ink transition-colors hover:border-accent hover:text-accent md:hidden">
             {mo ? <IconClose className="h-4 w-4" /> : <GachMenu />}
           </motion.button>
         </div>
@@ -139,7 +152,7 @@ export default function Navbar() {
       <motion.div style={{scaleX: tienTrinh}} className="absolute inset-x-0 bottom-0 h-[2px] origin-left transform-gpu bg-gradient-to-r from-accent via-warn to-info" />
       <AnimatePresence>
         {mo && (
-          <motion.nav initial={{height: 0, opacity: 0}} animate={{height: "auto", opacity: 1}} exit={{height: 0, opacity: 0}} transition={spring} className="overflow-hidden border-t border-ink/20 bg-paper-light sm:hidden">
+          <motion.nav initial={{height: 0, opacity: 0}} animate={{height: "auto", opacity: 1}} exit={{height: 0, opacity: 0}} transition={spring} className="overflow-hidden border-t border-ink/20 bg-paper-light md:hidden">
             <div className="mx-auto flex w-full max-w-6xl flex-col px-4 py-2">
               {lienKet.map((l, i) => (
                 <motion.div key={l.href} initial={{opacity: 0, x: -14}} animate={{opacity: 1, x: 0}} transition={{...spring, delay: i * 0.05}}>
