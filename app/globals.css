@@ -136,17 +136,6 @@ body {
   animation: troiB 32s ease-in-out infinite alternate;
   will-change: transform;
 }
-@keyframes chayDoc {
-  from {transform: translate3d(0, 0, 0);}
-  to {transform: translate3d(-50%, 0, 0);}
-}
-.chay-doc {
-  animation: chayDoc 40s linear infinite;
-  will-change: transform;
-}
-.chay-doc:hover {
-  animation-play-state: paused;
-}
 @keyframes shimmer {
   from {transform: translate3d(-100%, 0, 0);}
   to {transform: translate3d(100%, 0, 0);}
@@ -201,23 +190,8 @@ body {
 .nut-nhan:active::before {
   animation: vetMuc 0.5s ease-out;
 }
-@keyframes xoayCham {
-  from {transform: rotate(0deg);}
-  to {transform: rotate(360deg);}
-}
-.xoay-cham {
-  animation: xoayCham 28s linear infinite;
-  will-change: transform;
-}
-@keyframes lacNhe {
-  0%, 100% {transform: rotate(-2deg);}
-  50% {transform: rotate(2deg);}
-}
-.lac-nhe {
-  animation: lacNhe 5s ease-in-out infinite;
-}
 @media (prefers-reduced-motion: reduce) {
-  .lop-troi, .lop-troi-2, .xoay-cham, .lac-nhe, .chay-doc, .shimmer {
+  .lop-troi, .lop-troi-2, .shimmer {
     animation: none;
   }
   .nut-quet:hover::after, .nut-nhan:active::before {
