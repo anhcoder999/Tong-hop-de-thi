@@ -28,8 +28,8 @@ export function hubClient(hub: Hub): SupabaseClient {
   cache.set(hub, client);
   return client;
 }
-export function authClient() {
-  const store = cookies();
+export async function authClient() {
+  const store = await cookies();
   return createServerClient(env("NEXT_PUBLIC_SUPABASE_URL_MAIN"), env("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY_MAIN"), {
     cookies: {
       getAll: () => store.getAll(),
@@ -42,7 +42,7 @@ export function authClient() {
   });
 }
 export async function adminUid(): Promise<string | null> {
-  const {data, error} = await authClient().auth.getClaims();
+  const {data, error} = await (await authClient()).auth.getClaims();
   const uid = data?.claims?.sub;
   if (error || !uid) return null;
   const {data: hoSo} = await hubClient("MAIN").from("profiles").select("role,banned").eq("id", uid).maybeSingle();
