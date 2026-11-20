@@ -2,15 +2,16 @@
 import {useEffect, useMemo, useState} from "react";
 import Link from "next/link";
 import {motion, useScroll, useTransform} from "framer-motion";
-import {IconArrowRight, IconCalendar, IconCheck, IconEye, IconFile, IconSearch, IconSeal, MonIcon} from "@/components/Icons";
+import {IconArrowRight, IconCalendar, IconCheck, IconEye, IconFile, IconSearch, MonIcon} from "@/components/Icons";
 import InkDraw from "@/components/InkDraw";
+import ThuNgo from "@/components/ThuNgo";
 import {DS_MON, formatNgay, MON_DAY_DU, type DeThi} from "@/lib/data";
 import {buttonTap, EASE, fadeInUp, spring, staggerContainer} from "@/lib/animations";
 import {useAuth} from "@/lib/auth";
 import {layDanhSach} from "@/lib/deThi";
-function IconGhimTrang({className}: {className?: string}) {
+function IconGhimTrang() {
   return (
-    <svg aria-hidden viewBox="0 0 24 24" className={className ?? "h-5 w-5"} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
+    <svg aria-hidden viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
       <path d="M7 3.5h10v17l-5-3.6-5 3.6Z" />
     </svg>
   );
@@ -30,7 +31,7 @@ function DauKho() {
       <circle cx="60" cy="60" r="47" fill="none" stroke="currentColor" strokeWidth="1.6" />
       <circle cx="60" cy="60" r="31" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
       <text fontSize="8.5" letterSpacing="2.4" fill="currentColor">
-        <textPath href="#dethi-vong-kho">KHO ĐỀ THPT · MIỄN PHÍ · KHÔNG QUẢNG CÁO ·</textPath>
+        <textPath href="#dethi-vong-kho">KHO DE THPT · MIEN PHI · KHONG QUANG CAO ·</textPath>
       </text>
       <text x="60" y="66" textAnchor="middle" fontSize="17" fontWeight="bold" fill="currentColor" fontFamily="serif">ĐT</text>
     </motion.svg>
@@ -71,15 +72,23 @@ export default function TrangGioiThieu() {
     }
     return {demMon, dapAn, xem, moiNhat};
   }, [ds]);
-  const vuaLen = useMemo(() => [...ds].sort((a, b) => b.ngay.localeCompare(a.ngay)).slice(0, 3), [ds]);
+  const vuaLen = useMemo(() => {
+    const sap = [...ds].sort((a, b) => b.ngay.localeCompare(a.ngay));
+    return sap.slice(0, 3);
+  }, [ds]);
   const so = (n: number) => (dangTai ? "—" : String(n));
+  const chiSo = [
+    {nhan: "có đáp án", giaTri: so(thongKe.dapAn)},
+    {nhan: "môn đã có", giaTri: so(thongKe.demMon.size) + "/" + DS_MON.length},
+    {nhan: "lượt xem", giaTri: so(thongKe.xem)}
+  ];
   return (
     <div className="mx-auto w-full min-w-0 max-w-6xl overflow-x-clip px-4 pb-16 pt-7 sm:pt-10">
       <motion.section variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 items-start gap-7 lg:grid-cols-12">
         <motion.div variants={fadeInUp} className="min-w-0 lg:col-span-7">
           <div className="flex items-baseline justify-between gap-3 border-b border-ink/25 pb-2 text-[10px] uppercase tracking-[0.22em] text-ink-faint">
             <span>Kho đề ôn thi tốt nghiệp THPT</span>
-            <span className="shrink-0 font-mono">{dangTai ? "đang đếm..." : thongKe.moiNhat ? `cập nhật ${formatNgay(thongKe.moiNhat)}` : "chưa có đề"}</span>
+            <span className="shrink-0 font-mono">{dangTai ? "đang đếm..." : thongKe.moiNhat ? "cập nhật " + formatNgay(thongKe.moiNhat) : "chưa có đề"}</span>
           </div>
           <h1 className="mt-4 font-display text-[2.4rem] font-bold leading-[1.06] tracking-tight text-ink sm:text-[3.4rem]">
             Đề thi THPT,
@@ -125,18 +134,14 @@ export default function TrangGioiThieu() {
               <span className="pb-1 text-xs uppercase tracking-[0.16em] text-ink-soft">đề trong kho</span>
             </div>
             <div className="mt-3 grid grid-cols-3 divide-x divide-dashed divide-ink/25">
-              {[
-                {nhan: "có đáp án", giaTri: so(thongKe.dapAn)},
-                {nhan: "môn đã có", giaTri: `${so(thongKe.demMon.size)}/${DS_MON.length}`},
-                {nhan: "lượt xem", giaTri: so(thongKe.xem)}
-              ].map((r) => (
+              {chiSo.map((r) => (
                 <div key={r.nhan} className="px-2 first:pl-0 last:pr-0">
                   <motion.p key={r.giaTri} initial={{y: 8, opacity: 0}} animate={{y: 0, opacity: 1}} transition={spring} className="font-display text-lg font-bold text-ink">{r.giaTri}</motion.p>
                   <p className="mt-0.5 text-[10px] uppercase tracking-[0.12em] text-ink-faint">{r.nhan}</p>
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-[11px] leading-relaxed text-ink-faint">{loi ? `Chưa đọc được số liệu: ${loi}.` : "Đếm thẳng từ kho, không làm tròn."}</p>
+            <p className="mt-3 text-[11px] leading-relaxed text-ink-faint">{loi ? "Chưa đọc được số liệu: " + loi + "." : "Đếm thẳng từ kho, không làm tròn."}</p>
             <DauKho />
           </div>
         </motion.aside>
@@ -157,7 +162,7 @@ export default function TrangGioiThieu() {
           {VIEC.map((v, i) => (
             <motion.li key={v.tieuDe} initial={{opacity: 0, x: -14}} whileInView={{opacity: 1, x: 0}} viewport={{once: true, margin: "-50px"}} transition={{duration: 0.34, ease: EASE, delay: i * 0.04}} className="group flex gap-3.5 border-b border-dashed border-ink/20 py-3.5 first:pt-0">
               <span className="grid h-10 w-10 shrink-0 place-items-center border border-ink/30 bg-paper-light text-ink transition-colors group-hover:border-accent group-hover:text-accent">
-                <v.icon className="h-[18px] w-[18px]" />
+                <v.icon />
               </span>
               <div className="min-w-0">
                 <p className="flex items-baseline gap-2 font-display text-base font-bold text-ink">
@@ -193,13 +198,16 @@ export default function TrangGioiThieu() {
                   )}
                 </>
               );
-              return soDe > 0 ? (
-                <motion.div key={m} initial={{opacity: 0}} whileInView={{opacity: 1}} viewport={{once: true}} transition={{duration: 0.28, delay: Math.min(i * 0.02, 0.2)}}>
-                  <Link href={`/kho-de?mon=${encodeURIComponent(m)}`} title={MON_DAY_DU[m]} className="group flex items-center gap-2 border-b border-ink/10 py-2 transition-colors hover:bg-accent-wash/40">
-                    {trong}
-                  </Link>
-                </motion.div>
-              ) : (
+              if (soDe > 0) {
+                return (
+                  <motion.div key={m} initial={{opacity: 0}} whileInView={{opacity: 1}} viewport={{once: true}} transition={{duration: 0.28, delay: Math.min(i * 0.02, 0.2)}}>
+                    <Link href={"/kho-de?mon=" + encodeURIComponent(m)} title={MON_DAY_DU[m]} className="group flex items-center gap-2 border-b border-ink/10 py-2 transition-colors hover:bg-accent-wash/40">
+                      {trong}
+                    </Link>
+                  </motion.div>
+                );
+              }
+              return (
                 <span key={m} title={MON_DAY_DU[m]} className="flex items-center gap-2 border-b border-ink/10 py-2 opacity-60">
                   {trong}
                 </span>
@@ -223,7 +231,7 @@ export default function TrangGioiThieu() {
             ) : (
               vuaLen.map((d, i) => (
                 <motion.li key={d.id} initial={{opacity: 0, y: 12}} whileInView={{opacity: 1, y: 0}} viewport={{once: true, margin: "-40px"}} transition={{duration: 0.32, ease: EASE, delay: i * 0.05}}>
-                  <Link href={`/de/${d.id}`} className="sheet group relative flex items-center gap-3 overflow-hidden p-3 pl-8 shadow-paper transition-all duration-300 hover:translate-x-1 hover:border-accent/60 hover:shadow-lift">
+                  <Link href={"/de/" + d.id} className="sheet group relative flex items-center gap-3 overflow-hidden p-3 pl-8 shadow-paper transition-all duration-300 hover:translate-x-1 hover:border-accent/60 hover:shadow-lift">
                     <span className="grid h-9 w-9 shrink-0 place-items-center border border-ink/30 bg-paper text-ink transition-all duration-300 group-hover:-rotate-3 group-hover:border-accent group-hover:text-accent">
                       <MonIcon mon={d.mon} className="h-4 w-4" />
                     </span>
@@ -231,4 +239,35 @@ export default function TrangGioiThieu() {
                       <span className="block truncate font-display text-sm font-bold text-ink">{d.ten}</span>
                       <span className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] uppercase tracking-[0.1em] text-ink-faint">
                         <span className="font-semibold text-accent">{d.mon}</span>
-                        <span className="flex items-center gap-1"><I
+                        <span className="flex items-center gap-1"><IconCalendar className="h-3 w-3" />{formatNgay(d.ngay)}</span>
+                        <span className="flex items-center gap-1"><IconEye className="h-3 w-3" />{d.luotXem ?? 0}</span>
+                        {d.dapAnDuongDan ? <span className="border border-ok/60 px-1 text-ok">đáp án</span> : <span className="border border-ink/20 px-1">chưa đáp án</span>}
+                        {d.ghimAt && <span className="border border-ink bg-ink px-1 text-paper-light">ghim</span>}
+                      </span>
+                    </span>
+                    <IconArrowRight className="relative h-4 w-4 shrink-0 text-ink-faint transition-transform duration-300 group-hover:translate-x-1 group-hover:text-accent" />
+                  </Link>
+                </motion.li>
+              ))
+            )}
+          </ul>
+        </motion.section>
+      </div>
+      <ThuNgo />
+      <motion.div initial={{opacity: 0}} whileInView={{opacity: 1}} viewport={{once: true}} transition={{duration: 0.4, ease: EASE}} className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t-2 border-ink pt-4">
+        <p className="max-w-xl font-display text-base italic text-ink-soft">Thư tới đây thôi. Cậu uống ngụm nước rồi mở mục lục, chọn môn đang yếu nhất mà luyện nhé.</p>
+        <div className="flex flex-wrap items-center gap-4">
+          <Link href="/kho-de" className="group flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.12em] text-accent underline-offset-4 hover:underline hover:decoration-wavy">
+            Vào kho đề
+            <IconArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+          </Link>
+          {!user && (
+            <Link href="/login" className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-faint underline-offset-4 transition-colors hover:text-ink hover:underline">
+              Đăng nhập
+            </Link>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
