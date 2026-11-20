@@ -1,7 +1,7 @@
 "use client";
 import {useEffect, useState} from "react";
 import Image from "next/image";
-import {AnimatePresence, motion} from "framer-motion";
+import {AnimatePresence, motion, type Variants} from "framer-motion";
 import {IconArrowRight, IconClose, IconExternal, IconSeal} from "@/components/Icons";
 import InkDraw from "@/components/InkDraw";
 import {useAuth} from "@/lib/auth";
@@ -9,7 +9,7 @@ import {supabase} from "@/lib/supabase";
 import {buttonTap} from "@/lib/animations";
 type TB = {id: string; noi_dung: string; url_anh: string};
 const GIAY_O = {backgroundImage: "linear-gradient(rgba(31,26,20,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(31,26,20,0.045) 1px, transparent 1px)", backgroundSize: "22px 22px"};
-const vaoNhanh = {
+const vaoNhanh: Variants = {
   hidden: {opacity: 0, y: 16},
   visible: {opacity: 1, y: 0, transition: {type: "spring", stiffness: 420, damping: 30, mass: 0.6}}
 };
