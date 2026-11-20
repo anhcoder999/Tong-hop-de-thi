@@ -8,7 +8,7 @@ import {chuanMon, formatDungLuong, formatNgay, MON_DAY_DU, tenNhom, type DeThi} 
 import {authClient, BUCKET, hubClient, hubCuaPath} from "@/lib/server";
 export const dynamic = "force-dynamic";
 interface Props {
-  params: {id: string};
+  params: Promise<{id: string}>;
 }
 async function layDe(id: string): Promise<DeThi | null> {
   if (!/^[0-9a-fA-F-]{8,}$/.test(id)) return null;
@@ -34,13 +34,15 @@ async function layDe(id: string): Promise<DeThi | null> {
   };
 }
 export async function generateMetadata({params}: Props): Promise<Metadata> {
-  const de = await layDe(params.id);
+  const {id} = await params;
+  const de = await layDe(id);
   if (!de) return {title: "Không tìm thấy đề"};
   const moTa = `Xem và tải ${de.ten} - môn ${MON_DAY_DU[de.mon]}${de.dapAnDuongDan ? ", kèm đáp án" : ""}, cập nhật ngày ${formatNgay(de.ngay)}.`;
   return {title: de.ten, description: moTa, openGraph: {title: de.ten, description: moTa, type: "article"}};
 }
 export default async function TrangXemDe({params}: Props) {
-  const {data, error} = await authClient().auth.getClaims();
+  const {id} = await params;
+  const {data, error} = await (await authClient()).auth.getClaims();
   if (error || !data?.claims) {
     return (
       <div className="mx-auto w-full min-w-0 max-w-xl px-4 pb-16 pt-16">
@@ -56,7 +58,7 @@ export default async function TrangXemDe({params}: Props) {
     );
   }
   const uid = String(data.claims.sub);
-  const [hoSo, de] = await Promise.all([hubClient("MAIN").from("profiles").select("banned").eq("id", uid).maybeSingle(), layDe(params.id)]);
+  const [hoSo, de] = await Promise.all([hubClient("MAIN").from("profiles").select("banned").eq("id", uid).maybeSingle(), layDe(id)]);
   if (hoSo.data?.banned) {
     return (
       <div className="mx-auto w-full min-w-0 max-w-xl px-4 pb-16 pt-16">
