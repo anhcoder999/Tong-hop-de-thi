@@ -2,11 +2,11 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import Link from "next/link";
 import {AnimatePresence, motion} from "framer-motion";
-import {IconAlert, IconCheck, IconClose, IconDownload, IconEdit, IconExternal, IconEye, IconFile, IconLoader, IconPlus, IconRefresh, IconSearch, IconSeal, IconSort, IconTrash, IconUndo, IconUpload, MonIcon} from "@/components/Icons";
+import {IconAlert, IconCheck, IconClose, IconDownload, IconEdit, IconExternal, IconEye, IconFile, IconLoader, IconPlus, IconRefresh, IconSearch, IconSort, IconTrash, IconUndo, IconUpload, MonIcon} from "@/components/Icons";
 import EmptyState from "@/components/EmptyState";
 import Skeleton from "@/components/Skeleton";
 import {formatDungLuong, formatNgay, homNay, khongDau, MON_DAY_DU, MON_SLUG, monTrongLoc, NHOM_MON, tenNhom, type DeThi, type Loc, type Mon} from "@/lib/data";
-import {buttonTap, EASE, fadeInUp, spring, staggerContainer} from "@/lib/animations";
+import {buttonTap, EASE, fadeInUp, spring} from "@/lib/animations";
 import {useHoverCapable} from "@/lib/useHover";
 import {useAuth} from "@/lib/auth";
 import {duoiFile, kiemTraTrung, layDanhSach, MAX_BYTES, suaDe, themDe, xoaDe} from "@/lib/deThi";
@@ -226,327 +226,294 @@ export default function AdminPanel() {
   const doiChon = (id: string) => setChon((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
   const chonHet = () => setChon(tatCaChon ? [] : hienThi.map((d) => d.id));
   return (
-    <div className="mx-auto w-full min-w-0 max-w-6xl overflow-x-clip px-4 pb-24 pt-8 sm:pt-10">
-      <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="w-full min-w-0">
-        <motion.header variants={fadeInUp} className="w-full border-b-2 border-ink pb-5">
-          <h1 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-            Trang <span className="text-accent">quản trị</span>
-          </h1>
-          <p className="mt-2 text-sm text-ink-soft">Đề và đáp án là hai file PDF riêng, tải lên riêng, lưu riêng thư mục. Cả hai đều tự nén trước khi gửi.</p>
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.12em] text-ink-faint">
-            <span className="flex items-center gap-1.5 border border-accent/70 px-2 py-0.5 text-accent">
-              <IconSeal className="h-3.5 w-3.5" />
-              Quản trị viên
-            </span>
-            <span className="max-w-[16rem] truncate">{hoSo?.ho_ten?.trim() || hoSo?.email || user?.email}</span>
+    <div className="mx-auto w-full min-w-0 max-w-6xl overflow-x-clip px-4 pb-16 pt-6">
+      <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="w-full min-w-0">
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-ink pb-3">
+          <div className="min-w-0">
+            <h1 className="font-display text-2xl font-bold tracking-tight text-ink">Đề PDF trong kho</h1>
+            <p className="mt-1 text-xs text-ink-soft">Đề và đáp án là hai file riêng, tự nén trước khi gửi, xếp vào thư mục theo môn.</p>
           </div>
-        </motion.header>
-        <motion.div variants={fadeInUp} className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {[
-            {nhan: "Tổng đề", giaTri: String(thongKe.tong)},
-            {nhan: "Đề có đáp án", giaTri: `${thongKe.dapAn}/${thongKe.tong}`},
-            {nhan: "Dung lượng", giaTri: formatDungLuong(thongKe.bytes)}
-          ].map((s) => (
-            <div key={s.nhan} className="border border-ink/25 bg-paper-light px-3 py-3 shadow-paper">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-ink-faint">{s.nhan}</p>
-              <p className="mt-1 font-display text-xl font-bold text-ink">{dangTai ? "—" : s.giaTri}</p>
+          <div className="flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-[0.1em] text-ink-faint">
+            <span className="border border-ink/25 bg-paper-light px-2 py-1">Tổng <b className="font-mono text-ink">{dangTai ? "—" : thongKe.tong}</b></span>
+            <span className="border border-ok/50 bg-ok/10 px-2 py-1 text-ok">Đáp án <b className="font-mono">{dangTai ? "—" : thongKe.dapAn}</b></span>
+            <span className="border border-ink/25 bg-paper-light px-2 py-1">Nặng <b className="font-mono text-ink">{dangTai ? "—" : formatDungLuong(thongKe.bytes)}</b></span>
+            <span className="max-w-[10rem] truncate border border-accent/50 bg-accent-wash px-2 py-1 text-accent">{hoSo?.ho_ten?.trim() || hoSo?.email || user?.email}</span>
+          </div>
+        </div>
+        <div className="mt-4 grid w-full min-w-0 grid-cols-1 gap-5 lg:grid-cols-5">
+          <motion.form ref={formRef} onSubmit={guiForm} className="h-fit min-w-0 scroll-mt-32 space-y-3 border border-ink/25 bg-paper-light p-4 shadow-paper lg:col-span-2">
+            <div className="flex items-center justify-between gap-2 border-b border-dashed border-ink/20 pb-2">
+              <h2 className="flex items-center gap-2 font-display text-base font-bold text-ink">
+                {editingId ? <IconEdit className="h-4 w-4 text-accent" /> : <IconUpload className="h-4 w-4 text-accent" />}
+                {editingId ? "Sửa đề" : "Tải đề mới"}
+              </h2>
+              {editingId && (
+                <button type="button" onClick={resetForm} className="flex items-center gap-1 border border-ink/30 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft transition-colors hover:border-accent hover:text-accent">
+                  <IconClose className="h-3 w-3" />
+                  Hủy
+                </button>
+              )}
             </div>
-          ))}
-        </motion.div>
-        <div className="mt-6 grid w-full min-w-0 grid-cols-1 gap-6 lg:grid-cols-5">
-          <motion.form ref={formRef} variants={fadeInUp} onSubmit={guiForm} className="h-fit min-w-0 scroll-mt-24 space-y-4 border border-ink/25 bg-paper-light p-5 shadow-paper lg:col-span-2">
-            <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink">
-              {editingId ? <IconEdit className="h-4 w-4 text-accent" /> : <IconUpload className="h-4 w-4 text-accent" />}
-              {editingId ? "Sửa đề và đáp án" : "Tải đề mới"}
-            </h2>
             <div className="min-w-0">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">Môn</span>
-              <div className="space-y-3">
-                {NHOM_MON.map((n) => (
-                  <div key={n.id}>
-                    <p className="mb-1.5 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-ink-faint">
-                      {n.ten}
-                      <span className="h-px flex-1 bg-ink/15" />
-                    </p>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {n.mon.map((m) => {
-                        const active = mon === m;
-                        return (
-                          <motion.button key={m} type="button" whileTap={buttonTap} onClick={() => setMon(m)} aria-pressed={active} title={MON_DAY_DU[m]} className={`flex flex-col items-center gap-1 border px-1 py-2 transition-colors ${active ? "border-accent bg-accent-wash text-accent shadow-stamp" : "border-ink/25 bg-paper text-ink-soft hover:border-ink/50 hover:text-ink"}`}>
-                            <MonIcon mon={m} className="h-4 w-4" />
-                            <span className="text-[11px] font-semibold uppercase tracking-[0.06em]">{m}</span>
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+              <div className="mb-1 flex items-baseline justify-between gap-2">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft">Môn</span>
+                <span className="truncate font-mono text-[10px] text-ink-faint">{MON_SLUG[mon]}</span>
               </div>
-              <p className="mt-2 text-[11px] text-ink-faint">
-                Đang chọn {MON_DAY_DU[mon]} · thư mục <span className="font-mono text-ink-soft">{MON_SLUG[mon]}</span> và <span className="font-mono text-ink-soft">{MON_SLUG[mon]}/dap-an</span>
-              </p>
-            </div>
-            <div className="min-w-0">
-              <label htmlFor="ten" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">Tên đề</label>
-              <input id="ten" type="text" value={ten} maxLength={160} onChange={(e) => setTen(e.target.value)} placeholder="VD: Đề thi thử tốt nghiệp 2026 - Lần 1" className="w-full min-w-0 border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent" />
-            </div>
-            <div className="min-w-0">
-              <label htmlFor="ngay" className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">Ngày đăng</label>
-              <input id="ngay" type="date" value={ngay} onChange={(e) => setNgay(e.target.value)} className="w-full min-w-0 border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none transition-colors focus:border-accent" />
-            </div>
-            <div className="min-w-0">
-              <span className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">
-                <IconFile className="h-3.5 w-3.5 text-accent" />
-                File đề (PDF)
-              </span>
-              <motion.label
-                htmlFor="tep"
-                whileHover={hover ? {scale: 1.01} : undefined}
-                transition={spring}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDangKeo(true);
-                }}
-                onDragLeave={() => setDangKeo(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDangKeo(false);
-                  nhanFile(e.dataTransfer.files?.[0], "de");
-                }}
-                className={`block min-w-0 cursor-pointer border-2 border-dashed p-5 text-center transition-colors duration-300 ${dangKeo ? "border-accent bg-accent-wash shadow-stamp" : "border-ink/40 bg-paper hover:border-accent hover:shadow-stamp"}`}
-              >
-                <motion.div animate={dangKeo ? {scale: 1.06} : {scale: 1}} transition={spring} className="flex flex-col items-center gap-2">
-                  <span className="grid h-11 w-11 place-items-center border border-ink bg-ink text-paper-light">
-                    <IconUpload className="h-5 w-5" />
-                  </span>
-                  {tep ? (
-                    <span className="flex max-w-full flex-col items-center gap-1">
-                      <span className="flex max-w-full items-center gap-1.5 text-sm font-semibold text-accent">
-                        <IconFile className="h-4 w-4 shrink-0" />
-                        <span className="truncate">{tep.name}</span>
-                      </span>
-                      <span className="text-[11px] uppercase tracking-[0.12em] text-ink-faint">{formatDungLuong(tep.size)}</span>
-                    </span>
-                  ) : (
-                    <span className="text-sm font-semibold text-ink">{editingId ? "Chọn file mới nếu muốn thay đề" : "Kéo thả PDF đề vào đây"}</span>
-                  )}
-                  <span className="text-xs text-ink-faint">tối đa 20MB · tự nén trước khi upload</span>
-                </motion.div>
-                <input ref={fileRef} id="tep" type="file" accept=".pdf,application/pdf" className="sr-only" onChange={(e) => {
-                  nhanFile(e.target.files?.[0], "de");
-                  e.target.value = "";
-                }} />
-              </motion.label>
-              {editingId && !tep && <p className="mt-2 border border-ink/25 bg-paper p-2.5 text-[11px] text-ink-soft">Giữ nguyên file đề cũ nếu không chọn file mới.</p>}
-            </div>
-            <div className="min-w-0">
-              <span className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-soft">
-                <IconCheck className="h-3.5 w-3.5 text-ok" />
-                File đáp án (PDF, tùy chọn)
-              </span>
-              <motion.label
-                htmlFor="tepdapan"
-                whileHover={hover ? {scale: 1.01} : undefined}
-                transition={spring}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDangKeoDa(true);
-                }}
-                onDragLeave={() => setDangKeoDa(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDangKeoDa(false);
-                  nhanFile(e.dataTransfer.files?.[0], "dapan");
-                }}
-                className={`block min-w-0 cursor-pointer border-2 border-dashed p-5 text-center transition-colors duration-300 ${dangKeoDa ? "border-ok bg-ok/10 shadow-stamp" : "border-ok/45 bg-paper hover:border-ok"}`}
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <span className="grid h-11 w-11 place-items-center border border-ok bg-ok/12 text-ok">
-                    <IconCheck className="h-5 w-5" />
-                  </span>
-                  {tepDapAn ? (
-                    <span className="flex max-w-full flex-col items-center gap-1">
-                      <span className="flex max-w-full items-center gap-1.5 text-sm font-semibold text-ok">
-                        <IconFile className="h-4 w-4 shrink-0" />
-                        <span className="truncate">{tepDapAn.name}</span>
-                      </span>
-                      <span className="text-[11px] uppercase tracking-[0.12em] text-ink-faint">{formatDungLuong(tepDapAn.size)}</span>
-                    </span>
-                  ) : (
-                    <span className="text-sm font-semibold text-ink">{deDangSua?.dapAnDuongDan && !xoaDapAn ? "Chọn file mới nếu muốn thay đáp án" : "Kéo thả PDF đáp án vào đây"}</span>
-                  )}
-                  <span className="text-xs text-ink-faint">đáp án lưu thư mục riêng · tối đa 20MB</span>
+              <div className="relative -mx-1 px-1">
+                <div className="no-scrollbar overflow-x-auto">
+                  <div className="flex w-max items-end gap-2.5">
+                    {NHOM_MON.map((n) => (
+                      <div key={n.id} className="flex flex-col gap-1 border-l border-dashed border-ink/20 pl-2.5 first:border-l-0 first:pl-0">
+                        <span className="text-[9px] uppercase tracking-[0.16em] text-ink-faint">{n.ten}</span>
+                        <div className="flex gap-1">
+                          {n.mon.map((m) => (
+                            <motion.button key={m} type="button" whileTap={buttonTap} onClick={() => setMon(m)} aria-pressed={mon === m} title={MON_DAY_DU[m]} className={`flex items-center gap-1.5 border px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] transition-colors ${mon === m ? "border-accent bg-accent-wash text-accent shadow-stamp" : "border-ink/25 bg-paper text-ink-soft hover:border-ink/50 hover:text-ink"}`}>
+                              <MonIcon mon={m} className="h-3.5 w-3.5" />
+                              {m}
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <input ref={dapAnRef} id="tepdapan" type="file" accept=".pdf,application/pdf" className="sr-only" onChange={(e) => {
-                  nhanFile(e.target.files?.[0], "dapan");
-                  e.target.value = "";
-                }} />
-              </motion.label>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-paper-light to-transparent" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <div className="min-w-0 sm:col-span-2">
+                <label htmlFor="ten" className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft">Tên đề</label>
+                <input id="ten" type="text" value={ten} maxLength={160} onChange={(e) => setTen(e.target.value)} placeholder="VD: KSCL 12 lần 1 - 2026" className="w-full min-w-0 border border-ink/30 bg-paper px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent" />
+              </div>
+              <div className="min-w-0">
+                <label htmlFor="ngay" className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft">Ngày đăng</label>
+                <input id="ngay" type="date" value={ngay} onChange={(e) => setNgay(e.target.value)} className="w-full min-w-0 border border-ink/30 bg-paper px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-accent" />
+              </div>
+            </div>
+            <motion.label
+              htmlFor="tep"
+              whileHover={hover ? {scale: 1.01} : undefined}
+              transition={spring}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDangKeo(true);
+              }}
+              onDragLeave={() => setDangKeo(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDangKeo(false);
+                nhanFile(e.dataTransfer.files?.[0], "de");
+              }}
+              className={`block min-w-0 cursor-pointer border-2 border-dashed p-3.5 text-center transition-colors duration-300 ${dangKeo ? "border-accent bg-accent-wash shadow-stamp" : "border-ink/40 bg-paper hover:border-accent"}`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center border border-ink bg-ink text-paper-light">
+                  <IconUpload className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1 text-left">
+                  <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft">File đề · PDF</span>
+                  {tep ? (
+                    <span className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-accent">
+                      <IconFile className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{tep.name}</span>
+                      <span className="shrink-0 font-mono text-[10px] text-ink-faint">{formatDungLuong(tep.size)}</span>
+                    </span>
+                  ) : (
+                    <span className="mt-0.5 block truncate text-xs text-ink-faint">{editingId ? "Chọn file mới nếu muốn thay đề" : "Kéo thả hoặc bấm để chọn · tối đa 20MB"}</span>
+                  )}
+                </span>
+              </div>
+              <input ref={fileRef} id="tep" type="file" accept=".pdf,application/pdf" className="sr-only" onChange={(e) => {
+                nhanFile(e.target.files?.[0], "de");
+                e.target.value = "";
+              }} />
+            </motion.label>
+            <motion.label
+              htmlFor="tepdapan"
+              whileHover={hover ? {scale: 1.01} : undefined}
+              transition={spring}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDangKeoDa(true);
+              }}
+              onDragLeave={() => setDangKeoDa(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDangKeoDa(false);
+                nhanFile(e.dataTransfer.files?.[0], "dapan");
+              }}
+              className={`block min-w-0 cursor-pointer border-2 border-dashed p-3.5 text-center transition-colors duration-300 ${dangKeoDa ? "border-ok bg-ok/10 shadow-stamp" : "border-ok/45 bg-paper hover:border-ok"}`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center border border-ok bg-ok/12 text-ok">
+                  <IconCheck className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1 text-left">
+                  <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-soft">File đáp án · tùy chọn</span>
+                  {tepDapAn ? (
+                    <span className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-ok">
+                      <IconFile className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{tepDapAn.name}</span>
+                      <span className="shrink-0 font-mono text-[10px] text-ink-faint">{formatDungLuong(tepDapAn.size)}</span>
+                    </span>
+                  ) : (
+                    <span className="mt-0.5 block truncate text-xs text-ink-faint">{deDangSua?.dapAnDuongDan && !xoaDapAn ? `Đang có đáp án · ${formatDungLuong(deDangSua.dapAnKichThuoc ?? null)}` : "Kéo thả hoặc bấm để chọn đáp án"}</span>
+                  )}
+                </span>
+              </div>
+              <input ref={dapAnRef} id="tepdapan" type="file" accept=".pdf,application/pdf" className="sr-only" onChange={(e) => {
+                nhanFile(e.target.files?.[0], "dapan");
+                e.target.value = "";
+              }} />
+            </motion.label>
+            {(tepDapAn || (editingId && deDangSua?.dapAnDuongDan)) && (
+              <div className="flex flex-wrap gap-1.5">
                 {tepDapAn && (
                   <button type="button" onClick={() => {
                     setTepDapAn(null);
                     if (dapAnRef.current) dapAnRef.current.value = "";
-                  }} className="flex items-center gap-1.5 border border-ink/40 bg-paper px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-soft transition-colors hover:border-accent hover:text-accent">
+                  }} className="flex items-center gap-1 border border-ink/30 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-soft transition-colors hover:border-accent hover:text-accent">
                     <IconClose className="h-3 w-3" />
-                    Bỏ file đáp án đã chọn
+                    Bỏ đáp án đã chọn
                   </button>
                 )}
                 {editingId && deDangSua?.dapAnDuongDan && !tepDapAn && (
-                  <button type="button" onClick={() => setXoaDapAn((v) => !v)} className={`flex items-center gap-1.5 border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] transition-colors ${xoaDapAn ? "border-danger bg-danger/12 text-danger" : "border-ink/40 bg-paper text-ink-soft hover:border-danger hover:text-danger"}`}>
+                  <button type="button" onClick={() => setXoaDapAn((v) => !v)} className={`flex items-center gap-1 border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] transition-colors ${xoaDapAn ? "border-danger bg-danger/12 text-danger" : "border-ink/30 text-ink-soft hover:border-danger hover:text-danger"}`}>
                     <IconTrash className="h-3 w-3" />
                     {xoaDapAn ? "Sẽ xóa đáp án cũ" : "Xóa đáp án cũ"}
                   </button>
                 )}
-                {editingId && deDangSua?.dapAnDuongDan && !xoaDapAn && !tepDapAn && <span className="text-[11px] uppercase tracking-[0.1em] text-ok">Đang có đáp án · {formatDungLuong(deDangSua.dapAnKichThuoc ?? null)}</span>}
               </div>
-            </div>
+            )}
             <AnimatePresence>
               {dangGui && (
                 <motion.div initial={{opacity: 0, height: 0}} animate={{opacity: 1, height: "auto"}} exit={{opacity: 0, height: 0}} className="overflow-hidden">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.1em] text-accent">
-                    <IconLoader className="h-3.5 w-3.5 animate-spin" />
+                  <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-accent">
+                    <IconLoader className="h-3 w-3 animate-spin" />
                     {giaiDoan || "Đang xử lý..."}
                   </div>
-                  <div className="mt-2 h-1 w-full overflow-hidden bg-ink/15">
+                  <div className="mt-1.5 h-1 w-full overflow-hidden bg-ink/15">
                     <motion.div animate={{x: ["-100%", "100%"]}} transition={{duration: 1.1, repeat: Infinity, ease: "linear"}} className="h-full w-1/2 bg-accent" />
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
-            <div className="flex gap-2.5">
-              <motion.button whileTap={buttonTap} type="submit" disabled={dangGui} className="flex flex-1 items-center justify-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50">
-                {dangGui ? <IconLoader className="h-4 w-4 animate-spin" /> : editingId ? <IconCheck className="h-4 w-4" /> : <IconPlus className="h-4 w-4" />}
-                {dangGui ? "Đang lưu" : editingId ? "Cập nhật" : "Tải lên kho"}
-              </motion.button>
-              {editingId && (
-                <motion.button whileTap={buttonTap} type="button" onClick={resetForm} className="flex items-center gap-1.5 border border-ink/40 bg-paper px-4 py-2.5 text-sm font-semibold text-ink-soft transition-colors active:bg-paper-deep hover:bg-paper-deep">
-                  <IconClose className="h-4 w-4" />
-                  Hủy
-                </motion.button>
-              )}
-            </div>
+            <motion.button whileTap={buttonTap} type="submit" disabled={dangGui} className="nut-nhan flex w-full items-center justify-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50">
+              {dangGui ? <IconLoader className="h-4 w-4 animate-spin" /> : editingId ? <IconCheck className="h-4 w-4" /> : <IconPlus className="h-4 w-4" />}
+              {dangGui ? "Đang lưu" : editingId ? "Cập nhật đề" : "Tải lên kho"}
+            </motion.button>
           </motion.form>
-          <motion.section variants={fadeInUp} className="min-w-0 lg:col-span-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="font-display text-lg font-bold text-ink">
-                Kho đề <span className="text-ink-faint">({hienThi.length}/{ds.length})</span>
+          <section className="min-w-0 lg:col-span-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-display text-base font-bold text-ink">
+                Danh sách <span className="font-mono text-xs text-ink-faint">{hienThi.length}/{ds.length}</span>
               </h2>
-              <motion.button whileTap={buttonTap} type="button" onClick={() => void tai()} className="flex items-center gap-1.5 border border-ink/30 bg-paper-light px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft transition-colors active:bg-accent-wash hover:border-accent hover:text-accent">
-                <IconRefresh className={`h-3.5 w-3.5 ${dangTai ? "animate-spin" : ""}`} />
+              <motion.button whileTap={buttonTap} type="button" onClick={() => void tai()} className="flex items-center gap-1.5 border border-ink/30 bg-paper-light px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft transition-colors hover:border-accent hover:text-accent">
+                <IconRefresh className={`h-3 w-3 ${dangTai ? "animate-spin" : ""}`} />
                 Tải lại
               </motion.button>
             </div>
-            <div className="mt-3 space-y-2.5">
-              <div className="group relative">
-                <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint transition-colors group-focus-within:text-accent" />
-                <input type="text" value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} placeholder="Tìm trong kho đề..." aria-label="Tìm trong kho đề" className="w-full border border-ink/30 bg-paper py-2.5 pl-9 pr-8 text-sm text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent" />
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-4">
+              <div className="group relative sm:col-span-2">
+                <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-faint transition-colors group-focus-within:text-accent" />
+                <input type="text" value={tuKhoa} onChange={(e) => setTuKhoa(e.target.value)} placeholder="Tìm trong kho..." aria-label="Tìm trong kho đề" className="w-full border border-ink/30 bg-paper py-2 pl-8 pr-7 text-xs text-ink outline-none transition-colors placeholder:text-ink-faint focus:border-accent" />
                 {tuKhoa && (
                   <button type="button" onClick={() => setTuKhoa("")} aria-label="Xóa từ khóa" className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-faint transition-colors hover:text-accent">
-                    <IconClose className="h-4 w-4" />
+                    <IconClose className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <select value={locMon} onChange={(e) => setLocMon(e.target.value as Loc)} aria-label="Lọc theo môn" className="min-w-0 border border-ink/30 bg-paper px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft outline-none focus:border-accent">
-                  <option value="Tất cả">Tất cả môn</option>
-                  {NHOM_MON.map((n) => (
-                    <optgroup key={n.id} label={n.ten}>
-                      <option value={n.id}>Cả nhóm {n.ten}</option>
-                      {n.mon.map((m) => (
-                        <option key={m} value={m}>{m} · {MON_DAY_DU[m]}</option>
-                      ))}
-                    </optgroup>
-                  ))}
+              <select value={locMon} onChange={(e) => setLocMon(e.target.value as Loc)} aria-label="Lọc theo môn" className="min-w-0 border border-ink/30 bg-paper px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-soft outline-none focus:border-accent">
+                <option value="Tất cả">Tất cả môn</option>
+                {NHOM_MON.map((n) => (
+                  <optgroup key={n.id} label={n.ten}>
+                    <option value={n.id}>Nhóm {n.ten}</option>
+                    {n.mon.map((m) => <option key={m} value={m}>{m}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+              <div className="flex items-center gap-1.5">
+                <IconSort className="h-3.5 w-3.5 shrink-0 text-ink-faint" />
+                <select value={sapXep} onChange={(e) => setSapXep(e.target.value as SapXep)} aria-label="Sắp xếp" className="min-w-0 flex-1 border border-ink/30 bg-paper px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-soft outline-none focus:border-accent">
+                  <option value="moi">Mới nhất</option>
+                  <option value="cu">Cũ nhất</option>
+                  <option value="ten">Theo tên</option>
                 </select>
-                <div className="flex items-center gap-2">
-                  <IconSort className="h-4 w-4 shrink-0 text-ink-faint" />
-                  <select value={sapXep} onChange={(e) => setSapXep(e.target.value as SapXep)} aria-label="Sắp xếp" className="min-w-0 flex-1 border border-ink/30 bg-paper px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft outline-none focus:border-accent">
-                    <option value="moi">Mới nhất</option>
-                    <option value="cu">Cũ nhất</option>
-                    <option value="ten">Theo tên</option>
-                  </select>
-                </div>
               </div>
-              {hienThi.length > 0 && (
-                <button type="button" onClick={chonHet} className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft transition-colors hover:text-accent">
-                  <span className={`grid h-4 w-4 place-items-center border ${tatCaChon ? "border-accent bg-accent text-paper-light" : "border-ink/40"}`}>
-                    {tatCaChon && <IconCheck className="h-3 w-3" />}
-                  </span>
-                  {tatCaChon ? "Bỏ chọn tất cả" : `Chọn tất cả ${hienThi.length} đề`}
-                </button>
-              )}
             </div>
+            {hienThi.length > 0 && (
+              <button type="button" onClick={chonHet} className="mt-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft transition-colors hover:text-accent">
+                <span className={`grid h-4 w-4 place-items-center border ${tatCaChon ? "border-accent bg-accent text-paper-light" : "border-ink/40"}`}>
+                  {tatCaChon && <IconCheck className="h-3 w-3" />}
+                </span>
+                {tatCaChon ? "Bỏ chọn tất cả" : `Chọn ${hienThi.length} đề đang lọc`}
+              </button>
+            )}
             {loiTai ? (
-              <div className="mt-4 border border-accent/50 bg-accent-wash p-4 text-sm text-accent-deep">
+              <div className="mt-3 border border-accent/50 bg-accent-wash p-3 text-xs text-accent-deep">
                 <p className="font-semibold">Không tải được kho đề</p>
-                <p className="mt-1 text-xs">{loiTai}</p>
+                <p className="mt-1">{loiTai}</p>
               </div>
             ) : dangTai ? (
-              <div className="mt-4 space-y-3">
-                {Array.from({length: 4}).map((_, i) => (
-                  <Skeleton key={i} className="h-20 w-full" />
-                ))}
+              <div className="mt-3 space-y-2">
+                {Array.from({length: 4}).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
               </div>
             ) : ds.length === 0 ? (
-              <div className="mt-4">
-                <EmptyState kieu="kho" tieuDe="Kho chưa có đề nào" moTa="Chọn môn theo từng nhóm ở form bên cạnh, tải file đề và file đáp án riêng rồi bấm tải lên kho." />
+              <div className="mt-3">
+                <EmptyState kieu="kho" tieuDe="Kho chưa có đề nào" moTa="Chọn môn ở form bên cạnh rồi tải đề đầu tiên. File lưu vĩnh viễn, không mất khi tải lại trang." />
               </div>
             ) : hienThi.length === 0 ? (
-              <div className="mt-4">
+              <div className="mt-3">
                 <EmptyState onReset={() => {
                   setTuKhoa("");
                   setLocMon("Tất cả");
                 }} />
               </div>
             ) : (
-              <ul className="mt-4 min-w-0 space-y-3">
-                <AnimatePresence initial={false}>
-                  {hienThi.map((d, i) => (
-                    <motion.li
-                      key={d.id}
-                      layout="position"
-                      initial={{opacity: 0, x: -20}}
-                      animate={{opacity: 1, x: 0}}
-                      exit={{opacity: 0, x: 24, transition: {duration: 0.2, ease: EASE}}}
-                      transition={{duration: 0.3, ease: EASE, delay: Math.min(i * 0.03, 0.3)}}
-                      className={`sheet flex min-w-0 items-center gap-2.5 p-4 pl-8 shadow-paper transition-colors ${chon.includes(d.id) ? "border-accent/70 bg-accent-wash/40" : ""}`}
-                    >
-                      <button type="button" onClick={() => doiChon(d.id)} aria-label="Chọn đề" className={`grid h-5 w-5 shrink-0 place-items-center border transition-colors ${chon.includes(d.id) ? "border-accent bg-accent text-paper-light" : "border-ink/40 text-transparent hover:border-accent"}`}>
-                        <IconCheck className="h-3 w-3" />
-                      </button>
-                      <span title={MON_DAY_DU[d.mon]} className="grid h-10 w-10 shrink-0 place-items-center border border-ink/30 bg-paper text-ink">
-                        <MonIcon mon={d.mon} className="h-5 w-5" />
-                      </span>
-                      <button type="button" onClick={() => setChiTiet(d)} className="min-w-0 flex-1 text-left">
-                        <p className="truncate text-sm font-semibold text-ink">{d.ten}</p>
-                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] uppercase tracking-[0.1em] text-ink-faint">
-                          <span className="font-semibold text-accent">{d.mon}</span>
-                          <span>{formatNgay(d.ngay)}</span>
-                          <span>{formatDungLuong(d.kichThuoc)}</span>
-                          {d.dapAnDuongDan ? <span className="border border-ok/60 px-1 text-ok">Đáp án</span> : <span className="border border-ink/25 px-1">Chưa đáp án</span>}
-                        </p>
-                      </button>
-                      <Link href={`/de/${d.id}`} aria-label="Xem đề" className="shrink-0 border border-transparent p-1.5 text-ink-faint transition-colors hover:border-ink/30 hover:text-ink">
-                        <IconEye className="h-4 w-4" />
-                      </Link>
-                      <motion.button whileTap={buttonTap} type="button" onClick={() => sua(d)} aria-label="Sửa đề" className="shrink-0 border border-transparent p-1.5 text-ink transition-colors hover:border-accent hover:text-accent">
-                        <IconEdit className="h-4 w-4" />
-                      </motion.button>
-                      <motion.button whileTap={buttonTap} type="button" onClick={() => yeuCauXoa([d])} aria-label="Xóa đề" className="shrink-0 border border-transparent p-1.5 text-accent transition-colors hover:border-accent hover:bg-accent-wash">
-                        <IconTrash className="h-4 w-4" />
-                      </motion.button>
-                    </motion.li>
-                  ))}
-                </AnimatePresence>
-              </ul>
+              <>
+                <div className="viewer-scroll mt-3 max-h-[54vh] min-h-[12rem] overflow-y-auto border border-ink/15 bg-paper/40 p-2">
+                  <ul className="space-y-2">
+                    <AnimatePresence initial={false}>
+                      {hienThi.map((d) => (
+                        <motion.li key={d.id} layout="position" initial={{opacity: 0, x: -14}} animate={{opacity: 1, x: 0}} exit={{opacity: 0, x: 20, transition: {duration: 0.18, ease: EASE}}} transition={{duration: 0.24, ease: EASE}} className={`flex min-w-0 items-center gap-2 border bg-paper-light p-2.5 transition-colors ${chon.includes(d.id) ? "border-accent/70 bg-accent-wash/40" : "border-ink/20"}`}>
+                          <button type="button" onClick={() => doiChon(d.id)} aria-label="Chọn đề" className={`grid h-4 w-4 shrink-0 place-items-center border transition-colors ${chon.includes(d.id) ? "border-accent bg-accent text-paper-light" : "border-ink/40 text-transparent hover:border-accent"}`}>
+                            <IconCheck className="h-2.5 w-2.5" />
+                          </button>
+                          <span title={MON_DAY_DU[d.mon]} className="grid h-8 w-8 shrink-0 place-items-center border border-ink/25 bg-paper text-ink">
+                            <MonIcon mon={d.mon} className="h-4 w-4" />
+                          </span>
+                          <button type="button" onClick={() => setChiTiet(d)} className="min-w-0 flex-1 text-left">
+                            <p className="truncate text-xs font-semibold text-ink">{d.ten}</p>
+                            <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[10px] uppercase tracking-[0.08em] text-ink-faint">
+                              <span className="font-semibold text-accent">{d.mon}</span>
+                              <span>{formatNgay(d.ngay)}</span>
+                              <span className="font-mono">{formatDungLuong(d.kichThuoc)}</span>
+                              {d.dapAnDuongDan ? <span className="border border-ok/60 px-1 text-ok">ĐA</span> : <span className="border border-ink/25 px-1">—</span>}
+                            </p>
+                          </button>
+                          <Link href={`/de/${d.id}`} aria-label="Xem đề" className="shrink-0 p-1 text-ink-faint transition-colors hover:text-ink">
+                            <IconEye className="h-3.5 w-3.5" />
+                          </Link>
+                          <motion.button whileTap={buttonTap} type="button" onClick={() => sua(d)} aria-label="Sửa đề" className="shrink-0 p-1 text-ink transition-colors hover:text-accent">
+                            <IconEdit className="h-3.5 w-3.5" />
+                          </motion.button>
+                          <motion.button whileTap={buttonTap} type="button" onClick={() => yeuCauXoa([d])} aria-label="Xóa đề" className="shrink-0 p-1 text-accent transition-colors hover:text-accent-deep">
+                            <IconTrash className="h-3.5 w-3.5" />
+                          </motion.button>
+                        </motion.li>
+                      ))}
+                    </AnimatePresence>
+                  </ul>
+                </div>
+                <p className="mt-1.5 text-[10px] uppercase tracking-[0.12em] text-ink-faint">Khung cuộn riêng · đang hiện {hienThi.length} trên {ds.length} đề</p>
+              </>
             )}
-          </motion.section>
+          </section>
         </div>
       </motion.div>
       <AnimatePresence>
         {bao && (
-          <motion.div initial={{opacity: 0, y: 20}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: 20}} className={`fixed inset-x-4 bottom-4 z-[60] mx-auto flex max-w-lg items-start gap-2.5 border p-3.5 text-sm shadow-lift ${bao.kieu === "loi" ? "border-accent bg-accent-wash text-accent-deep" : "border-ink bg-ink text-paper-light"}`}>
+          <motion.div initial={{opacity: 0, y: 20}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: 20}} className={`fixed inset-x-4 bottom-4 z-[60] mx-auto flex max-w-lg items-start gap-2.5 border p-3 text-sm shadow-lift ${bao.kieu === "loi" ? "border-accent bg-accent-wash text-accent-deep" : "border-ink bg-ink text-paper-light"}`}>
             {bao.kieu === "loi" ? <IconAlert className="mt-0.5 h-4 w-4 shrink-0" /> : <IconCheck className="mt-0.5 h-4 w-4 shrink-0" />}
             <p className="min-w-0 flex-1">{bao.text}</p>
             <button type="button" onClick={() => setBao(null)} aria-label="Đóng thông báo" className="shrink-0 opacity-70 transition-opacity hover:opacity-100">
@@ -557,12 +524,12 @@ export default function AdminPanel() {
       </AnimatePresence>
       <AnimatePresence>
         {chon.length > 0 && (
-          <motion.div initial={{opacity: 0, y: 24}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: 24}} className="fixed inset-x-4 bottom-4 z-[55] mx-auto flex max-w-lg items-center gap-3 border border-ink bg-paper-light p-3 shadow-lift">
-            <span className="grid h-8 w-8 shrink-0 place-items-center border border-accent bg-accent-wash font-display text-sm font-bold text-accent">{chon.length}</span>
-            <p className="min-w-0 flex-1 text-xs uppercase tracking-[0.1em] text-ink-soft">đề đang chọn</p>
-            <motion.button whileTap={buttonTap} type="button" onClick={() => setChon([])} className="border border-ink/40 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-ink-soft transition-colors hover:bg-paper-deep">Bỏ chọn</motion.button>
-            <motion.button whileTap={buttonTap} type="button" onClick={() => yeuCauXoa(ds.filter((d) => chon.includes(d.id)))} className="flex items-center gap-1.5 border border-accent bg-accent px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:bg-accent-deep">
-              <IconTrash className="h-3.5 w-3.5" />
+          <motion.div initial={{opacity: 0, y: 24}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: 24}} className="fixed inset-x-4 bottom-4 z-[55] mx-auto flex max-w-lg items-center gap-3 border border-ink bg-paper-light p-2.5 shadow-lift">
+            <span className="grid h-7 w-7 shrink-0 place-items-center border border-accent bg-accent-wash font-display text-xs font-bold text-accent">{chon.length}</span>
+            <p className="min-w-0 flex-1 text-[10px] uppercase tracking-[0.1em] text-ink-soft">đề đang chọn</p>
+            <motion.button whileTap={buttonTap} type="button" onClick={() => setChon([])} className="border border-ink/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-soft transition-colors hover:bg-paper-deep">Bỏ chọn</motion.button>
+            <motion.button whileTap={buttonTap} type="button" onClick={() => yeuCauXoa(ds.filter((d) => chon.includes(d.id)))} className="flex items-center gap-1.5 border border-accent bg-accent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:bg-accent-deep">
+              <IconTrash className="h-3 w-3" />
               Xóa
             </motion.button>
           </motion.div>
@@ -571,13 +538,11 @@ export default function AdminPanel() {
       <AnimatePresence>
         {choXoa.length > 0 && (
           <motion.div initial={{opacity: 0, y: 24}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: 24}} transition={spring} className="fixed inset-x-4 bottom-4 z-[70] mx-auto max-w-lg border-2 border-accent bg-paper-light shadow-lift">
-            <div className="flex items-center gap-3 p-3.5">
+            <div className="flex items-center gap-3 p-3">
               <IconTrash className="h-4 w-4 shrink-0 text-accent" />
-              <p className="min-w-0 flex-1 text-sm text-ink">
-                Đang chờ xóa <b>{choXoa.length}</b> đề, đáp án và file trong kho.
-              </p>
-              <motion.button whileTap={buttonTap} type="button" onClick={hoanTac} className="flex shrink-0 items-center gap-1.5 border border-ink bg-ink px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent">
-                <IconUndo className="h-3.5 w-3.5" />
+              <p className="min-w-0 flex-1 text-sm text-ink">Đang chờ xóa <b>{choXoa.length}</b> đề và file.</p>
+              <motion.button whileTap={buttonTap} type="button" onClick={hoanTac} className="flex shrink-0 items-center gap-1.5 border border-ink bg-ink px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent">
+                <IconUndo className="h-3 w-3" />
                 Hoàn tác
               </motion.button>
             </div>
@@ -590,26 +555,26 @@ export default function AdminPanel() {
           <>
             <motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} onClick={() => setChiTiet(null)} className="fixed inset-0 z-[80] bg-ink/45 backdrop-blur-sm" />
             <motion.aside initial={{x: "100%"}} animate={{x: 0}} exit={{x: "100%"}} transition={spring} className="viewer-scroll fixed right-0 top-0 z-[81] flex h-full w-full max-w-md flex-col overflow-y-auto border-l-2 border-ink bg-paper shadow-lift">
-              <div className="flex items-start justify-between gap-3 border-b-2 border-ink p-5">
+              <div className="sticky top-0 flex items-start justify-between gap-3 border-b-2 border-ink bg-paper p-4">
                 <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-ink-faint">Chi tiết đề</p>
-                  <h3 className="mt-1 font-display text-xl font-bold leading-snug text-ink">{chiTiet.ten}</h3>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-ink-faint">Chi tiết đề</p>
+                  <h3 className="mt-1 font-display text-lg font-bold leading-snug text-ink">{chiTiet.ten}</h3>
                 </div>
-                <button type="button" onClick={() => setChiTiet(null)} aria-label="Đóng" className="shrink-0 border border-ink/40 p-2 text-ink-soft transition-colors hover:border-accent hover:text-accent">
+                <button type="button" onClick={() => setChiTiet(null)} aria-label="Đóng" className="shrink-0 border border-ink/40 p-1.5 text-ink-soft transition-colors hover:border-accent hover:text-accent">
                   <IconClose className="h-4 w-4" />
                 </button>
               </div>
-              <div className="flex-1 space-y-4 p-5">
+              <div className="flex-1 space-y-4 p-4">
                 <div className="flex items-center gap-3">
-                  <span className="grid h-14 w-14 shrink-0 place-items-center border-2 border-ink bg-paper-light text-accent shadow-stamp">
-                    <MonIcon mon={chiTiet.mon} className="h-7 w-7" />
+                  <span className="grid h-12 w-12 shrink-0 place-items-center border-2 border-ink bg-paper-light text-accent shadow-stamp">
+                    <MonIcon mon={chiTiet.mon} className="h-6 w-6" />
                   </span>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-block -rotate-2 border border-accent/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">{chiTiet.mon}</span>
+                      <span className="-rotate-2 border border-accent/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent">{chiTiet.mon}</span>
                       <span className="text-[10px] uppercase tracking-[0.16em] text-ink-faint">{tenNhom(chiTiet.mon)}</span>
                     </div>
-                    <p className="mt-1.5 text-sm text-ink-soft">{MON_DAY_DU[chiTiet.mon]}</p>
+                    <p className="mt-1 text-sm text-ink-soft">{MON_DAY_DU[chiTiet.mon]}</p>
                   </div>
                 </div>
                 <dl className="border-t border-dashed border-ink/25">
@@ -624,45 +589,45 @@ export default function AdminPanel() {
                     {nhan: "Đường dẫn đề", giaTri: chiTiet.duongDan ?? "—"},
                     {nhan: "Đường dẫn đáp án", giaTri: chiTiet.dapAnDuongDan ?? "—"}
                   ].map((r) => (
-                    <div key={r.nhan} className="flex items-start justify-between gap-3 border-b border-dashed border-ink/20 py-2.5">
-                      <dt className="shrink-0 text-xs uppercase tracking-[0.12em] text-ink-faint">{r.nhan}</dt>
-                      <dd className="min-w-0 break-all text-right text-sm font-semibold text-ink">{r.giaTri}</dd>
+                    <div key={r.nhan} className="flex items-start justify-between gap-3 border-b border-dashed border-ink/20 py-2">
+                      <dt className="shrink-0 text-[10px] uppercase tracking-[0.12em] text-ink-faint">{r.nhan}</dt>
+                      <dd className="min-w-0 break-all text-right text-xs font-semibold text-ink">{r.giaTri}</dd>
                     </div>
                   ))}
                 </dl>
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-2">
                   <Link href={`/de/${chiTiet.id}`}>
-                    <motion.span whileTap={buttonTap} className="flex items-center justify-center gap-2 border border-ink bg-ink px-3 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent">
-                      <IconEye className="h-4 w-4" />
+                    <motion.span whileTap={buttonTap} className="flex items-center justify-center gap-2 border border-ink bg-ink px-3 py-2 text-xs font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent">
+                      <IconEye className="h-3.5 w-3.5" />
                       Xem đề
                     </motion.span>
                   </Link>
-                  <motion.a whileTap={buttonTap} href={chiTiet.urlPdf} download={`${chiTiet.ten}.pdf`} className="flex items-center justify-center gap-2 border border-ink bg-paper-light px-3 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-paper">
-                    <IconDownload className="h-4 w-4" />
+                  <motion.a whileTap={buttonTap} href={chiTiet.urlPdf} download={`${chiTiet.ten}.pdf`} className="flex items-center justify-center gap-2 border border-ink bg-paper-light px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-paper">
+                    <IconDownload className="h-3.5 w-3.5" />
                     Tải đề
                   </motion.a>
                   {chiTiet.urlDapAn ? (
-                    <motion.a whileTap={buttonTap} href={chiTiet.urlDapAn} download={`${chiTiet.ten}-dap-an.pdf`} className="flex items-center justify-center gap-2 border border-ok bg-ok/12 px-3 py-2.5 text-sm font-semibold text-ok transition-colors hover:bg-ok hover:text-paper-light">
-                      <IconDownload className="h-4 w-4" />
+                    <motion.a whileTap={buttonTap} href={chiTiet.urlDapAn} download={`${chiTiet.ten}-dap-an.pdf`} className="flex items-center justify-center gap-2 border border-ok bg-ok/12 px-3 py-2 text-xs font-semibold text-ok transition-colors hover:bg-ok hover:text-paper-light">
+                      <IconDownload className="h-3.5 w-3.5" />
                       Tải đáp án
                     </motion.a>
                   ) : (
-                    <motion.button whileTap={buttonTap} type="button" onClick={() => sua(chiTiet)} className="flex items-center justify-center gap-2 border border-ok/50 bg-paper px-3 py-2.5 text-sm font-semibold text-ok transition-colors hover:bg-ok/10">
-                      <IconPlus className="h-4 w-4" />
+                    <motion.button whileTap={buttonTap} type="button" onClick={() => sua(chiTiet)} className="flex items-center justify-center gap-2 border border-ok/50 bg-paper px-3 py-2 text-xs font-semibold text-ok transition-colors hover:bg-ok/10">
+                      <IconPlus className="h-3.5 w-3.5" />
                       Thêm đáp án
                     </motion.button>
                   )}
-                  <motion.a whileTap={buttonTap} href={chiTiet.urlDapAn ?? chiTiet.urlPdf} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 border border-ink/40 bg-paper px-3 py-2.5 text-sm font-semibold text-ink-soft transition-colors hover:bg-paper-deep">
-                    <IconExternal className="h-4 w-4" />
+                  <motion.a whileTap={buttonTap} href={chiTiet.urlDapAn ?? chiTiet.urlPdf} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 border border-ink/40 bg-paper px-3 py-2 text-xs font-semibold text-ink-soft transition-colors hover:bg-paper-deep">
+                    <IconExternal className="h-3.5 w-3.5" />
                     Mở kho
                   </motion.a>
                 </div>
-                <motion.button whileTap={buttonTap} type="button" onClick={() => sua(chiTiet)} className="flex w-full items-center justify-center gap-2 border border-accent bg-accent-wash px-4 py-2.5 text-sm font-semibold text-accent-deep transition-colors hover:bg-accent hover:text-paper-light">
-                  <IconEdit className="h-4 w-4" />
+                <motion.button whileTap={buttonTap} type="button" onClick={() => sua(chiTiet)} className="flex w-full items-center justify-center gap-2 border border-accent bg-accent-wash px-4 py-2 text-xs font-semibold text-accent-deep transition-colors hover:bg-accent hover:text-paper-light">
+                  <IconEdit className="h-3.5 w-3.5" />
                   Sửa đề và đáp án
                 </motion.button>
-                <motion.button whileTap={buttonTap} type="button" onClick={() => yeuCauXoa([chiTiet])} className="flex w-full items-center justify-center gap-2 border border-accent bg-accent px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:bg-accent-deep">
-                  <IconTrash className="h-4 w-4" />
+                <motion.button whileTap={buttonTap} type="button" onClick={() => yeuCauXoa([chiTiet])} className="flex w-full items-center justify-center gap-2 border border-accent bg-accent px-4 py-2 text-xs font-semibold text-paper-light transition-colors hover:bg-accent-deep">
+                  <IconTrash className="h-3.5 w-3.5" />
                   Xóa đề, đáp án và file
                 </motion.button>
               </div>
