@@ -1,5 +1,5 @@
 "use client";
-import {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {use, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
 import {AnimatePresence, motion} from "framer-motion";
@@ -70,7 +70,8 @@ function XemLai({c}: {c: KetQuaCau}) {
     </li>
   );
 }
-export default function PhongThiPage({params}: {params: {id: string}}) {
+export default function PhongThiPage({params}: {params: Promise<{id: string}>}) {
+  const {id} = use(params);
   const router = useRouter();
   const [giaiDoan, setGiaiDoan] = useState<"dangTai" | "dangLam" | "ketQua" | "loi">("dangTai");
   const [phong, setPhong] = useState<Phong | null>(null);
@@ -101,9 +102,9 @@ export default function PhongThiPage({params}: {params: {id: string}}) {
         setGiaiDoan("ketQua");
         return;
       }
-      router.replace(`/thi-thu/${params.id}`);
+      router.replace(`/thi-thu/${id}`);
     }
-    const kq = await batDauThi(params.id);
+    const kq = await batDauThi(id);
     if (!kq.ok) {
       setLoi(kq.error);
       setGiaiDoan("loi");
@@ -116,7 +117,7 @@ export default function PhongThiPage({params}: {params: {id: string}}) {
     setIdx(0);
     setConLai(Math.max(0, Math.round((new Date(kq.hanNop).getTime() - Date.now()) / 1000)));
     setGiaiDoan("dangLam");
-  }, [params.id, router]);
+  }, [id, router]);
   useEffect(() => {
     void moPhong();
   }, [moPhong]);
@@ -198,7 +199,7 @@ export default function PhongThiPage({params}: {params: {id: string}}) {
       window.removeEventListener("blur", matTieuDiem);
     };
   }, [giaiDoan]);
-  const cau = phong?.cau ?? [];
+  const cau = useMemo(() => phong?.cau ?? [], [phong]);
   const cauHien = cau[idx];
   const soDaLam = useMemo(() => cau.filter((c) => {
     const v = traLoi[c.id];
@@ -213,7 +214,7 @@ export default function PhongThiPage({params}: {params: {id: string}}) {
     return moi;
   });
   const lamLai = () => {
-    router.replace(`/thi-thu/${params.id}`);
+    router.replace(`/thi-thu/${id}`);
     setPhong(null);
     void moPhong();
   };
