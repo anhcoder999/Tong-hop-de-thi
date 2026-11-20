@@ -266,10 +266,10 @@ export async function layBinhLuanAdmin(): Promise<{ok: true; ds: BinhLuanAdminRo
   }
   return {ok: true, ds: rows.map((o) => ({id: String(o.id), ten_nguoi: String(o.ten_nguoi), noi_dung: String(o.noi_dung), created_at: String(o.created_at), duyet: !!o.duyet, cuaToi: false, de_ten: String(o.de_thi?.ten ?? "Đề đã xóa"), email: email.get(String(o.user_id)) ?? ""}))};
 }
-export async function doiAnBinhLuan(id: string, an: boolean): Promise<KetQua> {
+export async function doiAnBinhLuan(id: string, hien: boolean): Promise<KetQua> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
-  const {error} = await main().from("binh_luan").update({duyet: !an}).eq("id", id);
+  const {error} = await main().from("binh_luan").update({duyet: hien}).eq("id", id);
   return error ? {ok: false, error: error.message} : {ok: true};
 }
 export async function xoaBinhLuan(id: string): Promise<KetQua> {
