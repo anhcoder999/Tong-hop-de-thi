@@ -1,14 +1,13 @@
 "use client";
-import {use, useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {use, useEffect, useMemo} from "react";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
 import {AnimatePresence, motion} from "framer-motion";
 import {IconAlert, IconArrowLeft, IconArrowRight, IconCheck, IconClose, IconLoader, IconSeal} from "@/components/Icons";
 import Latex from "@/components/Latex";
-import {batDauThi, ghiNhanThoat, layKetQua, luuNhap, nopBai, type PhongThi} from "@/app/thi-thu/actions";
-import {KY_HIEU_DS, SO_LAN_THOAT_TOI_DA, dinhDangDongHo, lamTron, nhanLoai, type KetQuaBai, type KetQuaCau, type TraLoi} from "@/lib/thiThu";
+import {daLamCau, usePhongThi} from "@/lib/phongThiStore";
+import {SO_LAN_THOAT_TOI_DA, dinhDangDongHo, lamTron, nhanLoai, type KetQuaCau} from "@/lib/thiThu";
 import {buttonTap, EASE, spring} from "@/lib/animations";
-type Phong = Extract<PhongThi, {ok: true}>;
 function XemLai({c}: {c: KetQuaCau}) {
   const tl = c.tra_loi;
   return (
@@ -73,150 +72,51 @@ function XemLai({c}: {c: KetQuaCau}) {
 export default function PhongThiPage({params}: {params: Promise<{id: string}>}) {
   const {id} = use(params);
   const router = useRouter();
-  const [giaiDoan, setGiaiDoan] = useState<"dangTai" | "dangLam" | "ketQua" | "loi">("dangTai");
-  const [phong, setPhong] = useState<Phong | null>(null);
-  const [traLoi, setTraLoi] = useState<TraLoi>({});
-  const [idx, setIdx] = useState(0);
-  const [conLai, setConLai] = useState(0);
-  const [soLan, setSoLan] = useState(0);
-  const [canhBao, setCanhBao] = useState<number | null>(null);
-  const [hoiNop, setHoiNop] = useState(false);
-  const [dangNop, setDangNop] = useState(false);
-  const [ketQua, setKetQua] = useState<KetQuaBai | null>(null);
-  const [loi, setLoi] = useState("");
-  const traLoiRef = useRef<TraLoi>({});
-  const nopRef = useRef(false);
-  const thoatRef = useRef(0);
-  const baiRef = useRef("");
-  traLoiRef.current = traLoi;
-  const moPhong = useCallback(async () => {
-    nopRef.current = false;
-    setGiaiDoan("dangTai");
-    setKetQua(null);
-    setLoi("");
+  const giaiDoan = usePhongThi((s) => s.giaiDoan);
+  const phongTen = usePhongThi((s) => s.ten);
+  const phongMon = usePhongThi((s) => s.mon);
+  const cau = usePhongThi((s) => s.cau);
+  const traLoi = usePhongThi((s) => s.traLoi);
+  const idx = usePhongThi((s) => s.idx);
+  const conLai = usePhongThi((s) => s.conLai);
+  const soLan = usePhongThi((s) => s.soLan);
+  const canhBao = usePhongThi((s) => s.canhBao);
+  const hoiNop = usePhongThi((s) => s.hoiNop);
+  const dangNop = usePhongThi((s) => s.dangNop);
+  const ketQua = usePhongThi((s) => s.ketQua);
+  const loi = usePhongThi((s) => s.loi);
+  const setIdx = usePhongThi((s) => s.setIdx);
+  const chon = usePhongThi((s) => s.chon);
+  const chonY = usePhongThi((s) => s.chonY);
+  const xoaDapAn = usePhongThi((s) => s.xoaDapAn);
+  const setHoiNop = usePhongThi((s) => s.setHoiNop);
+  const dongCanhBao = usePhongThi((s) => s.dongCanhBao);
+  const nop = usePhongThi((s) => s.nop);
+  const moPhong = usePhongThi((s) => s.moPhong);
+  useEffect(() => {
+    let alive = true;
     const baiCu = new URLSearchParams(window.location.search).get("bai");
-    if (baiCu) {
-      const kq = await layKetQua(baiCu);
-      if (kq.ok) {
-        setKetQua(kq.ketQua);
-        setGiaiDoan("ketQua");
-        return;
-      }
-      router.replace(`/thi-thu/${id}`);
-    }
-    const kq = await batDauThi(id);
-    if (!kq.ok) {
-      setLoi(kq.error);
-      setGiaiDoan("loi");
-      return;
-    }
-    baiRef.current = kq.baiThiId;
-    setPhong(kq);
-    setTraLoi(kq.traLoi ?? {});
-    setSoLan(kq.soLanThoat);
-    setIdx(0);
-    setConLai(Math.max(0, Math.round((new Date(kq.hanNop).getTime() - Date.now()) / 1000)));
-    setGiaiDoan("dangLam");
-  }, [id, router]);
-  useEffect(() => {
-    void moPhong();
-  }, [moPhong]);
-  const nop = useCallback(async (tuDong: boolean) => {
-    if (nopRef.current || !baiRef.current) return;
-    nopRef.current = true;
-    setDangNop(true);
-    setHoiNop(false);
-    const kq = await nopBai(baiRef.current, traLoiRef.current);
-    setDangNop(false);
-    if (kq.ok) {
-      setKetQua(kq.ketQua);
-      setGiaiDoan("ketQua");
-    } else {
-      nopRef.current = false;
-      if (!tuDong) setLoi(kq.error);
-    }
-  }, []);
-  useEffect(() => {
-    if (giaiDoan !== "dangLam" || !phong) return;
-    const han = new Date(phong.hanNop).getTime();
-    const t = setInterval(() => {
-      const con = Math.max(0, Math.round((han - Date.now()) / 1000));
-      setConLai(con);
-      if (con <= 0) void nop(true);
-    }, 1000);
-    return () => clearInterval(t);
-  }, [giaiDoan, phong, nop]);
-  useEffect(() => {
-    if (giaiDoan !== "dangLam") return;
-    const t = setInterval(() => {
-      if (baiRef.current) void luuNhap(baiRef.current, traLoiRef.current);
-    }, 10000);
-    return () => clearInterval(t);
-  }, [giaiDoan]);
-  useEffect(() => {
-    if (giaiDoan !== "dangLam" || !baiRef.current) return;
-    const t = setTimeout(() => {
-      void luuNhap(baiRef.current, traLoi);
-    }, 1200);
-    return () => clearTimeout(t);
-  }, [traLoi, giaiDoan]);
-  useEffect(() => {
-    if (giaiDoan !== "dangLam") return;
+    void moPhong(id, baiCu).then((k) => {
+      if (alive && k === "moMoi") router.replace(`/thi-thu/${id}`);
+    });
     const canh = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
+      if (usePhongThi.getState().giaiDoan === "dangLam") {
+        e.preventDefault();
+        e.returnValue = "";
+      }
     };
     window.addEventListener("beforeunload", canh);
-    return () => window.removeEventListener("beforeunload", canh);
-  }, [giaiDoan]);
-  useEffect(() => {
-    if (giaiDoan !== "dangLam") return;
-    const xuLy = async () => {
-      if (nopRef.current || !baiRef.current) return;
-      const now = Date.now();
-      if (now - thoatRef.current < 1500) return;
-      thoatRef.current = now;
-      const kq = await ghiNhanThoat(baiRef.current);
-      if (!kq.ok && !kq.biHuy) return;
-      setSoLan(kq.soLan);
-      if (kq.biHuy) {
-        nopRef.current = true;
-        const r = await layKetQua(baiRef.current);
-        if (r.ok) {
-          setKetQua(r.ketQua);
-          setGiaiDoan("ketQua");
-        }
-      } else setCanhBao(kq.soLan);
-    };
-    const anHien = () => {
-      if (document.visibilityState === "hidden") void xuLy();
-    };
-    const matTieuDiem = () => void xuLy();
-    document.addEventListener("visibilitychange", anHien);
-    window.addEventListener("blur", matTieuDiem);
     return () => {
-      document.removeEventListener("visibilitychange", anHien);
-      window.removeEventListener("blur", matTieuDiem);
+      alive = false;
+      window.removeEventListener("beforeunload", canh);
+      usePhongThi.getState().dungVongLap();
     };
-  }, [giaiDoan]);
-  const cau = useMemo(() => phong?.cau ?? [], [phong]);
+  }, [id, router, moPhong]);
   const cauHien = cau[idx];
-  const soDaLam = useMemo(() => cau.filter((c) => {
-    const v = traLoi[c.id];
-    if (c.loai === "dung_sai") return !!v && typeof v === "object" && KY_HIEU_DS.every((k) => typeof (v as Record<string, boolean>)[k] === "boolean");
-    return typeof v === "string" && v.trim() !== "";
-  }).length, [cau, traLoi]);
-  const chon = (id: string, giaTri: string | Record<string, boolean>) => setTraLoi((cur) => ({...cur, [id]: giaTri}));
-  const chonY = (id: string, ky: string, giaTri: boolean) => setTraLoi((cur) => ({...cur, [id]: {...(cur[id] && typeof cur[id] === "object" ? (cur[id] as Record<string, boolean>) : {}), [ky]: giaTri}}));
-  const xoaDapAn = (id: string) => setTraLoi((cur) => {
-    const moi = {...cur};
-    delete moi[id];
-    return moi;
-  });
+  const soDaLam = useMemo(() => cau.filter((c) => daLamCau(c, traLoi)).length, [cau, traLoi]);
   const lamLai = () => {
     router.replace(`/thi-thu/${id}`);
-    setPhong(null);
-    void moPhong();
+    void moPhong(id, null);
   };
   if (giaiDoan === "dangTai") {
     return (
@@ -235,7 +135,7 @@ export default function PhongThiPage({params}: {params: Promise<{id: string}>}) 
           <p className="mt-2 text-sm text-ink-soft">{loi}</p>
           <div className="mt-5 flex flex-wrap gap-2">
             <Link href="/thi-thu" className="border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent">Về danh sách đề</Link>
-            <motion.button whileTap={buttonTap} type="button" onClick={() => void moPhong()} className="border border-ink/40 bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink-soft">Thử lại</motion.button>
+            <motion.button whileTap={buttonTap} type="button" onClick={() => void moPhong(id, null)} className="border border-ink/40 bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink-soft">Thử lại</motion.button>
           </div>
         </div>
       </div>
@@ -294,15 +194,15 @@ export default function PhongThiPage({params}: {params: Promise<{id: string}>}) 
       </div>
     );
   }
-  if (!phong || !cauHien) return null;
+  if (!cauHien) return null;
   const v = traLoi[cauHien.id];
   return (
     <div className="mx-auto w-full min-w-0 max-w-4xl px-4 pb-16">
       <div className="sticky top-[66px] z-40 -mx-4 border-b-2 border-ink bg-paper px-4 py-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate font-display text-base font-bold text-ink">{phong.ten}</p>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-ink-faint">{phong.mon} · đã làm {soDaLam}/{cau.length} câu · rời phòng {soLan}/{SO_LAN_THOAT_TOI_DA}</p>
+            <p className="truncate font-display text-base font-bold text-ink">{phongTen}</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-ink-faint">{phongMon} · đã làm {soDaLam}/{cau.length} câu · rời phòng {soLan}/{SO_LAN_THOAT_TOI_DA}</p>
           </div>
           <div className="flex items-center gap-2">
             <span className={`border px-3 py-1.5 font-mono text-lg font-bold tabular-nums ${conLai <= 60 ? "border-danger bg-danger/10 text-danger" : "border-ink bg-paper-light text-ink"}`}>{dinhDangDongHo(conLai)}</span>
@@ -318,11 +218,7 @@ export default function PhongThiPage({params}: {params: Promise<{id: string}>}) 
       </div>
       <div className="mt-4 flex flex-wrap gap-1.5">
         {cau.map((c, i) => {
-          const daLam = (() => {
-            const g = traLoi[c.id];
-            if (c.loai === "dung_sai") return !!g && typeof g === "object" && KY_HIEU_DS.every((k) => typeof (g as Record<string, boolean>)[k] === "boolean");
-            return typeof g === "string" && g.trim() !== "";
-          })();
+          const daLam = daLamCau(c, traLoi);
           return (
             <button key={c.id} type="button" onClick={() => setIdx(i)} className={`grid h-9 w-9 place-items-center border text-xs font-bold transition-colors ${i === idx ? "border-accent bg-accent text-paper-light" : daLam ? "border-ok bg-ok/15 text-ok" : "border-ink/25 bg-paper-light text-ink-faint hover:border-ink/60"}`}>
               {c.thu_tu}
@@ -383,11 +279,11 @@ export default function PhongThiPage({params}: {params: Promise<{id: string}>}) 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-ink/20 pt-4">
             <motion.button whileTap={buttonTap} type="button" onClick={() => xoaDapAn(cauHien.id)} className="border border-ink/30 bg-paper-light px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-ink-faint transition-colors hover:border-danger hover:text-danger">Xóa đáp án</motion.button>
             <div className="flex gap-2">
-              <motion.button whileTap={buttonTap} type="button" disabled={idx <= 0} onClick={() => setIdx((i) => Math.max(0, i - 1))} className="flex items-center gap-1.5 border border-ink/40 bg-paper-light px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft transition-colors disabled:opacity-40 hover:border-accent hover:text-accent">
+              <motion.button whileTap={buttonTap} type="button" disabled={idx <= 0} onClick={() => setIdx(Math.max(0, idx - 1))} className="flex items-center gap-1.5 border border-ink/40 bg-paper-light px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft transition-colors disabled:opacity-40 hover:border-accent hover:text-accent">
                 <IconArrowLeft className="h-3.5 w-3.5" />
                 Câu trước
               </motion.button>
-              <motion.button whileTap={buttonTap} type="button" disabled={idx >= cau.length - 1} onClick={() => setIdx((i) => Math.min(cau.length - 1, i + 1))} className="flex items-center gap-1.5 border border-ink bg-ink px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-paper-light transition-colors disabled:opacity-40 hover:border-accent hover:bg-accent">
+              <motion.button whileTap={buttonTap} type="button" disabled={idx >= cau.length - 1} onClick={() => setIdx(Math.min(cau.length - 1, idx + 1))} className="flex items-center gap-1.5 border border-ink bg-ink px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-paper-light transition-colors disabled:opacity-40 hover:border-accent hover:bg-accent">
                 Câu sau
                 <IconArrowRight className="h-3.5 w-3.5" />
               </motion.button>
@@ -403,7 +299,7 @@ export default function PhongThiPage({params}: {params: Promise<{id: string}>}) 
               <IconAlert className="mx-auto h-9 w-9 text-danger" />
               <h2 className="mt-3 font-display text-2xl font-bold text-ink">Cảnh báo rời phòng thi</h2>
               <p className="mt-2 text-sm text-ink-soft">Cậu vừa rời khỏi phòng thi lần <b className="text-danger">{canhBao}</b> trên {SO_LAN_THOAT_TOI_DA} lần cho phép. Quá {SO_LAN_THOAT_TOI_DA} lần, bài sẽ bị 0 điểm ngay lập tức.</p>
-              <motion.button whileTap={buttonTap} type="button" onClick={() => setCanhBao(null)} className="nut-nhan mt-5 w-full border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent">Đã hiểu, tiếp tục làm bài</motion.button>
+              <motion.button whileTap={buttonTap} type="button" onClick={dongCanhBao} className="nut-nhan mt-5 w-full border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors hover:border-accent hover:bg-accent">Đã hiểu, tiếp tục làm bài</motion.button>
             </motion.div>
           </motion.div>
         )}
