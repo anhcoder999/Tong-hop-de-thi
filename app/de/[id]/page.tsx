@@ -5,7 +5,7 @@ import {IconCalendar, IconCheck, IconChevron, IconDownload, IconEye} from "@/com
 import DocumentViewer from "@/components/DocumentViewer";
 import DanhGia from "@/components/DanhGia";
 import {chuanMon, formatDungLuong, formatNgay, MON_DAY_DU, tenNhom, type DeThi} from "@/lib/data";
-import {authClient, BUCKET, hubClient, hubCuaPath} from "@/lib/server";
+import {authClient, hubClient, hubCuaPath, kyUrl} from "@/lib/server";
 export const dynamic = "force-dynamic";
 interface Props {
   params: Promise<{id: string}>;
@@ -70,13 +70,11 @@ export default async function TrangXemDe({params}: Props) {
     );
   }
   if (!de) notFound();
-  const [, sDe, sDa] = await Promise.all([
+  const [, url, urlDapAn] = await Promise.all([
     hubClient("MAIN").rpc("tang_xem", {uid: de.id}),
-    de.duongDan ? hubClient(hubCuaPath(de.duongDan)).storage.from(BUCKET).createSignedUrl(de.duongDan, 3600) : Promise.resolve(null),
-    de.dapAnDuongDan ? hubClient(hubCuaPath(de.dapAnDuongDan)).storage.from(BUCKET).createSignedUrl(de.dapAnDuongDan, 3600) : Promise.resolve(null)
+    de.duongDan ? kyUrl(hubCuaPath(de.duongDan), de.duongDan) : Promise.resolve(de.urlPdf),
+    de.dapAnDuongDan ? kyUrl(hubCuaPath(de.dapAnDuongDan), de.dapAnDuongDan) : Promise.resolve(de.urlDapAn)
   ]);
-  const url = sDe?.data?.signedUrl ?? de.urlPdf;
-  const urlDapAn = sDa?.data?.signedUrl ?? de.urlDapAn ?? null;
   return (
     <div className="mx-auto w-full min-w-0 max-w-5xl px-4 pb-16 pt-6 sm:pt-10">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-xs uppercase tracking-[0.12em] text-ink-soft">
