@@ -255,12 +255,16 @@ export async function binhLuan(deId: string, noiDung: string): Promise<KetQua> {
 export async function layBinhLuanAdmin(): Promise<{ok: true; ds: BinhLuanAdminRow[]} | {ok: false; error: string}> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
-  const {data, error} = await main().from("binh_luan").select("id,user_id,ten_nguoi,noi_dung,created_at,duyet,de_thi(ten),profiles(email)").order("created_at", {ascending: false}).limit(100);
+  const {data, error} = await main().from("binh_luan").select("id,user_id,ten_nguoi,noi_dung,created_at,duyet,de_thi(ten)").order("created_at", {ascending: false}).limit(100);
   if (error) return {ok: false, error: error.message};
-  return {ok: true, ds: (data ?? []).map((r) => {
-    const o = r as Record<string, unknown> & {de_thi?: {ten?: string} | null; profiles?: {email?: string} | null};
-    return {id: String(o.id), ten_nguoi: String(o.ten_nguoi), noi_dung: String(o.noi_dung), created_at: String(o.created_at), duyet: !!o.duyet, cuaToi: false, de_ten: String(o.de_thi?.ten ?? "Đề đã xóa"), email: String(o.profiles?.email ?? "")};
-  })};
+  const rows = (data ?? []) as (Record<string, unknown> & {user_id: string; de_thi?: {ten?: string} | null})[];
+  const ids = [...new Set(rows.map((r) => String(r.user_id)))];
+  const email = new Map<string, string>();
+  if (ids.length) {
+    const {data: hs} = await main().from("profiles").select("id,email").in("id", ids);
+    for (const p of hs ?? []) email.set(String(p.id), String(p.email));
+  }
+  return {ok: true, ds: rows.map((o) => ({id: String(o.id), ten_nguoi: String(o.ten_nguoi), noi_dung: String(o.noi_dung), created_at: String(o.created_at), duyet: !!o.duyet, cuaToi: false, de_ten: String(o.de_thi?.ten ?? "Đề đã xóa"), email: email.get(String(o.user_id)) ?? ""}))};
 }
 export async function doiAnBinhLuan(id: string, an: boolean): Promise<KetQua> {
   const uid = await adminUid();
