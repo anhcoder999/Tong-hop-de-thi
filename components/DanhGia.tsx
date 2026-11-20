@@ -33,7 +33,7 @@ export default function DanhGia({deId, tenDe}: {deId: string; tenDe: string}) {
   }, [tai]);
   useEffect(() => {
     if (!bao) return;
-    const t = setTimeout(() => setBao(null), 4000);
+    const t = setTimeout(() => setBao(null), 5000);
     return () => clearTimeout(t);
   }, [bao]);
   const tenHien = hoSo?.ho_ten?.trim() || (user?.email ?? "Thành viên").split("@")[0];
@@ -67,10 +67,10 @@ export default function DanhGia({deId, tenDe}: {deId: string; tenDe: string}) {
       setBao({kieu: "loi", text: "Nhận xét tối thiểu 3 ký tự."});
       return;
     }
-    const tam: BinhLuan = {id: `tam-${Date.now()}`, ten_nguoi: tenHien, noi_dung: txt, created_at: new Date().toISOString(), duyet: false, cuaToi: true};
+    const tam: BinhLuan = {id: `tam-${Date.now()}`, ten_nguoi: tenHien, noi_dung: txt, created_at: new Date().toISOString(), duyet: true, cuaToi: true};
     setDs((cur) => [tam, ...cur]);
     setNoiDung("");
-    setBao({kieu: "ok", text: "Đã gửi nhận xét, chờ quản trị duyệt là hiện công khai."});
+    setBao({kieu: "ok", text: "Đã đăng nhận xét. Mỗi đề một nhận xét, mỗi ngày một lần thôi nhé."});
     setDangGui(true);
     void binhLuan(deId, txt).then((kq) => {
       setDangGui(false);
@@ -112,12 +112,12 @@ export default function DanhGia({deId, tenDe}: {deId: string; tenDe: string}) {
         {tg.cuaToi > 0 && <motion.span key={tg.cuaToi} variants={stampIn} initial="hidden" animate="visible" className="-rotate-2 border border-warn/70 bg-warn/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-warn">Cậu chấm {tg.cuaToi} sao</motion.span>}
       </motion.div>
       <motion.form variants={fadeInUp} onSubmit={gui} className="mt-5 space-y-2.5">
-        <textarea value={noiDung} onChange={(e) => setNoiDung(e.target.value)} maxLength={600} rows={3} placeholder="Nhận xét về đề: độ khó, câu sai đáp án, gợi ý ôn tập... (quản trị duyệt trước khi hiện)" className="w-full border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent" />
+        <textarea value={noiDung} onChange={(e) => setNoiDung(e.target.value)} maxLength={600} rows={3} placeholder="Nhận xét về đề: độ khó, câu sai đáp án, gợi ý ôn tập... Mỗi đề một nhận xét, không dùng từ tục." className="w-full border border-ink/30 bg-paper px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-accent" />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-[10px] uppercase tracking-[0.12em] text-ink-faint">{noiDung.length}/600</span>
           <motion.button whileTap={buttonTap} type="submit" disabled={dangGui} className="nut-quet nut-nhan flex items-center gap-2 border border-ink bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent disabled:opacity-60">
             {dangGui ? <IconLoader className="h-3.5 w-3.5 animate-spin" /> : <IconSeal className="h-3.5 w-3.5" />}
-            {dangGui ? "Đang đồng bộ..." : "Gửi nhận xét"}
+            {dangGui ? "Đang đăng..." : "Gửi nhận xét"}
           </motion.button>
         </div>
         <AnimatePresence>
@@ -144,7 +144,7 @@ export default function DanhGia({deId, tenDe}: {deId: string; tenDe: string}) {
                     <p className="flex flex-wrap items-center gap-2 text-xs">
                       <span className="font-semibold text-ink">{b.ten_nguoi}</span>
                       <span className="uppercase tracking-[0.1em] text-ink-faint">{new Date(b.created_at).toLocaleDateString("vi-VN")}</span>
-                      {!b.duyet && <span className="border border-warn/70 bg-warn/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-warn">Chờ duyệt</span>}
+                      {!b.duyet && <span className="border border-warn/70 bg-warn/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-warn">Đang bị ẩn</span>}
                       {b.cuaToi && <span className="border border-info/60 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-info">Của cậu</span>}
                     </p>
                     <p className="mt-1 whitespace-pre-wrap break-words text-sm text-ink-soft">{b.noi_dung}</p>
@@ -154,7 +154,7 @@ export default function DanhGia({deId, tenDe}: {deId: string; tenDe: string}) {
             </AnimatePresence>
           </ul>
         )}
-        {isAdmin && <p className="mt-3 text-[11px] uppercase tracking-[0.12em] text-ink-faint">Quản trị: duyệt nhận xét ở mục “Nhận xét chờ duyệt” trong trang quản trị.</p>}
+        {isAdmin && <p className="mt-3 text-[11px] uppercase tracking-[0.12em] text-ink-faint">Quản trị: ẩn hoặc xóa nhận xét ở mục “Quản lý nhận xét” trong trang quản trị.</p>}
       </motion.div>
     </motion.section>
   );
