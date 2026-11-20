@@ -20,6 +20,7 @@ const CONFIG: Record<Hub, () => {url: string; key: string}> = {
   TCK: () => ({url: env("SUPABASE_URL_TCK"), key: env("SUPABASE_SECRET_KEY_TCK")})
 };
 const cache = new Map<Hub, SupabaseClient>();
+const cacheUrl = new Map<string, {url: string; exp: number}>();
 export function hubClient(hub: Hub): SupabaseClient {
   const hit = cache.get(hub);
   if (hit) return hit;
@@ -27,6 +28,20 @@ export function hubClient(hub: Hub): SupabaseClient {
   const client = createClient(url, key, {auth: {persistSession: false, autoRefreshToken: false}});
   cache.set(hub, client);
   return client;
+}
+export async function kyUrl(hub: Hub, path: string, giay = 3600): Promise<string> {
+  if (!path) return "";
+  const khoa = `${hub}:${path}`;
+  const hit = cacheUrl.get(khoa);
+  const now = Date.now();
+  if (hit && hit.exp > now) return hit.url;
+  const {data} = await hubClient(hub).storage.from(BUCKET).createSignedUrl(path, giay);
+  const url = data?.signedUrl ?? "";
+  if (url) {
+    if (cacheUrl.size > 400) cacheUrl.clear();
+    cacheUrl.set(khoa, {url, exp: now + Math.max(30, giay - 60) * 1000});
+  }
+  return url;
 }
 export async function authClient() {
   const store = await cookies();
