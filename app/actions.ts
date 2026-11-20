@@ -15,14 +15,16 @@ export type DapAnInput = {dapAnPath?: string | null; dapAnKichThuoc?: number | n
 export type DanhGiaTong = {tb: number; dem: number; cuaToi: number; tong: number};
 export type BinhLuan = {id: string; ten_nguoi: string; noi_dung: string; created_at: string; duyet: boolean; cuaToi: boolean};
 export type ThongKe = {tongDe: number; tongDapAn: number; tongXem: number; tongTai: number; thanhVien: number; choDuyet: number; bytes: number; ngay: {ngay: string; xem: number; tai: number}[]; mon: {mon: Mon; xem: number; tai: number; de: number}[]; top: {id: string; ten: string; mon: Mon; xem: number; tai: number}[]};
+type HangSao = {sao: number; user_id: string};
+type HangBinhLuan = {id: string; user_id: string; ten_nguoi: string; noi_dung: string; created_at: string; duyet: boolean};
 export async function dangNhap(email: string, password: string, token: string): Promise<KetQua> {
   if (!(await xacThucTurnstile(token))) return {ok: false, error: "Xác thực Turnstile thất bại. Thử lại."};
-  const {error} = await authClient().auth.signInWithPassword({email, password});
+  const {error} = await (await authClient()).auth.signInWithPassword({email, password});
   return error ? {ok: false, error: error.message} : {ok: true};
 }
 export async function dangKy(email: string, password: string, hoTen: string, token: string): Promise<KetQua> {
   if (!(await xacThucTurnstile(token))) return {ok: false, error: "Xác thực Turnstile thất bại. Thử lại."};
-  const {error} = await authClient().auth.signUp({email, password, options: {data: {ho_ten: hoTen}}});
+  const {error} = await (await authClient()).auth.signUp({email, password, options: {data: {ho_ten: hoTen}}});
   return error ? {ok: false, error: error.message} : {ok: true};
 }
 export async function xinLinkUpload(mon: Mon, loai: Loai, thuMuc: ThuMuc): Promise<LinkUpload> {
@@ -157,17 +159,17 @@ export async function banNguoiDung(id: string, banned: boolean): Promise<KetQua>
   return error ? {ok: false, error: error.message} : {ok: true};
 }
 async function uidHienTai(): Promise<string | null> {
-  const {data, error} = await authClient().auth.getClaims();
+  const {data, error} = await (await authClient()).auth.getClaims();
   return error ? null : (data?.claims?.sub ?? null);
 }
 export async function layDanhGia(deId: string): Promise<DanhGiaTong> {
-  const [cl, kq] = await Promise.all([authClient().auth.getClaims(), hubClient("MAIN").from("danh_gia").select("sao,user_id").eq("de_id", deId)]);
+  const [cl, kq] = await Promise.all([(await authClient()).auth.getClaims(), hubClient("MAIN").from("danh_gia").select("sao,user_id").eq("de_id", deId)]);
   const uid = cl.error ? null : (cl.data?.claims?.sub ?? null);
-  const ds = kq.data ?? [];
+  const ds = (kq.data ?? []) as HangSao[];
   const dem = ds.length;
-  const tong = ds.reduce((s, r) => s + Number(r.sao), 0);
+  const tong = ds.reduce((s: number, r: HangSao) => s + Number(r.sao), 0);
   const tb = dem ? Math.round((tong / dem) * 10) / 10 : 0;
-  const cuaToi = uid ? Number(ds.find((r) => r.user_id === uid)?.sao ?? 0) : 0;
+  const cuaToi = uid ? Number(ds.find((r: HangSao) => r.user_id === uid)?.sao ?? 0) : 0;
   return {tb, dem, cuaToi, tong};
 }
 export async function danhGia(deId: string, sao: number): Promise<KetQua> {
@@ -178,9 +180,10 @@ export async function danhGia(deId: string, sao: number): Promise<KetQua> {
   return error ? {ok: false, error: error.message} : {ok: true};
 }
 export async function layBinhLuan(deId: string): Promise<BinhLuan[]> {
-  const [cl, kq] = await Promise.all([authClient().auth.getClaims(), hubClient("MAIN").from("binh_luan").select("id,user_id,ten_nguoi,noi_dung,created_at,duyet").eq("de_id", deId).order("created_at", {ascending: false}).limit(60)]);
+  const [cl, kq] = await Promise.all([(await authClient()).auth.getClaims(), hubClient("MAIN").from("binh_luan").select("id,user_id,ten_nguoi,noi_dung,created_at,duyet").eq("de_id", deId).order("created_at", {ascending: false}).limit(60)]);
   const uid = cl.error ? null : (cl.data?.claims?.sub ?? null);
-  return (kq.data ?? []).filter((r) => r.duyet || (!!uid && r.user_id === uid)).map((r) => ({id: String(r.id), ten_nguoi: String(r.ten_nguoi), noi_dung: String(r.noi_dung), created_at: String(r.created_at), duyet: !!r.duyet, cuaToi: !!uid && r.user_id === uid}));
+  const rows = (kq.data ?? []) as HangBinhLuan[];
+  return rows.filter((r: HangBinhLuan) => r.duyet || (!!uid && r.user_id === uid)).map((r: HangBinhLuan) => ({id: String(r.id), ten_nguoi: String(r.ten_nguoi), noi_dung: String(r.noi_dung), created_at: String(r.created_at), duyet: !!r.duyet, cuaToi: !!uid && r.user_id === uid}));
 }
 export async function binhLuan(deId: string, noiDung: string): Promise<KetQua> {
   const txt = noiDung.trim();
