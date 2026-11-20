@@ -285,23 +285,18 @@ export async function layThongKe(): Promise<{ok: true; tk: ThongKe} | {ok: false
   tu.setHours(0, 0, 0, 0);
   const [de, nk, tv, bl] = await Promise.all([
     main().from("de_thi").select("id,ten,mon,luot_xem,luot_tai,kich_thuoc,dap_an_kich_thuoc,dap_an_duong_dan"),
-    main().from("nhat_ky").select("kieu,created_at").gte("created_at", tu.toISOString()).limit(20000),
+    main().rpc("thong_ke_ngay", {tu: tu.toISOString()}),
     main().from("profiles").select("id", {count: "exact", head: true}),
     main().from("binh_luan").select("id", {count: "exact", head: true}).eq("duyet", false)
   ]);
   const ds = de.data ?? [];
+  const theoNgay = new Map<string, {xem: number; tai: number}>();
+  for (const r of (nk.data ?? []) as {ngay_date: string; xem: string; tai: string}[]) theoNgay.set(String(r.ngay_date).slice(0, 10), {xem: Number(r.xem), tai: Number(r.tai)});
   const ngay: {ngay: string; xem: number; tai: number}[] = [];
   for (let i = 0; i < 14; i++) {
     const d = new Date(tu.getTime() + i * 86400000);
-    ngay.push({ngay: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`, xem: 0, tai: 0});
-  }
-  for (const r of nk.data ?? []) {
-    const d = new Date(String(r.created_at));
-    const idx = Math.floor((new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - tu.getTime()) / 86400000);
-    if (idx >= 0 && idx < 14) {
-      if (r.kieu === "tai") ngay[idx].tai++;
-      else ngay[idx].xem++;
-    }
+    const o = theoNgay.get(d.toISOString().slice(0, 10)) ?? {xem: 0, tai: 0};
+    ngay.push({ngay: `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`, xem: o.xem, tai: o.tai});
   }
   const monMap = new Map<Mon, {xem: number; tai: number; de: number}>();
   for (const m of DS_MON) monMap.set(m, {xem: 0, tai: 0, de: 0});
