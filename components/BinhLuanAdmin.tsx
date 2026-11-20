@@ -2,7 +2,7 @@
 import {useCallback, useEffect, useState} from "react";
 import {AnimatePresence, motion} from "framer-motion";
 import {IconCheck, IconLoader, IconRefresh, IconSeal, IconTrash} from "@/components/Icons";
-import {duyetBinhLuan, layBinhLuanChoDuyet, xoaBinhLuan, type BinhLuan} from "@/app/thi-thu/actions";
+import {duyetBinhLuan, layBinhLuanChoDuyet, xoaBinhLuan, type BinhLuan} from "@/app/actions";
 import {buttonTap, fadeInUp, spring} from "@/lib/animations";
 export default function BinhLuanAdmin() {
   const [ds, setDs] = useState<(BinhLuan & {de_ten: string})[]>([]);
