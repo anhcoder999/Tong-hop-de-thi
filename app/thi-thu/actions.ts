@@ -6,7 +6,7 @@ export type KetQua = {ok: boolean; error?: string};
 export type PhongThi = {ok: true; baiThiId: string; ten: string; mon: string; thoiGianPhut: number; hanNop: string; soLanThoat: number; traLoi: TraLoi; cau: CauHoiCongKhai[]} | {ok: false; error: string};
 const main = () => hubClient("MAIN");
 async function uid(): Promise<string | null> {
-  const {data, error} = await authClient().auth.getClaims();
+  const {data, error} = await (await authClient()).auth.getClaims();
   return error ? null : (data?.claims?.sub ?? null);
 }
 function deRow(r: Record<string, unknown>, soCau: number): DeThiOnline {
