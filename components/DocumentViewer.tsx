@@ -13,16 +13,17 @@ const WORKER = `${CDN}/build/pdf.worker.min.js`;
 const CMAP = `${CDN}/cmaps/`;
 const FONTS = `${CDN}/standard_fonts/`;
 type KetQuaTim = {trang: number; snippet: string};
+type TrangDaVe = {page: any; scale: number; dpr: number; cssW: number; cssH: number};
 function IconGhim({day}: {day: boolean}) {
   return (
-    <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill={day ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill={day ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
       <path d="M7 3.5h10v17l-5-3.6-5 3.6Z" />
     </svg>
   );
 }
 function IconSoTay() {
   return (
-    <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M5 4.5h11a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3Z" />
       <path d="M9 9h6M9 12.5h6M9 16h4" />
     </svg>
@@ -30,7 +31,7 @@ function IconSoTay() {
 }
 function IconTapTrung({mo}: {mo: boolean}) {
   return (
-    <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       {mo ? <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /> : <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />}
     </svg>
   );
@@ -49,6 +50,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
   const taskRef = useRef<{cancel: () => void; promise: Promise<unknown>} | null>(null);
   const touchRef = useRef<{x: number; y: number; kc: number; t: number} | null>(null);
   const liveRef = useRef({base: 1, pending: 1, timer: null as ReturnType<typeof setTimeout> | null});
+  const daVeRef = useRef<TrangDaVe | null>(null);
   const lastTapRef = useRef(0);
   const prevTrangRef = useRef(1);
   const [nguon, setNguon] = useState<"de" | "dapan">("de");
@@ -58,10 +60,12 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
   const [tong, setTong] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [huong, setHuong] = useState(1);
+  const [lanVe, setLanVe] = useState(0);
   const [dangTai, setDangTai] = useState(true);
   const [dangVe, setDangVe] = useState(true);
   const [loi, setLoi] = useState("");
   const [tuKhoa, setTuKhoa] = useState("");
+  const [tuKhoaNen, setTuKhoaNen] = useState("");
   const [ketQua, setKetQua] = useState<KetQuaTim[]>([]);
   const [dangTim, setDangTim] = useState(false);
   const [tapTrung, setTapTrung] = useState(false);
@@ -93,6 +97,10 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
     danhDau(id);
   }, [id, danhDau]);
   useEffect(() => {
+    const t = setTimeout(() => setTuKhoaNen(tuKhoa), 250);
+    return () => clearTimeout(t);
+  }, [tuKhoa]);
+  useEffect(() => {
     let alive = true;
     setDangTai(true);
     setLoi("");
@@ -102,6 +110,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
     setZoom(1);
     setKetQua([]);
     setTiepTuc(null);
+    daVeRef.current = null;
     (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
@@ -164,9 +173,8 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
     };
   }, [pdf, tapTrung, moSoTay]);
   useEffect(() => {
-    if (!pdf || fit <= 0 || !canvasRef.current || !overlayRef.current || !boxRef.current) return;
+    if (!pdf || fit <= 0 || !canvasRef.current || !boxRef.current) return;
     const canvas = canvasRef.current;
-    const overlay = overlayRef.current;
     const box = boxRef.current;
     let cancelled = false;
     liveRef.current.base = zoom;
@@ -188,10 +196,6 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
       canvas.height = Math.max(1, Math.floor(cssH * dpr));
       canvas.style.width = `${cssW}px`;
       canvas.style.height = `${cssH}px`;
-      overlay.width = canvas.width;
-      overlay.height = canvas.height;
-      overlay.style.width = `${cssW}px`;
-      overlay.style.height = `${cssH}px`;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
       ctx.fillStyle = "#ffffff";
@@ -201,23 +205,8 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
       taskRef.current = task;
       await task.promise;
       if (cancelled) return;
-      const octx = overlay.getContext("2d");
-      if (octx) {
-        octx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        octx.clearRect(0, 0, cssW, cssH);
-        const q = tuKhoa.trim().toLowerCase();
-        if (q) {
-          const tc = await page.getTextContent();
-          const vp = page.getViewport({scale});
-          octx.fillStyle = "rgba(179,38,30,0.32)";
-          for (const it of tc.items as any[]) {
-            const s = String(it.str ?? "").toLowerCase();
-            if (!s.includes(q)) continue;
-            const r = vp.convertToViewportRectangle([it.transform[4], it.transform[5], it.transform[4] + it.width, it.transform[5] + it.height]);
-            octx.fillRect(Math.min(r[0], r[2]), Math.min(r[1], r[3]), Math.abs(r[2] - r[0]), Math.abs(r[3] - r[1]));
-          }
-        }
-      }
+      daVeRef.current = {page, scale, dpr, cssW, cssH};
+      setLanVe((v) => v + 1);
       setDangVe(false);
     })().catch(() => {
       if (!cancelled) setDangVe(false);
@@ -225,7 +214,40 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
     return () => {
       cancelled = true;
     };
-  }, [pdf, fit, trang, zoom, tuKhoa]);
+  }, [pdf, fit, trang, zoom]);
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    const info = daVeRef.current;
+    if (!overlay || !info) return;
+    let cancelled = false;
+    (async () => {
+      if (overlay.width !== Math.floor(info.cssW * info.dpr)) {
+        overlay.width = Math.floor(info.cssW * info.dpr);
+        overlay.height = Math.floor(info.cssH * info.dpr);
+        overlay.style.width = `${info.cssW}px`;
+        overlay.style.height = `${info.cssH}px`;
+      }
+      const octx = overlay.getContext("2d");
+      if (!octx) return;
+      octx.setTransform(info.dpr, 0, 0, info.dpr, 0, 0);
+      octx.clearRect(0, 0, info.cssW, info.cssH);
+      const q = tuKhoaNen.trim().toLowerCase();
+      if (!q || cancelled) return;
+      const tc = await info.page.getTextContent();
+      if (cancelled) return;
+      const vp = info.page.getViewport({scale: info.scale});
+      octx.fillStyle = "rgba(179,38,30,0.32)";
+      for (const it of tc.items as any[]) {
+        const s = String(it.str ?? "").toLowerCase();
+        if (!s.includes(q)) continue;
+        const r = vp.convertToViewportRectangle([it.transform[4], it.transform[5], it.transform[4] + it.width, it.transform[5] + it.height]);
+        octx.fillRect(Math.min(r[0], r[2]), Math.min(r[1], r[3]), Math.abs(r[2] - r[0]), Math.abs(r[3] - r[1]));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [lanVe, tuKhoaNen]);
   useEffect(() => {
     const phim = (e: KeyboardEvent) => {
       const t = e.target;
@@ -339,39 +361,39 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
           </motion.button>
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2.5">
         {!tapTrung && (
-          <motion.button whileTap={buttonTap} type="button" onClick={quayLai} className="flex items-center gap-2 border border-ink bg-paper-light px-3.5 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
+          <motion.button whileTap={buttonTap} type="button" onClick={quayLai} className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
             <IconArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Quay lại</span>
+            Quay lại
           </motion.button>
         )}
         <motion.a whileTap={buttonTap} href={src} download onClick={() => {
           if (!xemDapAn) void goiTai(id);
-        }} target="_blank" rel="noopener noreferrer" className="nut-quet nut-nhan flex items-center gap-2 border border-ink bg-ink px-3.5 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent">
+        }} target="_blank" rel="noopener noreferrer" className="nut-quet nut-nhan flex items-center gap-2 border border-ink bg-ink px-4 py-2.5 text-sm font-semibold text-paper-light transition-colors active:border-accent active:bg-accent hover:border-accent hover:bg-accent">
           <IconDownload className="h-4 w-4" />
           {xemDapAn ? "Tải đáp án" : "Tải PDF"}
         </motion.a>
-        <motion.button whileTap={buttonTap} type="button" disabled={!urlDapAn} title={urlDapAn ? "Xem đáp án của đề này" : "Đề này chưa có đáp án"} onClick={() => setNguon((n) => (n === "de" ? "dapan" : "de"))} className={`flex items-center gap-2 border px-3.5 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${xemDapAn ? "border-ink bg-ink text-paper-light hover:border-accent hover:bg-accent" : "border-ok bg-ok/12 text-ok hover:bg-ok hover:text-paper-light"}`}>
+        {!tapTrung && (
+          <motion.a whileTap={buttonTap} href={viewerUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 border border-ink bg-paper-light px-4 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
+            <IconExternal className="h-4 w-4" />
+            Mở tab mới
+          </motion.a>
+        )}
+        <motion.button whileTap={buttonTap} type="button" disabled={!urlDapAn} title={urlDapAn ? "Xem đáp án của đề này" : "Đề này chưa có đáp án"} onClick={() => setNguon((n) => (n === "de" ? "dapan" : "de"))} className={`flex items-center gap-2 border px-4 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${xemDapAn ? "border-ink bg-ink text-paper-light hover:border-accent hover:bg-accent" : "border-ok bg-ok/12 text-ok hover:bg-ok hover:text-paper-light"}`}>
           {xemDapAn ? <IconFile className="h-4 w-4" /> : <IconCheck className="h-4 w-4" />}
           {xemDapAn ? "Xem đề thi" : "Đáp án"}
         </motion.button>
-        <motion.button whileTap={buttonTap} type="button" onClick={() => setMoSoTay((v) => !v)} aria-expanded={moSoTay} title="Sổ tay: trang ghim và ghi chú" className={`relative flex items-center gap-2 border px-3.5 py-2.5 text-sm font-semibold transition-colors ${moSoTay ? "border-warn bg-warn/15 text-warn" : "border-ink bg-paper-light text-ink hover:border-warn hover:text-warn"}`}>
+        <motion.button whileTap={buttonTap} type="button" onClick={() => setMoSoTay((v) => !v)} aria-expanded={moSoTay} className={`relative flex items-center gap-2 border px-4 py-2.5 text-sm font-semibold transition-colors ${moSoTay ? "border-warn bg-warn/15 text-warn" : "border-ink bg-paper-light text-ink hover:border-warn hover:text-warn"}`}>
           <IconSoTay />
-          <span className="hidden sm:inline">Sổ tay</span>
+          Sổ tay
           {soMuc > 0 && <span className="grid h-5 min-w-5 place-items-center border border-warn bg-warn px-1 text-[10px] font-bold text-paper-light">{soMuc}</span>}
         </motion.button>
         {!tapTrung && (
-          <motion.button whileTap={buttonTap} type="button" onClick={() => setTapTrung(true)} title="Ẩn mọi thứ quanh, chỉ còn đề (phím F)" className="flex items-center gap-2 border border-info bg-info/12 px-3.5 py-2.5 text-sm font-semibold text-info transition-colors hover:bg-info hover:text-paper-light">
+          <motion.button whileTap={buttonTap} type="button" onClick={() => setTapTrung(true)} title="Ẩn mọi thứ quanh, chỉ còn đề (phím F)" className="flex items-center gap-2 border border-info bg-info/12 px-4 py-2.5 text-sm font-semibold text-info transition-colors hover:bg-info hover:text-paper-light">
             <IconTapTrung mo={false} />
-            <span className="hidden sm:inline">Tập trung</span>
+            Tập trung
           </motion.button>
-        )}
-        {!tapTrung && (
-          <motion.a whileTap={buttonTap} href={viewerUrl} target="_blank" rel="noopener noreferrer" title="Mở bằng trình đọc PDF ở tab mới" className="flex items-center gap-2 border border-ink bg-paper-light px-3.5 py-2.5 text-sm font-semibold text-ink transition-colors active:bg-paper-deep hover:bg-paper">
-            <IconExternal className="h-4 w-4" />
-            <span className="hidden sm:inline">Mở tab mới</span>
-          </motion.a>
         )}
       </div>
       <div className="mt-3 h-1 w-full overflow-hidden bg-ink/10">
