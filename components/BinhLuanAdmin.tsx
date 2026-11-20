@@ -8,27 +8,32 @@ export default function BinhLuanAdmin() {
   const [ds, setDs] = useState<BinhLuanAdminRow[]>([]);
   const [dangTai, setDangTai] = useState(true);
   const [dangXuLy, setDangXuLy] = useState<string | null>(null);
-  const [bao, setBao] = useState("");
+  const [bao, setBao] = useState<{kieu: "ok" | "loi"; text: string} | null>(null);
   const tai = useCallback(async () => {
     setDangTai(true);
     const kq = await layBinhLuanAdmin();
     if (kq.ok) setDs(kq.ds);
-    else setBao(kq.error);
+    else setBao({kieu: "loi", text: kq.error});
     setDangTai(false);
   }, []);
   useEffect(() => {
     void tai();
   }, [tai]);
+  useEffect(() => {
+    if (!bao) return;
+    const t = setTimeout(() => setBao(null), 4000);
+    return () => clearTimeout(t);
+  }, [bao]);
   const xuLy = async (id: string, kieu: "an" | "xoa") => {
     const muc = ds.find((b) => b.id === id);
     setDangXuLy(id);
-    setBao("");
+    setBao(null);
     const kq = kieu === "an" ? await doiAnBinhLuan(id, !muc?.duyet) : await xoaBinhLuan(id);
     if (kq.ok) {
       if (kieu === "xoa") setDs((cur) => cur.filter((b) => b.id !== id));
       else setDs((cur) => cur.map((b) => (b.id === id ? {...b, duyet: !b.duyet} : b)));
-      setBao(kieu === "xoa" ? "Đã xóa nhận xét." : muc?.duyet ? "Đã ẩn nhận xét khỏi trang đề." : "Đã hiện lại nhận xét.");
-    } else setBao(kq.error ?? "Lỗi xử lý.");
+      setBao({kieu: "ok", text: kieu === "xoa" ? "Đã xóa nhận xét." : muc?.duyet ? "Đã ẩn nhận xét khỏi trang đề." : "Đã hiện lại nhận xét."});
+    } else setBao({kieu: "loi", text: kq.error ?? "Lỗi xử lý."});
     setDangXuLy(null);
   };
   const soAn = ds.filter((b) => !b.duyet).length;
@@ -39,7 +44,7 @@ export default function BinhLuanAdmin() {
           <h1 className="flex items-center gap-2 font-display text-2xl font-bold tracking-tight text-ink">
             <IconSeal className="h-4 w-4 text-accent" />
             Quản lý nhận xét
-            <span className="border border-ink/25 bg-paper-light px-2 py-0.5 font-mono text-xs font-semibold text-ink-soft">{ds.length}</span>
+            <span className="border border-ink/25 bg-paper-light px-2 py-0.5 font-mono text-xs font-semibold text-ink-soft">{dangTai ? "—" : ds.length}</span>
             {soAn > 0 && <span className="border border-warn/70 bg-warn/10 px-2 py-0.5 font-mono text-xs font-semibold text-warn">{soAn} ẩn</span>}
           </h1>
           <p className="mt-1 text-xs text-ink-soft">Nhận xét đăng lên ngay không cần duyệt. Ẩn thì nó biến mất khỏi trang đề, xóa là mất hẳn.</p>
@@ -49,7 +54,7 @@ export default function BinhLuanAdmin() {
           Tải lại
         </motion.button>
       </div>
-      {bao && <p className="mt-3 border border-accent/50 bg-accent-wash p-2.5 text-xs text-accent-deep">{bao}</p>}
+      {bao && <p className={`mt-3 border p-2.5 text-xs ${bao.kieu === "loi" ? "border-danger/60 bg-danger/10 text-danger" : "border-ok/60 bg-ok/10 text-ok"}`}>{bao.text}</p>}
       {dangTai ? (
         <div className="mt-3 flex items-center gap-2 text-sm text-ink-faint">
           <IconLoader className="h-4 w-4 animate-spin text-accent" />
