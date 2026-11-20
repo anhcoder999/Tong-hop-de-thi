@@ -1,22 +1,52 @@
 "use server";
 import {randomUUID} from "node:crypto";
+import {headers} from "next/headers";
 import {adminUid, authClient, BUCKET, hubClient, hubCuaMon, hubCuaPath} from "@/lib/server";
 import {xacThucTurnstile} from "@/lib/turnstile";
+import {kiemTraToxic} from "@/lib/locToxic";
 import {chuanMon, DS_MON, MON_SLUG, type Loai, type Mon} from "@/lib/data";
-const NAM_GIU_LINK = 31536000;
+const NAM_GIU_LINK = 604800;
+const GIAY_CHO_BINH_LUAN = 20;
+const IP_TOI_DA = 5;
 const ANH_DUOI = ["png", "jpg", "jpeg", "webp", "gif"];
 export type ThuMuc = "de" | "dap-an";
 export type LinkUpload = {ok: true; path: string; signedUrl: string} | {ok: false; error: string};
 export type LinkAnh = {ok: true; path: string; token: string} | {ok: false; error: string};
 export type KetQuaGhi = {ok: true; row: Record<string, unknown>} | {ok: false; error: string};
-export type KetQua = {ok: boolean; error?: string};
+export type KetQua = {ok: boolean; error?: string; canXacNhan?: boolean};
 export type NguoiDung = {id: string; email: string; ho_ten: string | null; role: string; banned: boolean; created_at: string};
 export type DapAnInput = {dapAnPath?: string | null; dapAnKichThuoc?: number | null; dapAnTenGoc?: string | null; xoaDapAn?: boolean};
 export type DanhGiaTong = {tb: number; dem: number; cuaToi: number; tong: number};
 export type BinhLuan = {id: string; ten_nguoi: string; noi_dung: string; created_at: string; duyet: boolean; cuaToi: boolean};
+export type BinhLuanAdminRow = BinhLuan & {de_ten: string; email: string};
 export type ThongKe = {tongDe: number; tongDapAn: number; tongXem: number; tongTai: number; thanhVien: number; choDuyet: number; bytes: number; ngay: {ngay: string; xem: number; tai: number}[]; mon: {mon: Mon; xem: number; tai: number; de: number}[]; top: {id: string; ten: string; mon: Mon; xem: number; tai: number}[]};
 type HangSao = {sao: number; user_id: string};
 type HangBinhLuan = {id: string; user_id: string; ten_nguoi: string; noi_dung: string; created_at: string; duyet: boolean};
+const main = () => hubClient("MAIN");
+async function uidHienTai(): Promise<string | null> {
+  const {data, error} = await (await authClient()).auth.getClaims();
+  return error ? null : (data?.claims?.sub ?? null);
+}
+async function layIpVaQuocGia(): Promise<{ip: string; quocGia: string}> {
+  const hs = await headers();
+  const ip = (hs.get("x-forwarded-for") ?? "").split(",")[0].trim() || hs.get("x-real-ip") || "";
+  return {ip, quocGia: (hs.get("x-vercel-ip-country") ?? "").toUpperCase()};
+}
+async function laMangMayChu(ip: string): Promise<boolean> {
+  if (!ip) return false;
+  try {
+    const res = await fetch(`http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,hosting,proxy`, {cache: "no-store"});
+    const d = (await res.json()) as {status?: string; hosting?: boolean; proxy?: boolean};
+    if (d.status !== "success") return false;
+    return !!d.hosting || !!d.proxy;
+  } catch {
+    return false;
+  }
+}
+function dauNgayVN(): string {
+  const now = new Date(Date.now() + 7 * 3600000);
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - 7 * 3600000).toISOString();
+}
 export async function dangNhap(email: string, password: string, token: string): Promise<KetQua> {
   if (!(await xacThucTurnstile(token))) return {ok: false, error: "Xác thực Turnstile thất bại. Thử lại."};
   const {error} = await (await authClient()).auth.signInWithPassword({email, password});
@@ -24,7 +54,21 @@ export async function dangNhap(email: string, password: string, token: string): 
 }
 export async function dangKy(email: string, password: string, hoTen: string, token: string): Promise<KetQua> {
   if (!(await xacThucTurnstile(token))) return {ok: false, error: "Xác thực Turnstile thất bại. Thử lại."};
-  const {error} = await (await authClient()).auth.signUp({email, password, options: {data: {ho_ten: hoTen}}});
+  const {ip, quocGia} = await layIpVaQuocGia();
+  if (quocGia && quocGia !== "VN") return {ok: false, error: "Kho đề hiện chỉ mở đăng ký cho mạng tại Việt Nam."};
+  if (await laMangMayChu(ip)) return {ok: false, error: "Không chấp nhận đăng ký từ mạng máy chủ, VPN hoặc proxy."};
+  if (ip) {
+    const {count} = await main().from("lu_ip_dang_ky").select("id", {count: "exact", head: true}).eq("ip", ip);
+    if ((count ?? 0) >= IP_TOI_DA) return {ok: false, error: `IP này đã đăng ký ${count} tài khoản, tối đa ${IP_TOI_DA}.`};
+  }
+  const {data, error} = await (await authClient()).auth.signUp({email, password, options: {data: {ho_ten: hoTen}}});
+  if (error) return {ok: false, error: error.message};
+  const uid = data.user?.id;
+  if (uid && ip) await main().from("lu_ip_dang_ky").insert({ip, user_id: uid});
+  return {ok: true, canXacNhan: !data.session};
+}
+export async function guiLaiMa(email: string): Promise<KetQua> {
+  const {error} = await (await authClient()).auth.resend({type: "signup", email});
   return error ? {ok: false, error: error.message} : {ok: true};
 }
 export async function xinLinkUpload(mon: Mon, loai: Loai, thuMuc: ThuMuc): Promise<LinkUpload> {
@@ -44,14 +88,14 @@ export async function ghiDe(input: {mon: Mon; ten: string; ngay: string; loai: L
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
   const url = await linkLuuTru(hubCuaPath(input.path), input.path);
   const urlDapAn = input.dapAnPath ? await linkLuuTru(hubCuaPath(input.dapAnPath), input.dapAnPath) : null;
-  const {data, error} = await hubClient("MAIN").from("de_thi").insert({mon: input.mon, ten: input.ten, ngay: input.ngay, url_file: url, loai: input.loai, duong_dan: input.path, user_id: uid, kich_thuoc: input.kichThuoc, ten_goc: input.tenGoc, url_dap_an: urlDapAn, dap_an_duong_dan: input.dapAnPath ?? null, dap_an_kich_thuoc: input.dapAnKichThuoc ?? null, dap_an_ten_goc: input.dapAnTenGoc ?? null}).select("*").maybeSingle();
+  const {data, error} = await main().from("de_thi").insert({mon: input.mon, ten: input.ten, ngay: input.ngay, url_file: url, loai: input.loai, duong_dan: input.path, user_id: uid, kich_thuoc: input.kichThuoc, ten_goc: input.tenGoc, url_dap_an: urlDapAn, dap_an_duong_dan: input.dapAnPath ?? null, dap_an_kich_thuoc: input.dapAnKichThuoc ?? null, dap_an_ten_goc: input.dapAnTenGoc ?? null}).select("*").maybeSingle();
   if (error || !data) return {ok: false, error: error?.message ?? "Không ghi được đề."};
   return {ok: true, row: data as Record<string, unknown>};
 }
 export async function capNhatDe(id: string, input: {mon: Mon; ten: string; ngay: string; loai: Loai; path: string | null; kichThuoc: number | null; tenGoc: string | null} & DapAnInput): Promise<KetQuaGhi> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
-  const {data: cu} = await hubClient("MAIN").from("de_thi").select("duong_dan,dap_an_duong_dan").eq("id", id).maybeSingle();
+  const {data: cu} = await main().from("de_thi").select("duong_dan,dap_an_duong_dan").eq("id", id).maybeSingle();
   const patch: Record<string, unknown> = {mon: input.mon, ten: input.ten, ngay: input.ngay};
   if (input.path) {
     patch.loai = input.loai;
@@ -71,7 +115,7 @@ export async function capNhatDe(id: string, input: {mon: Mon; ten: string; ngay:
     patch.dap_an_kich_thuoc = input.dapAnKichThuoc ?? null;
     patch.dap_an_ten_goc = input.dapAnTenGoc ?? null;
   }
-  const {data, error} = await hubClient("MAIN").from("de_thi").update(patch).eq("id", id).select("*").maybeSingle();
+  const {data, error} = await main().from("de_thi").update(patch).eq("id", id).select("*").maybeSingle();
   if (error || !data) return {ok: false, error: error?.message ?? "Không sửa được đề."};
   if (input.path && cu?.duong_dan) await hubClient(hubCuaPath(String(cu.duong_dan))).storage.from(BUCKET).remove([String(cu.duong_dan)]);
   if ((input.xoaDapAn || input.dapAnPath) && cu?.dap_an_duong_dan) await hubClient(hubCuaPath(String(cu.dap_an_duong_dan))).storage.from(BUCKET).remove([String(cu.dap_an_duong_dan)]);
@@ -80,8 +124,8 @@ export async function capNhatDe(id: string, input: {mon: Mon; ten: string; ngay:
 export async function xoaDeServer(id: string): Promise<KetQua> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
-  const {data} = await hubClient("MAIN").from("de_thi").select("duong_dan,dap_an_duong_dan").eq("id", id).maybeSingle();
-  const {error} = await hubClient("MAIN").from("de_thi").delete().eq("id", id);
+  const {data} = await main().from("de_thi").select("duong_dan,dap_an_duong_dan").eq("id", id).maybeSingle();
+  const {error} = await main().from("de_thi").delete().eq("id", id);
   if (error) return {ok: false, error: error.message};
   if (data?.duong_dan) await hubClient(hubCuaPath(String(data.duong_dan))).storage.from(BUCKET).remove([String(data.duong_dan)]);
   if (data?.dap_an_duong_dan) await hubClient(hubCuaPath(String(data.dap_an_duong_dan))).storage.from(BUCKET).remove([String(data.dap_an_duong_dan)]);
@@ -95,18 +139,18 @@ export async function xoaFile(path: string): Promise<void> {
 export async function ghimDe(id: string): Promise<KetQua> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
-  const {data: de} = await hubClient("MAIN").from("de_thi").select("mon,ghim_at").eq("id", id).maybeSingle();
+  const {data: de} = await main().from("de_thi").select("mon,ghim_at").eq("id", id).maybeSingle();
   if (!de) return {ok: false, error: "Không tìm thấy đề."};
   if (de.ghim_at) return {ok: true};
-  const {count} = await hubClient("MAIN").from("de_thi").select("id", {count: "exact", head: true}).eq("mon", de.mon).not("ghim_at", "is", null);
+  const {count} = await main().from("de_thi").select("id", {count: "exact", head: true}).eq("mon", de.mon).not("ghim_at", "is", null);
   if ((count ?? 0) >= 3) return {ok: false, error: `Môn ${de.mon} đã ghim đủ 3 đề, bỏ ghim bớt trước.`};
-  const {error} = await hubClient("MAIN").from("de_thi").update({ghim_at: new Date().toISOString()}).eq("id", id);
+  const {error} = await main().from("de_thi").update({ghim_at: new Date().toISOString()}).eq("id", id);
   return error ? {ok: false, error: error.message} : {ok: true};
 }
 export async function boGhimDe(id: string): Promise<KetQua> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
-  const {error} = await hubClient("MAIN").from("de_thi").update({ghim_at: null}).eq("id", id);
+  const {error} = await main().from("de_thi").update({ghim_at: null}).eq("id", id);
   return error ? {ok: false, error: error.message} : {ok: true};
 }
 export async function xinLinkAnhThongBao(duoi: string): Promise<LinkAnh> {
@@ -114,7 +158,7 @@ export async function xinLinkAnhThongBao(duoi: string): Promise<LinkAnh> {
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
   if (!ANH_DUOI.includes(duoi)) return {ok: false, error: "Ảnh chỉ nhận png, jpg, webp, gif."};
   const path = `thong-bao/${randomUUID()}.${duoi}`;
-  const {data, error} = await hubClient("MAIN").storage.from(BUCKET).createSignedUploadUrl(path);
+  const {data, error} = await main().storage.from(BUCKET).createSignedUploadUrl(path);
   if (error || !data) return {ok: false, error: error?.message ?? "Không tạo được link upload ảnh."};
   return {ok: true, path, token: data.token};
 }
@@ -125,9 +169,9 @@ export async function dangThongBao(input: {noiDung: string; path: string | null}
   if (!noiDung && !input.path) return {ok: false, error: "Thông báo cần text hoặc ảnh."};
   if (noiDung.length > 2000) return {ok: false, error: "Text tối đa 2000 ký tự."};
   const urlAnh = input.path ? await linkLuuTru("MAIN", input.path) : "";
-  const {error} = await hubClient("MAIN").from("thong_bao").insert({noi_dung: noiDung, url_anh: urlAnh, duong_dan: input.path});
+  const {error} = await main().from("thong_bao").insert({noi_dung: noiDung, url_anh: urlAnh, duong_dan: input.path});
   if (error) {
-    if (input.path) await hubClient("MAIN").storage.from(BUCKET).remove([input.path]);
+    if (input.path) await main().storage.from(BUCKET).remove([input.path]);
     return {ok: false, error: error.message};
   }
   return {ok: true};
@@ -135,19 +179,22 @@ export async function dangThongBao(input: {noiDung: string; path: string | null}
 export async function xoaThongBao(id: string): Promise<KetQua> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
-  const {data} = await hubClient("MAIN").from("thong_bao").select("duong_dan").eq("id", id).maybeSingle();
-  const {error} = await hubClient("MAIN").from("thong_bao").delete().eq("id", id);
+  const {data} = await main().from("thong_bao").select("duong_dan").eq("id", id).maybeSingle();
+  const {error} = await main().from("thong_bao").delete().eq("id", id);
   if (error) return {ok: false, error: error.message};
-  if (data?.duong_dan) await hubClient("MAIN").storage.from(BUCKET).remove([String(data.duong_dan)]);
+  if (data?.duong_dan) await main().storage.from(BUCKET).remove([String(data.duong_dan)]);
   return {ok: true};
 }
-export async function goiTai(id: string): Promise<void> {
-  await hubClient("MAIN").rpc("tang_tai", {uid: id});
+export async function goiTai(id: string): Promise<KetQua> {
+  const uid = await uidHienTai();
+  if (!uid) return {ok: false, error: "Cần đăng nhập để tải."};
+  await main().rpc("tang_tai", {uid: id});
+  return {ok: true};
 }
 export async function layNguoiDung(): Promise<{ok: true; ds: NguoiDung[]} | {ok: false; error: string}> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
-  const {data, error} = await hubClient("MAIN").from("profiles").select("id,email,ho_ten,role,banned,created_at").order("created_at", {ascending: false});
+  const {data, error} = await main().from("profiles").select("id,email,ho_ten,role,banned,created_at").order("created_at", {ascending: false});
   if (error) return {ok: false, error: error.message};
   return {ok: true, ds: (data ?? []) as NguoiDung[]};
 }
@@ -155,15 +202,11 @@ export async function banNguoiDung(id: string, banned: boolean): Promise<KetQua>
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
   if (id === uid) return {ok: false, error: "Không thể tự ban chính mình."};
-  const {error} = await hubClient("MAIN").from("profiles").update({banned}).eq("id", id);
+  const {error} = await main().from("profiles").update({banned}).eq("id", id);
   return error ? {ok: false, error: error.message} : {ok: true};
 }
-async function uidHienTai(): Promise<string | null> {
-  const {data, error} = await (await authClient()).auth.getClaims();
-  return error ? null : (data?.claims?.sub ?? null);
-}
 export async function layDanhGia(deId: string): Promise<DanhGiaTong> {
-  const [cl, kq] = await Promise.all([(await authClient()).auth.getClaims(), hubClient("MAIN").from("danh_gia").select("sao,user_id").eq("de_id", deId)]);
+  const [cl, kq] = await Promise.all([(await authClient()).auth.getClaims(), main().from("danh_gia").select("sao,user_id").eq("de_id", deId)]);
   const uid = cl.error ? null : (cl.data?.claims?.sub ?? null);
   const ds = (kq.data ?? []) as HangSao[];
   const dem = ds.length;
@@ -176,11 +219,11 @@ export async function danhGia(deId: string, sao: number): Promise<KetQua> {
   if (sao < 1 || sao > 5) return {ok: false, error: "Số sao không hợp lệ."};
   const uid = await uidHienTai();
   if (!uid) return {ok: false, error: "Cần đăng nhập để đánh giá."};
-  const {error} = await hubClient("MAIN").from("danh_gia").upsert({de_id: deId, user_id: uid, sao}, {onConflict: "de_id,user_id"});
+  const {error} = await main().from("danh_gia").upsert({de_id: deId, user_id: uid, sao}, {onConflict: "de_id,user_id"});
   return error ? {ok: false, error: error.message} : {ok: true};
 }
 export async function layBinhLuan(deId: string): Promise<BinhLuan[]> {
-  const [cl, kq] = await Promise.all([(await authClient()).auth.getClaims(), hubClient("MAIN").from("binh_luan").select("id,user_id,ten_nguoi,noi_dung,created_at,duyet").eq("de_id", deId).order("created_at", {ascending: false}).limit(60)]);
+  const [cl, kq] = await Promise.all([(await authClient()).auth.getClaims(), main().from("binh_luan").select("id,user_id,ten_nguoi,noi_dung,created_at,duyet").eq("de_id", deId).order("created_at", {ascending: false}).limit(60)]);
   const uid = cl.error ? null : (cl.data?.claims?.sub ?? null);
   const rows = (kq.data ?? []) as HangBinhLuan[];
   return rows.filter((r: HangBinhLuan) => r.duyet || (!!uid && r.user_id === uid)).map((r: HangBinhLuan) => ({id: String(r.id), ten_nguoi: String(r.ten_nguoi), noi_dung: String(r.noi_dung), created_at: String(r.created_at), duyet: !!r.duyet, cuaToi: !!uid && r.user_id === uid}));
@@ -191,45 +234,56 @@ export async function binhLuan(deId: string, noiDung: string): Promise<KetQua> {
   if (txt.length > 600) return {ok: false, error: "Nhận xét tối đa 600 ký tự."};
   const uid = await uidHienTai();
   if (!uid) return {ok: false, error: "Cần đăng nhập để nhận xét."};
-  const {data: hs} = await hubClient("MAIN").from("profiles").select("banned,ho_ten,email").eq("id", uid).maybeSingle();
+  const tuKho = kiemTraToxic(txt);
+  if (tuKho) return {ok: false, error: `Nhận xét có từ ngữ không phù hợp ("${tuKho}"), cậu viết lại nhé.`};
+  const {count: daCo} = await main().from("binh_luan").select("id", {count: "exact", head: true}).eq("de_id", deId).eq("user_id", uid);
+  if ((daCo ?? 0) > 0) return {ok: false, error: "Cậu đã nhận xét đề này rồi, mỗi đề chỉ một nhận xét thôi."};
+  const {count: homNay} = await main().from("binh_luan").select("id", {count: "exact", head: true}).eq("user_id", uid).gte("created_at", dauNgayVN());
+  if ((homNay ?? 0) > 0) return {ok: false, error: "Hôm nay cậu đã nhận xét rồi, qua ngày mới viết tiếp nhé."};
+  const {data: ganNhat} = await main().from("binh_luan").select("created_at").eq("user_id", uid).order("created_at", {ascending: false}).limit(1).maybeSingle();
+  if (ganNhat && Date.now() - new Date(String(ganNhat.created_at)).getTime() < GIAY_CHO_BINH_LUAN * 1000) return {ok: false, error: `Cậu gửi nhanh quá, chờ ${GIAY_CHO_BINH_LUAN} giây rồi gửi lại nhé.`};
+  const {data: hs} = await main().from("profiles").select("banned,ho_ten,email").eq("id", uid).maybeSingle();
   if (hs?.banned) return {ok: false, error: "Tài khoản bị khóa."};
   const ten = String(hs?.ho_ten ?? "").trim() || String(hs?.email ?? "Thành viên").split("@")[0];
-  const {error} = await hubClient("MAIN").from("binh_luan").insert({de_id: deId, user_id: uid, ten_nguoi: ten, noi_dung: txt});
-  return error ? {ok: false, error: error.message} : {ok: true};
+  const {error} = await main().from("binh_luan").insert({de_id: deId, user_id: uid, ten_nguoi: ten, noi_dung: txt, duyet: true});
+  if (error) {
+    if (error.code === "23505") return {ok: false, error: "Cậu đã nhận xét đề này rồi."};
+    return {ok: false, error: error.message};
+  }
+  return {ok: true};
 }
-export async function layBinhLuanChoDuyet(): Promise<{ok: true; ds: (BinhLuan & {de_ten: string})[]} | {ok: false; error: string}> {
+export async function layBinhLuanAdmin(): Promise<{ok: true; ds: BinhLuanAdminRow[]} | {ok: false; error: string}> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
-  const {data, error} = await hubClient("MAIN").from("binh_luan").select("id,ten_nguoi,noi_dung,created_at,duyet,de_thi(ten)").eq("duyet", false).order("created_at", {ascending: true}).limit(100);
+  const {data, error} = await main().from("binh_luan").select("id,user_id,ten_nguoi,noi_dung,created_at,duyet,de_thi(ten),profiles(email)").order("created_at", {ascending: false}).limit(100);
   if (error) return {ok: false, error: error.message};
   return {ok: true, ds: (data ?? []).map((r) => {
-    const o = r as Record<string, unknown> & {de_thi?: {ten?: string} | null};
-    return {id: String(o.id), ten_nguoi: String(o.ten_nguoi), noi_dung: String(o.noi_dung), created_at: String(o.created_at), duyet: false, cuaToi: false, de_ten: String(o.de_thi?.ten ?? "Đề đã xóa")};
+    const o = r as Record<string, unknown> & {de_thi?: {ten?: string} | null; profiles?: {email?: string} | null};
+    return {id: String(o.id), ten_nguoi: String(o.ten_nguoi), noi_dung: String(o.noi_dung), created_at: String(o.created_at), duyet: !!o.duyet, cuaToi: false, de_ten: String(o.de_thi?.ten ?? "Đề đã xóa"), email: String(o.profiles?.email ?? "")};
   })};
 }
-export async function duyetBinhLuan(id: string): Promise<KetQua> {
+export async function doiAnBinhLuan(id: string, an: boolean): Promise<KetQua> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
-  const {error} = await hubClient("MAIN").from("binh_luan").update({duyet: true}).eq("id", id);
+  const {error} = await main().from("binh_luan").update({duyet: !an}).eq("id", id);
   return error ? {ok: false, error: error.message} : {ok: true};
 }
 export async function xoaBinhLuan(id: string): Promise<KetQua> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
-  const {error} = await hubClient("MAIN").from("binh_luan").delete().eq("id", id);
+  const {error} = await main().from("binh_luan").delete().eq("id", id);
   return error ? {ok: false, error: error.message} : {ok: true};
 }
 export async function layThongKe(): Promise<{ok: true; tk: ThongKe} | {ok: false; error: string}> {
   const uid = await adminUid();
   if (!uid) return {ok: false, error: "Không có quyền quản trị."};
-  const main = hubClient("MAIN");
   const tu = new Date(Date.now() - 13 * 86400000);
   tu.setHours(0, 0, 0, 0);
   const [de, nk, tv, bl] = await Promise.all([
-    main.from("de_thi").select("id,ten,mon,luot_xem,luot_tai,kich_thuoc,dap_an_kich_thuoc,dap_an_duong_dan"),
-    main.from("nhat_ky").select("kieu,created_at").gte("created_at", tu.toISOString()).limit(20000),
-    main.from("profiles").select("id", {count: "exact", head: true}),
-    main.from("binh_luan").select("id", {count: "exact", head: true}).eq("duyet", false)
+    main().from("de_thi").select("id,ten,mon,luot_xem,luot_tai,kich_thuoc,dap_an_kich_thuoc,dap_an_duong_dan"),
+    main().from("nhat_ky").select("kieu,created_at").gte("created_at", tu.toISOString()).limit(20000),
+    main().from("profiles").select("id", {count: "exact", head: true}),
+    main().from("binh_luan").select("id", {count: "exact", head: true}).eq("duyet", false)
   ]);
   const ds = de.data ?? [];
   const ngay: {ngay: string; xem: number; tai: number}[] = [];
