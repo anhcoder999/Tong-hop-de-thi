@@ -3,7 +3,7 @@ import {useRef} from "react";
 import {useWatch, type Control} from "react-hook-form";
 import {IconCheck} from "@/components/Icons";
 import Latex from "@/components/Latex";
-import {KY_HIEU_DS, KY_HIEU_MCQ, nhanLoai} from "@/lib/thiThu";
+import {KY_HIEU_DS, KY_HIEU_MCQ, nhanLoai, type LoaiCau, type LuaChon} from "@/lib/thiThu";
 import type {GiaTriCauHoi} from "@/lib/schema";
 type NutCongThuc = {nhan: string; than: string; block?: boolean};
 const KHUNG: NutCongThuc[] = [
@@ -80,37 +80,42 @@ export function OSoan({nhan, giaTri, dat, rows = 3, placeholder, gon, hienXem, g
   );
 }
 export function XemTruocCau({control}: {control: Control<GiaTriCauHoi>}) {
-  const g = useWatch({control});
-  const ky = g.loai === "dung_sai" ? KY_HIEU_DS : KY_HIEU_MCQ;
+  const g = useWatch({control}) as Partial<GiaTriCauHoi>;
+  const loai = (g?.loai ?? "trac_nghiem") as LoaiCau;
+  const luaChon = (g?.lua_chon ?? []) as LuaChon[];
+  const dapAnDs = (g?.dap_an_ds ?? {}) as Record<string, boolean>;
+  const dapAnMcq = g?.dap_an_mcq ?? "";
+  const dapAnNgan = g?.dap_an_ngan ?? "";
+  const ky = loai === "dung_sai" ? KY_HIEU_DS : KY_HIEU_MCQ;
   return (
     <div className="mt-2">
       <p className="flex flex-wrap items-center gap-2 font-display text-sm font-bold text-ink">
-        Câu {g.thu_tu || "—"}
-        <span className="border border-ink/30 px-1.5 text-[9px] font-sans font-semibold uppercase tracking-[0.1em] text-ink-soft">{nhanLoai(g.loai)}</span>
-        <span className="text-[10px] font-sans font-normal text-ink-faint">{g.diem}đ</span>
+        Câu {g?.thu_tu || "—"}
+        <span className="border border-ink/30 px-1.5 text-[9px] font-sans font-semibold uppercase tracking-[0.1em] text-ink-soft">{nhanLoai(loai)}</span>
+        <span className="text-[10px] font-sans font-normal text-ink-faint">{g?.diem ?? 0}đ</span>
       </p>
-      <div className="mt-1.5 text-sm leading-relaxed text-ink"><Latex nguon={g.noi_dung || "(chưa có nội dung)"} /></div>
-      {g.loai !== "tra_loi_ngan" ? (
+      <div className="mt-1.5 text-sm leading-relaxed text-ink"><Latex nguon={g?.noi_dung || "(chưa có nội dung)"} /></div>
+      {loai !== "tra_loi_ngan" ? (
         <ul className="mt-2 space-y-1">
           {ky.map((k) => {
-            const nd = g.lua_chon.find((x) => x.ky_hieu === k)?.noi_dung ?? "";
-            const laDapAn = g.loai === "trac_nghiem" ? g.dap_an_mcq === k : g.dap_an_ds[k] === true;
+            const nd = luaChon.find((x) => x.ky_hieu === k)?.noi_dung ?? "";
+            const laDapAn = loai === "trac_nghiem" ? dapAnMcq === k : dapAnDs[k] === true;
             return (
-              <li key={k} className={`flex items-start gap-2 border px-2 py-1 text-sm ${g.loai === "trac_nghiem" && laDapAn ? "border-ok bg-ok/10" : "border-ink/20 bg-paper-light"}`}>
-                <span className="font-bold text-ink">{g.loai === "trac_nghiem" ? `${k}.` : `${k})`}</span>
+              <li key={k} className={`flex items-start gap-2 border px-2 py-1 text-sm ${loai === "trac_nghiem" && laDapAn ? "border-ok bg-ok/10" : "border-ink/20 bg-paper-light"}`}>
+                <span className="font-bold text-ink">{loai === "trac_nghiem" ? `${k}.` : `${k})`}</span>
                 <span className="min-w-0 flex-1 text-ink-soft"><Latex nguon={nd || "(trống)"} /></span>
-                {g.loai === "dung_sai" && typeof g.dap_an_ds[k] === "boolean" && (
-                  <span className={`shrink-0 border px-1 text-[9px] font-bold uppercase ${g.dap_an_ds[k] ? "border-ok text-ok" : "border-danger text-danger"}`}>{g.dap_an_ds[k] ? "Đúng" : "Sai"}</span>
+                {loai === "dung_sai" && typeof dapAnDs[k] === "boolean" && (
+                  <span className={`shrink-0 border px-1 text-[9px] font-bold uppercase ${dapAnDs[k] ? "border-ok text-ok" : "border-danger text-danger"}`}>{dapAnDs[k] ? "Đúng" : "Sai"}</span>
                 )}
-                {g.loai === "trac_nghiem" && laDapAn && <IconCheck className="h-3.5 w-3.5 shrink-0 text-ok" />}
+                {loai === "trac_nghiem" && laDapAn && <IconCheck className="h-3.5 w-3.5 shrink-0 text-ok" />}
               </li>
             );
           })}
         </ul>
       ) : (
-        <p className="mt-2 border border-ok bg-ok/10 px-2 py-1 text-sm text-ok">Đáp án: {g.dap_an_ngan ? g.dap_an_ngan.split("|").join(" hoặc ") : "(chưa nhập)"}</p>
+        <p className="mt-2 border border-ok bg-ok/10 px-2 py-1 text-sm text-ok">Đáp án: {dapAnNgan ? dapAnNgan.split("|").join(" hoặc ") : "(chưa nhập)"}</p>
       )}
-      {g.giai_thich && (
+      {g?.giai_thich && (
         <div className="mt-2 border-l-2 border-accent bg-paper-light p-2">
           <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-accent">Giải thích</p>
           <div className="mt-0.5 text-sm leading-relaxed text-ink-soft"><Latex nguon={g.giai_thich} /></div>
