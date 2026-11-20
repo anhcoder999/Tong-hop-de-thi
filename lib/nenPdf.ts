@@ -52,6 +52,6 @@ export async function nenPdf(file: File, onProgress?: (s: string) => void): Prom
   }
   await doc.destroy();
   const saved = await out.save({useObjectStreams: true});
-  const result = new Blob([saved], {type: "application/pdf"});
+  const result = new Blob([new Uint8Array(bytes)], {type: "application/pdf"});
   return result.size < file.size ? result : file;
 }
