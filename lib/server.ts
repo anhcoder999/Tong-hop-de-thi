@@ -1,4 +1,5 @@
 import "server-only";
+import {cache} from "react";
 import {createClient, type SupabaseClient} from "@supabase/supabase-js";
 import {createServerClient} from "@supabase/ssr";
 import {cookies} from "next/headers";
@@ -19,14 +20,14 @@ const CONFIG: Record<Hub, () => {url: string; key: string}> = {
   SDG: () => ({url: env("SUPABASE_URL_SDG"), key: env("SUPABASE_SECRET_KEY_SDG")}),
   TCK: () => ({url: env("SUPABASE_URL_TCK"), key: env("SUPABASE_SECRET_KEY_TCK")})
 };
-const cache = new Map<Hub, SupabaseClient>();
+const cacheClient = new Map<Hub, SupabaseClient>();
 const cacheUrl = new Map<string, {url: string; exp: number}>();
 export function hubClient(hub: Hub): SupabaseClient {
-  const hit = cache.get(hub);
+  const hit = cacheClient.get(hub);
   if (hit) return hit;
   const {url, key} = CONFIG[hub]();
   const client = createClient(url, key, {auth: {persistSession: false, autoRefreshToken: false}});
-  cache.set(hub, client);
+  cacheClient.set(hub, client);
   return client;
 }
 export async function kyUrl(hub: Hub, path: string, giay = 3600): Promise<string> {
@@ -56,11 +57,11 @@ export async function authClient() {
     }
   });
 }
-export async function adminUid(): Promise<string | null> {
+export const adminUid = cache(async (): Promise<string | null> => {
   const {data, error} = await (await authClient()).auth.getClaims();
   const uid = data?.claims?.sub;
   if (error || !uid) return null;
   const {data: hoSo} = await hubClient("MAIN").from("profiles").select("role,banned").eq("id", uid).maybeSingle();
   return hoSo?.role === "admin" && !hoSo?.banned ? uid : null;
-}
+});
 export {BUCKET};
