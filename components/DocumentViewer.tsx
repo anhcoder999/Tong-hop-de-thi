@@ -9,7 +9,6 @@ import {useDanhDau} from "@/lib/useDanhDau";
 import {useSoTay} from "@/lib/useSoTay";
 import {goiTai} from "@/app/actions";
 const CDN = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69";
-const WORKER = `${CDN}/build/pdf.worker.min.mjs`;
 const CMAP = `${CDN}/cmaps/`;
 const FONTS = `${CDN}/standard_fonts/`;
 type KetQuaTim = {trang: number; snippet: string};
@@ -61,6 +60,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
   const [zoom, setZoom] = useState(1);
   const [huong, setHuong] = useState(1);
   const [lanVe, setLanVe] = useState(0);
+  const [lanThu, setLanThu] = useState(0);
   const [dangTai, setDangTai] = useState(true);
   const [dangVe, setDangVe] = useState(true);
   const [loi, setLoi] = useState("");
@@ -114,7 +114,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
     (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = WORKER;
+        pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
         const doc = await pdfjs.getDocument({url: src, cMapUrl: CMAP, cMapPacked: true, standardFontDataUrl: FONTS, disableAutoFetch: true, rangeChunkSize: 65536}).promise;
         if (!alive) {
           doc.destroy();
@@ -130,7 +130,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
         setDangTai(false);
       } catch {
         if (alive) {
-          setLoi("Không tải được file. Link có thể đã hết hạn, hãy tải lại trang.");
+          setLoi("Không tải được file. Link có thể đã hết hạn hoặc mạng chập chờn — bấm thử lại, không được thì tải lại trang.");
           setDangTai(false);
         }
       }
@@ -139,7 +139,7 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
       alive = false;
       if (taskRef.current) taskRef.current.cancel();
     };
-  }, [src]);
+  }, [src, lanThu]);
   useEffect(() => {
     if (!tiepTuc) return;
     const t = setTimeout(() => setTiepTuc(null), 4000);
@@ -504,7 +504,12 @@ export default function DocumentViewer({url, ten, id, urlDapAn}: {url: string; t
             </div>
           </div>
         ) : loi ? (
-          <div className="border border-accent/50 bg-accent-wash p-5 text-sm text-accent-deep">{loi}</div>
+          <div className="border border-accent/50 bg-accent-wash p-5 text-sm text-accent-deep">
+            <p>{loi}</p>
+            <motion.button whileTap={buttonTap} type="button" onClick={() => setLanThu((v) => v + 1)} className="nut-nhan mt-3 border border-ink bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-paper-light transition-colors hover:border-accent hover:bg-accent">
+              Thử lại
+            </motion.button>
+          </div>
         ) : (
           <motion.div key={`${src}-${trang}`} initial={{opacity: 0, x: huong * 26}} animate={{opacity: 1, x: 0}} transition={spring} ref={boxRef} style={{transformOrigin: "top center"}} className="relative mx-auto">
             <canvas ref={canvasRef} className="block bg-white shadow-paper" />
