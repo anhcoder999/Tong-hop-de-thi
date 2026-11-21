@@ -1,5 +1,6 @@
 import type {Metadata} from "next";
 import Link from "next/link";
+import {after} from "next/server";
 import {notFound} from "next/navigation";
 import {IconCalendar, IconCheck, IconChevron, IconDownload, IconEye} from "@/components/Icons";
 import DocumentViewer from "@/components/DocumentViewer";
@@ -70,8 +71,8 @@ export default async function TrangXemDe({params}: Props) {
     );
   }
   if (!de) notFound();
-  const [, url, urlDapAn] = await Promise.all([
-    hubClient("MAIN").rpc("tang_xem", {uid: de.id}),
+  after(() => hubClient("MAIN").rpc("tang_xem", {uid: de.id}).then(() => undefined));
+  const [url, urlDapAn] = await Promise.all([
     de.duongDan ? kyUrl(hubCuaPath(de.duongDan), de.duongDan) : Promise.resolve(de.urlPdf),
     de.dapAnDuongDan ? kyUrl(hubCuaPath(de.dapAnDuongDan), de.dapAnDuongDan) : Promise.resolve(de.urlDapAn)
   ]);
