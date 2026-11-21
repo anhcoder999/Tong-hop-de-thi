@@ -71,7 +71,9 @@ export default async function TrangXemDe({params}: Props) {
     );
   }
   if (!de) notFound();
-  after(() => hubClient("MAIN").rpc("tang_xem", {uid: de.id}).then(() => undefined));
+  after(async () => {
+    await hubClient("MAIN").rpc("tang_xem", {uid: de.id});
+  });
   const [url, urlDapAn] = await Promise.all([
     de.duongDan ? kyUrl(hubCuaPath(de.duongDan), de.duongDan) : Promise.resolve(de.urlPdf),
     de.dapAnDuongDan ? kyUrl(hubCuaPath(de.dapAnDuongDan), de.dapAnDuongDan) : Promise.resolve(de.urlDapAn)
