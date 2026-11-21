@@ -3,6 +3,11 @@ import {capNhatDe, ghiDe, xoaDeServer, xoaFile, xinLinkUpload, type ThuMuc} from
 import {chuanMon, khongDau, type DeThi, type Loai, type Mon} from "@/lib/data";
 export const MAX_BYTES = 20 * 1024 * 1024;
 export type DeThiDayDu = DeThi & {saoTB?: number; saoDem?: number};
+const TTL_KHO = 20000;
+let cacheKho: {ts: number; ds: DeThiDayDu[]} | null = null;
+export function xoaCacheKho(): void {
+  cacheKho = null;
+}
 export function duoiFile(name: string): Loai | null {
   return name.toLowerCase().endsWith(".pdf") ? "pdf" : null;
 }
@@ -30,11 +35,12 @@ function sapGhimTruoc(rows: DeThiDayDu[]): DeThiDayDu[] {
   return rows.sort((a, b) => (a.ghimAt && b.ghimAt ? a.ghimAt.localeCompare(b.ghimAt) : a.ghimAt ? -1 : b.ghimAt ? 1 : 0));
 }
 export async function layDanhSach(): Promise<DeThiDayDu[]> {
+  if (cacheKho && Date.now() - cacheKho.ts < TTL_KHO) return cacheKho.ds;
   const [kq, dg] = await Promise.all([supabase.from("de_thi").select("*").order("created_at", {ascending: false}), supabase.rpc("danh_gia_tong")]);
   if (kq.error) throw new Error(kq.error.message);
   const sao = new Map<string, {tb: number; dem: number}>();
   for (const r of (dg.data ?? []) as {de_id: string; tb: number; dem: number}[]) sao.set(String(r.de_id), {tb: Number(r.tb), dem: Number(r.dem)});
-  return sapGhimTruoc((kq.data ?? []).map((r) => {
+  const ds = sapGhimTruoc((kq.data ?? []).map((r) => {
     const de = docRow(r as Record<string, unknown>) as DeThiDayDu;
     const s = sao.get(de.id);
     if (s) {
@@ -43,6 +49,8 @@ export async function layDanhSach(): Promise<DeThiDayDu[]> {
     }
     return de;
   }));
+  cacheKho = {ts: Date.now(), ds};
+  return ds;
 }
 export async function layDeTheoId(id: string): Promise<DeThi | null> {
   const {data, error} = await supabase.from("de_thi").select("*").eq("id", id).maybeSingle();
@@ -50,10 +58,10 @@ export async function layDeTheoId(id: string): Promise<DeThi | null> {
   return data ? docRow(data as Record<string, unknown>) : null;
 }
 export async function kiemTraTrung(mon: Mon, ten: string, boQuaId?: string): Promise<boolean> {
-  const {data, error} = await supabase.from("de_thi").select("id,ten,mon");
+  const {data, error} = await supabase.from("de_thi").select("id,ten").eq("mon", mon);
   if (error) throw new Error(error.message);
   const chuan = khongDau(ten);
-  return (data ?? []).some((r) => String(r.id) !== boQuaId && chuanMon(String(r.mon ?? "")) === mon && khongDau(String(r.ten)) === chuan);
+  return (data ?? []).some((r) => String(r.id) !== boQuaId && khongDau(String(r.ten)) === chuan);
 }
 async function chuanBiFile(file: File, onStage?: (s: string) => void, nhan?: string): Promise<File> {
   try {
@@ -86,20 +94,15 @@ export async function themDe(input: NhapDe, file: File, onStage?: (s: string) =>
     xacThuc(dapAn, "Đáp án");
     tepDa = await chuanBiFile(dapAn, onStage, "đáp án");
   }
-  onStage?.("Đang tải đề lên kho...");
-  const path = await taiLen(tepDe, input.mon, "de");
-  let pathDa: string | null = null;
-  if (tepDa) {
-    onStage?.("Đang tải đáp án lên kho...");
-    pathDa = await taiLen(tepDa, input.mon, "dap-an");
-  }
+  onStage?.("Đang tải đề và đáp án lên kho...");
+  const [path, pathDa] = await Promise.all([taiLen(tepDe, input.mon, "de"), tepDa ? taiLen(tepDa, input.mon, "dap-an") : Promise.resolve(null)]);
   onStage?.("Đang ghi thông tin đề...");
   const kq = await ghiDe({mon: input.mon, ten: input.ten, ngay: input.ngay, loai: "pdf", path, kichThuoc: tepDe.size, tenGoc: file.name, dapAnPath: pathDa, dapAnKichThuoc: tepDa ? tepDa.size : null, dapAnTenGoc: dapAn ? dapAn.name : null});
   if (!kq.ok) {
-    await xoaFile(path);
-    if (pathDa) await xoaFile(pathDa);
+    await Promise.all([xoaFile(path), pathDa ? xoaFile(pathDa) : Promise.resolve()]);
     throw new Error(kq.error);
   }
+  xoaCacheKho();
   return docRow(kq.row);
 }
 export async function suaDe(id: string, input: NhapDe, file: File | null, onStage?: (s: string) => void, dapAn?: File | null, xoaDapAn?: boolean): Promise<DeThi> {
@@ -109,32 +112,41 @@ export async function suaDe(id: string, input: NhapDe, file: File | null, onStag
   let pathDa: string | null = null;
   let kichThuocDa: number | null = null;
   let tenGocDa: string | null = null;
+  let tepDe: File | null = null;
+  let tepDa: File | null = null;
   if (file) {
     xacThuc(file, "Đề");
-    const tep = await chuanBiFile(file, onStage, "đề");
-    onStage?.("Đang tải đề mới...");
-    path = await taiLen(tep, input.mon, "de");
-    kichThuoc = tep.size;
-    tenGoc = file.name;
+    tepDe = await chuanBiFile(file, onStage, "đề");
   }
   if (dapAn) {
     xacThuc(dapAn, "Đáp án");
-    const tep = await chuanBiFile(dapAn, onStage, "đáp án");
-    onStage?.("Đang tải đáp án mới...");
-    pathDa = await taiLen(tep, input.mon, "dap-an");
-    kichThuocDa = tep.size;
-    tenGocDa = dapAn.name;
+    tepDa = await chuanBiFile(dapAn, onStage, "đáp án");
+  }
+  if (tepDe || tepDa) {
+    onStage?.("Đang tải file mới lên kho...");
+    const [pDe, pDa] = await Promise.all([tepDe ? taiLen(tepDe, input.mon, "de") : Promise.resolve(null), tepDa ? taiLen(tepDa, input.mon, "dap-an") : Promise.resolve(null)]);
+    path = pDe;
+    pathDa = pDa;
+    if (tepDe) {
+      kichThuoc = tepDe.size;
+      tenGoc = file?.name ?? null;
+    }
+    if (tepDa) {
+      kichThuocDa = tepDa.size;
+      tenGocDa = dapAn?.name ?? null;
+    }
   }
   onStage?.("Đang cập nhật thông tin...");
   const kq = await capNhatDe(id, {mon: input.mon, ten: input.ten, ngay: input.ngay, loai: "pdf", path, kichThuoc, tenGoc, dapAnPath: pathDa, dapAnKichThuoc: kichThuocDa, dapAnTenGoc: tenGocDa, xoaDapAn: !!xoaDapAn && !pathDa});
   if (!kq.ok) {
-    if (path) await xoaFile(path);
-    if (pathDa) await xoaFile(pathDa);
+    await Promise.all([path ? xoaFile(path) : Promise.resolve(), pathDa ? xoaFile(pathDa) : Promise.resolve()]);
     throw new Error(kq.error);
   }
+  xoaCacheKho();
   return docRow(kq.row);
 }
 export async function xoaDe(de: DeThi): Promise<void> {
   const kq = await xoaDeServer(de.id);
   if (!kq.ok) throw new Error(kq.error ?? "Không xóa được đề. Kiểm tra quyền quản trị.");
+  xoaCacheKho();
 }
