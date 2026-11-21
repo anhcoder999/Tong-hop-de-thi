@@ -67,7 +67,9 @@ export async function dangKy(email: string, password: string, hoTen: string, tok
   const {data, error} = await (await authClient()).auth.signUp({email, password, options: {data: {ho_ten: hoTen}}});
   if (error) return {ok: false, error: error.message};
   const uid = data.user?.id;
-  if (uid && ip) after(() => main().from("lu_ip_dang_ky").insert({ip, user_id: uid}).then(() => undefined));
+  if (uid && ip) after(async () => {
+    await main().from("lu_ip_dang_ky").insert({ip, user_id: uid});
+  });
   return {ok: true, canXacNhan: !data.session};
 }
 export async function guiLaiMa(email: string): Promise<KetQua> {
@@ -187,7 +189,9 @@ export async function dangThongBao(input: {noiDung: string; path: string | null}
   const urlAnh = input.path ? await linkLuuTru("MAIN", input.path) : "";
   const {error} = await main().from("thong_bao").insert({noi_dung: noiDung, url_anh: urlAnh, duong_dan: input.path});
   if (error) {
-    if (input.path) after(() => main().storage.from(BUCKET).remove([input.path as string]).then(() => undefined));
+    if (input.path) after(async () => {
+      await main().storage.from(BUCKET).remove([input.path as string]);
+    });
     return {ok: false, error: error.message};
   }
   return {ok: true};
@@ -198,13 +202,17 @@ export async function xoaThongBao(id: string): Promise<KetQua> {
   const {data} = await main().from("thong_bao").select("duong_dan").eq("id", id).maybeSingle();
   const {error} = await main().from("thong_bao").delete().eq("id", id);
   if (error) return {ok: false, error: error.message};
-  if (data?.duong_dan) after(() => main().storage.from(BUCKET).remove([String(data.duong_dan)]).then(() => undefined));
+  if (data?.duong_dan) after(async () => {
+    await main().storage.from(BUCKET).remove([String(data.duong_dan)]);
+  });
   return {ok: true};
 }
 export async function goiTai(id: string): Promise<KetQua> {
   const uid = await uidHienTai();
   if (!uid) return {ok: false, error: "Cần đăng nhập để tải."};
-  after(() => main().rpc("tang_tai", {uid: id}).then(() => undefined));
+  after(async () => {
+    await main().rpc("tang_tai", {uid: id});
+  });
   return {ok: true};
 }
 export async function layNguoiDung(): Promise<{ok: true; ds: NguoiDung[]} | {ok: false; error: string}> {
